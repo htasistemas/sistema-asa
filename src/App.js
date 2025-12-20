@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithCustomToken, onAuthStateChanged, signOut, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, signInWithCustomToken, onAuthStateChanged, signOut, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
 import { getFirestore, collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy, serverTimestamp, where, getDocs } from 'firebase/firestore';
 import { 
   ShieldCheck, LayoutDashboard, Building2, Users, LogOut, Plus, Trash2, Search, Map as MapIcon, 
@@ -289,7 +289,7 @@ const SubMenuItem = ({ label, isActive, onClick }) => (
 */
 
 // --- NOVA TELA: LOGIN MODERNIZADA ---
-const LoginScreen = ({ onLogin, loading, loginError, initialEmail }) => {
+const LoginScreen = ({ onLogin, loading, loginError, initialEmail, onClearError }) => {
   const [email, setEmail] = useState(initialEmail || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -367,9 +367,12 @@ const LoginScreen = ({ onLogin, loading, loginError, initialEmail }) => {
                            className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none font-medium transition-all text-slate-800"
                            placeholder="seu.email@asa.org.br"
                            value={email}
-                           onChange={(e) => setEmail(e.target.value)}
-                           required
-                         />
+                          onChange={(e) => {
+                            setEmail(e.target.value);
+                            if (loginError) onClearError?.();
+                          }}
+                          required
+                        />
                       </div>
                    </div>
 
@@ -392,7 +395,10 @@ const LoginScreen = ({ onLogin, loading, loginError, initialEmail }) => {
                           className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none font-medium transition-all text-slate-800"
                           placeholder="••••••••"
                           value={password}
-                          onChange={(e) => setPassword(e.target.value)}
+                          onChange={(e) => {
+                            setPassword(e.target.value);
+                            if (loginError) onClearError?.();
+                          }}
                           required
                         />
                       </div>
@@ -1053,9 +1059,10 @@ const App = () => {
   const [initialEmail, setInitialEmail] = useState('');
 
   useEffect(() => {
+    const savedEmail = localStorage.getItem('asa_login_email') || '';
+    setInitialEmail(savedEmail);
+
     if (isMock) {
-      const savedEmail = localStorage.getItem('asa_mock_user_email') || '';
-      setInitialEmail(savedEmail);
       if (savedEmail) setUser({ uid: 'mock-user', email: savedEmail });
       setLoading(false);
       return;
@@ -1084,10 +1091,13 @@ const App = () => {
       if (isMock) {
         if (!email || !password) throw new Error('Credenciais inválidas');
         setUser({ uid: 'mock-user', email });
-        if (rememberAccess) localStorage.setItem('asa_mock_user_email', email);
-        else localStorage.removeItem('asa_mock_user_email');
+        if (rememberAccess) localStorage.setItem('asa_login_email', email);
+        else localStorage.removeItem('asa_login_email');
         return;
       }
+      await setPersistence(auth, rememberAccess ? browserLocalPersistence : browserSessionPersistence);
+      if (rememberAccess) localStorage.setItem('asa_login_email', email);
+      else localStorage.removeItem('asa_login_email');
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       setLoginError('Credenciais inválidas ou acesso não autorizado.');
@@ -1099,7 +1109,13 @@ const App = () => {
   return user ? (
     <Dashboard user={user} onLogout={() => { if(!isMock) signOut(auth); window.location.reload(); }} />
   ) : (
-    <LoginScreen onLogin={handleLogin} loading={loading} loginError={loginError} initialEmail={initialEmail} />
+    <LoginScreen
+      onLogin={handleLogin}
+      loading={loading}
+      loginError={loginError}
+      initialEmail={initialEmail}
+      onClearError={() => setLoginError('')}
+    />
   );
 };
 
