@@ -7,14 +7,14 @@
 
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getAuth, signInWithCustomToken, onAuthStateChanged, signOut, signInWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy, serverTimestamp, where, getDocs } from 'firebase/firestore';
 import { 
   ShieldCheck, LayoutDashboard, Building2, Users, LogOut, Plus, Trash2, Search, Map as MapIcon, 
   AlertTriangle, Menu, X, ChevronDown, ChevronRight, Phone, Mail, MapPin, Edit, CheckCircle, 
   Clock, Database, Download, Upload, RefreshCw, Cloud, Check, Calendar, AlertOctagon, 
   ExternalLink, FileSpreadsheet, Locate, HeartHandshake, FileText, Award, Layers, DollarSign,
-  Star, Medal, Trophy, Lock, User
+  Star, Medal, Trophy, Lock, User, Eye, EyeOff
 } from 'lucide-react';
 
 /* ===================================================================
@@ -289,13 +289,15 @@ const SubMenuItem = ({ label, isActive, onClick }) => (
 */
 
 // --- NOVA TELA: LOGIN MODERNIZADA ---
-const LoginScreen = ({ onLogin, loading }) => {
-  const [email, setEmail] = useState('');
+const LoginScreen = ({ onLogin, loading, loginError, initialEmail }) => {
+  const [email, setEmail] = useState(initialEmail || '');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberAccess, setRememberAccess] = useState(true);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onLogin(email, password);
+    onLogin(email, password, rememberAccess);
   };
 
   return (
@@ -332,6 +334,9 @@ const LoginScreen = ({ onLogin, loading }) => {
                 <div className="flex items-center gap-2 text-sm font-medium bg-slate-800/50 px-4 py-2 rounded-lg border border-slate-700">
                    <CheckCircle size={16} className="text-emerald-400"/> Georreferenciamento
                 </div>
+                <div className="flex items-center gap-2 text-sm font-medium bg-slate-800/50 px-4 py-2 rounded-lg border border-slate-700">
+                   <CheckCircle size={16} className="text-emerald-400"/> Indicadores em Tempo Real
+                </div>
              </div>
          </div>
 
@@ -344,6 +349,13 @@ const LoginScreen = ({ onLogin, loading }) => {
                    <h2 className="text-2xl font-bold text-slate-800">Bem-vindo de volta</h2>
                    <p className="text-slate-500 mt-1">Acesse sua conta para continuar</p>
                 </div>
+
+                {loginError && (
+                  <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 flex items-center gap-3">
+                    <AlertTriangle size={18} />
+                    <span>{loginError}</span>
+                  </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                    <div className="space-y-2">
@@ -366,16 +378,39 @@ const LoginScreen = ({ onLogin, loading }) => {
                          <label className="text-sm font-bold text-slate-700">Senha</label>
                          <button type="button" className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors">Esqueceu?</button>
                       </div>
-                      <div className="relative group">
-                         <div className="absolute left-4 top-4 text-slate-400 group-focus-within:text-blue-600 transition-colors"><Lock size={20}/></div>
-                         <input 
-                           type="password" 
-                           className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none font-medium transition-all text-slate-800"
-                           placeholder="••••••••"
-                           value={password}
-                           onChange={(e) => setPassword(e.target.value)}
-                           required
-                         />
+                     <div className="relative group">
+                        <div className="absolute left-4 top-4 text-slate-400 group-focus-within:text-blue-600 transition-colors"><Lock size={20}/></div>
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute right-4 top-4 text-slate-400 group-focus-within:text-blue-600 hover:text-blue-600 transition-colors"
+                        >
+                          {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                        </button>
+                        <input 
+                          type={showPassword ? "text" : "password"}
+                          className="w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none font-medium transition-all text-slate-800"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                        />
+                      </div>
+                   </div>
+
+                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <label className="flex items-center gap-3 text-sm font-semibold text-slate-600">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                          checked={rememberAccess}
+                          onChange={(e) => setRememberAccess(e.target.checked)}
+                        />
+                        Manter minha sessão ativa
+                      </label>
+                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                        <ShieldCheck size={16} className="text-emerald-500" />
+                        Autenticação segura
                       </div>
                    </div>
 
@@ -394,6 +429,17 @@ const LoginScreen = ({ onLogin, loading }) => {
                         </>
                      )}
                    </button>
+
+                   <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600 space-y-2">
+                     <div className="flex items-center gap-2 font-semibold text-slate-700">
+                       <User size={16} className="text-blue-600" /> Acesso institucional
+                     </div>
+                     <p>Use seu e-mail oficial e senha cadastrada para acessar o painel completo.</p>
+                   </div>
+
+                   <div className="text-center text-sm text-slate-500 pt-2">
+                     Não tem acesso? <span className="text-blue-600 font-semibold">Solicite ao administrador.</span>
+                   </div>
                 </form>
 
                 <div className="mt-8 text-center">
@@ -1003,21 +1049,24 @@ const Dashboard = ({ user, onLogout }) => {
 const App = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loginError, setLoginError] = useState('');
+  const [initialEmail, setInitialEmail] = useState('');
 
   useEffect(() => {
     if (isMock) {
-      setUser({ uid: 'mock-user' });
+      const savedEmail = localStorage.getItem('asa_mock_user_email') || '';
+      setInitialEmail(savedEmail);
+      if (savedEmail) setUser({ uid: 'mock-user', email: savedEmail });
       setLoading(false);
       return;
     }
     const initAuth = async () => {
       try {
         if (initialToken) await signInWithCustomToken(auth, initialToken);
-        else await signInAnonymously(auth);
       } catch (e) {
         isMock = true; 
         mockDB.load();
-        setUser({ uid: 'mock-user' });
+        setInitialEmail('');
       } finally {
         setLoading(false);
       }
@@ -1028,7 +1077,30 @@ const App = () => {
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-900"></div></div>;
 
-  return user ? <Dashboard user={user} onLogout={() => { if(!isMock) signOut(auth); window.location.reload(); }} /> : <LoginScreen onLogin={() => setLoading(true)} loading={loading} />;
+  const handleLogin = async (email, password, rememberAccess) => {
+    setLoginError('');
+    setLoading(true);
+    try {
+      if (isMock) {
+        if (!email || !password) throw new Error('Credenciais inválidas');
+        setUser({ uid: 'mock-user', email });
+        if (rememberAccess) localStorage.setItem('asa_mock_user_email', email);
+        else localStorage.removeItem('asa_mock_user_email');
+        return;
+      }
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      setLoginError('Credenciais inválidas ou acesso não autorizado.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return user ? (
+    <Dashboard user={user} onLogout={() => { if(!isMock) signOut(auth); window.location.reload(); }} />
+  ) : (
+    <LoginScreen onLogin={handleLogin} loading={loading} loginError={loginError} initialEmail={initialEmail} />
+  );
 };
 
 export default App;
