@@ -660,6 +660,14 @@ const Dashboard = ({ user, onLogout }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMapUnit, setSelectedMapUnit] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const pageTitles = {
+    dashboard: 'Visão Geral',
+    units_list: 'Listagem de Unidades',
+    units_add: 'Cadastro de Unidade',
+    unit_life: 'Vida da Unidade',
+    map: 'Georreferenciamento',
+    backup: 'Backup e Dados',
+  };
 
   const initialForm = { nomeUnidade: '', nomeDiretor: '', anoEleicao: new Date().getFullYear(), email: '', telefone: '', cep: '', logradouro: '', numero: '', bairro: '', cidade: '', uf: '', pendencias: false, status: 'Ativo' };
   const [formData, setFormData] = useState(initialForm);
@@ -759,7 +767,9 @@ const Dashboard = ({ user, onLogout }) => {
         <header className="bg-white border-b px-8 md:px-12 py-6 flex justify-between items-center shrink-0 shadow-sm z-40 h-24">
           <div className="flex items-center gap-6">
              <button onClick={() => setSidebarOpen(true)} className="md:hidden text-slate-600 p-2 rounded-xl hover:bg-slate-100"><Menu size={32}/></button>
-             <h1 className="font-bold text-3xl text-slate-800 capitalize tracking-tight">{activePage.replace(/_/g, ' ')}</h1>
+             <h1 className="font-bold text-3xl text-slate-800 capitalize tracking-tight">
+               {pageTitles[activePage] ?? activePage.replace(/_/g, ' ')}
+             </h1>
           </div>
           <div className="flex items-center gap-6">
              <div className="text-base font-semibold text-slate-500 flex items-center gap-3 bg-slate-100 px-5 py-2.5 rounded-full shadow-inner">
