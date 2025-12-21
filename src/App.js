@@ -929,7 +929,7 @@ const UnitDashboardScreen = ({ units, showToast }) => {
   );
 };
 
-const UnitsManagementScreen = ({ units, onSelectUnit }) => {
+const UnitsManagementScreen = ({ units, onSelectUnit, onEditUnit, onDeleteUnit, onTogglePending }) => {
   const [filters, setFilters] = useState({ regiao: '', distrito: '', score: '', pendencias: '' });
 
   const filteredUnits = units.filter(unit => {
@@ -958,7 +958,7 @@ const UnitsManagementScreen = ({ units, onSelectUnit }) => {
   return (
     <div className="space-y-8 animate-in fade-in">
       <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-        <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3"><Building2 className="text-blue-600" size={28} /> Unidades ASA</h2>
+        <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3"><Building2 className="text-blue-600" size={28} /> Listagem de Unidades</h2>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <input className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium" placeholder="Filtrar por região" value={filters.regiao} onChange={e => setFilters(prev => ({ ...prev, regiao: e.target.value }))} />
           <input className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium" placeholder="Filtrar por distrito" value={filters.distrito} onChange={e => setFilters(prev => ({ ...prev, distrito: e.target.value }))} />
@@ -984,33 +984,65 @@ const UnitsManagementScreen = ({ units, onSelectUnit }) => {
             <thead className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider">
               <tr>
                 <th className="p-6">Unidade</th>
-                <th className="p-6">Região</th>
-                <th className="p-6">Distrito</th>
+                <th className="p-6">Direção</th>
+                <th className="p-6">Região / Distrito</th>
                 <th className="p-6">Score</th>
                 <th className="p-6">Pendências</th>
+                <th className="p-6">Ano</th>
                 <th className="p-6 text-right">Ações</th>
               </tr>
             </thead>
             <tbody>
               {filteredUnits.map(unit => (
                 <tr key={unit.id} className="border-t border-slate-100 hover:bg-slate-50/80 transition-colors">
-                  <td className="p-6 font-semibold text-slate-700">{unit.nomeUnidade}</td>
-                  <td className="p-6 text-slate-500">{unit.regiao || '-'}</td>
-                  <td className="p-6 text-slate-500">{unit.distrito || '-'}</td>
+                  <td className="p-6">
+                    <div className="font-semibold text-slate-700">{unit.nomeUnidade}</div>
+                    <div className="text-sm text-slate-400 flex items-center gap-2"><MapPin size={16}/> {safeRender(unit.cidade)}</div>
+                  </td>
+                  <td className="p-6">
+                    <div className="text-slate-600 font-medium">{safeRender(unit.nomeDiretor)}</div>
+                    <div className="text-sm text-slate-400 flex items-center gap-2">
+                      {getWhatsappLink(unit.telefone) ? (
+                        <a
+                          href={getWhatsappLink(unit.telefone)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-emerald-600 hover:text-emerald-700 transition-colors"
+                          aria-label="Abrir conversa no WhatsApp"
+                        >
+                          <Phone size={16}/>
+                        </a>
+                      ) : (
+                        <Phone size={16}/>
+                      )}
+                      {safeRender(unit.telefone)}
+                    </div>
+                  </td>
+                  <td className="p-6 text-slate-500">
+                    <div>{unit.regiao || '-'}</div>
+                    <div className="text-sm text-slate-400">{unit.distrito || '-'}</div>
+                  </td>
                   <td className="p-6"><ScoreBadge score={unit.scoreAtual || 0} /></td>
                   <td className="p-6">
-                    {unit.temPendencias || unit.pendencias ? <StatusBadge label="Com Pendências" tone="amber" /> : <StatusBadge label="Sem Pendências" tone="emerald" />}
+                    <button onClick={() => onTogglePending(unit)} className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-all shadow-sm hover:shadow-md ${unit.temPendencias || unit.pendencias ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-emerald-100 text-emerald-700 border border-emerald-200'}`}>
+                      {unit.temPendencias || unit.pendencias ? 'Com Pendência' : 'Regular'}
+                    </button>
                   </td>
+                  <td className="p-6 text-slate-600 font-semibold">{safeRender(unit.anoEleicao)}</td>
                   <td className="p-6 text-right">
-                    <Button variant="outline" className="px-4 py-2 text-sm" onClick={() => onSelectUnit(unit.id)}>
-                      <ExternalLink size={18} /> Detalhar
-                    </Button>
+                    <div className="flex justify-end gap-3">
+                      <Button variant="outline" className="px-4 py-2 text-sm" onClick={() => onSelectUnit(unit.id)}>
+                        <ExternalLink size={18} /> Detalhar
+                      </Button>
+                      <button onClick={() => onEditUnit(unit)} className="text-blue-600 p-2 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-100"><Edit size={20}/></button>
+                      <button onClick={() => onDeleteUnit(unit.id)} className="text-red-600 p-2 hover:bg-red-50 rounded-xl transition-colors border border-transparent hover:border-red-100"><Trash2 size={20}/></button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {filteredUnits.length === 0 && (
                 <tr>
-                  <td colSpan="6" className="p-10">
+                  <td colSpan="7" className="p-10">
                     <EmptyState title="Nenhuma unidade encontrada" description="Ajuste os filtros para ver mais resultados." icon={Search} />
                   </td>
                 </tr>
@@ -1954,8 +1986,7 @@ const BackupScreen = ({ units, showToast }) => {
 // --- DASHBOARD (PRINCIPAL) ---
 const Dashboard = ({ user, onLogout }) => {
   const getMenuKeyForPage = (page) => {
-    if (['units_list', 'units_add'].includes(page)) return 'management';
-    if (['asa_units', 'asa_unit_detail'].includes(page)) return 'asa';
+    if (['units_list', 'units_add', 'asa_unit_detail'].includes(page)) return 'management';
     return null;
   };
 
@@ -1963,7 +1994,6 @@ const Dashboard = ({ user, onLogout }) => {
     'dashboard',
     'units_list',
     'units_add',
-    'asa_units',
     'asa_unit_detail',
     'unit_life',
     'map',
@@ -1973,6 +2003,7 @@ const Dashboard = ({ user, onLogout }) => {
   const initialActivePage = (() => {
     if (typeof window === 'undefined') return 'dashboard';
     const stored = localStorage.getItem('activePage') || 'dashboard';
+    if (stored === 'asa_units') return 'units_list';
     return availablePages.has(stored) ? stored : 'dashboard';
   })();
 
@@ -1992,7 +2023,6 @@ const Dashboard = ({ user, onLogout }) => {
     dashboard: 'Visão Geral',
     units_list: 'Listagem de Unidades',
     units_add: 'Cadastro de Unidade',
-    asa_units: 'Unidades ASA',
     asa_unit_detail: 'Detalhe da Unidade',
     unit_life: 'Vida da Unidade',
     map: 'Georreferenciamento',
@@ -2177,26 +2207,13 @@ const Dashboard = ({ user, onLogout }) => {
             label="Cadastros"
             hasSubmenu
             isOpen={openMenuKey === 'management'}
-            isActive={openMenuKey === 'management' || ['units_list', 'units_add'].includes(activePage)}
+            isActive={openMenuKey === 'management' || ['units_list', 'units_add', 'asa_unit_detail'].includes(activePage)}
             onClick={() => setOpenMenuKey(prev => (prev === 'management' ? null : 'management'))}
           />
           {openMenuKey === 'management' && (
             <div className="pl-6 space-y-2 mt-2 border-l-2 border-slate-700 ml-8">
               <SubMenuItem label="Listagem" isActive={activePage === 'units_list'} onClick={() => { setActivePage('units_list'); setSidebarOpen(false); }} />
               <SubMenuItem label="Unidade" isActive={activePage === 'units_add'} onClick={() => { setFormData(initialForm); setEditingId(null); setActivePage('units_add'); setSidebarOpen(false); }} />
-            </div>
-          )}
-          <SidebarItem
-            icon={Award}
-            label="ASA"
-            hasSubmenu
-            isOpen={openMenuKey === 'asa'}
-            isActive={openMenuKey === 'asa' || ['asa_units', 'asa_unit_detail'].includes(activePage)}
-            onClick={() => setOpenMenuKey(prev => (prev === 'asa' ? null : 'asa'))}
-          />
-          {openMenuKey === 'asa' && (
-            <div className="pl-6 space-y-2 mt-2 border-l-2 border-slate-700 ml-8">
-              <SubMenuItem label="Unidades" isActive={activePage === 'asa_units' || activePage === 'asa_unit_detail'} onClick={() => { setActivePage('asa_units'); setSidebarOpen(false); }} />
             </div>
           )}
           <SidebarItem icon={HeartHandshake} label="Vida da Unidade" isActive={activePage === 'unit_life'} onClick={() => { setActivePage('unit_life'); setSidebarOpen(false); }} />
@@ -2245,13 +2262,6 @@ const Dashboard = ({ user, onLogout }) => {
             </div>
           )}
 
-          {activePage === 'asa_units' && (
-            <UnitsManagementScreen
-              units={units}
-              onSelectUnit={(unitId) => { setSelectedUnitId(unitId); setActivePage('asa_unit_detail'); }}
-            />
-          )}
-
           {activePage === 'asa_unit_detail' && selectedUnit && (
             <UnitDetailScreen
               unit={selectedUnit}
@@ -2259,72 +2269,19 @@ const Dashboard = ({ user, onLogout }) => {
               metasCatalog={metasCatalog}
               selosCatalog={selosCatalog}
               showToast={showToast}
-              onBack={() => { setActivePage('asa_units'); setSelectedUnitId(null); }}
+              onBack={() => { setActivePage('units_list'); setSelectedUnitId(null); }}
               onCatalogRefresh={refreshMockCatalogs}
             />
           )}
 
           {activePage === 'units_list' && (
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[1000px]">
-                  <thead className="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                      <th className="p-8 font-bold text-slate-600 text-sm uppercase tracking-widest">Unidade / Local</th>
-                      <th className="p-8 font-bold text-slate-600 text-sm uppercase tracking-widest">Direção / Contato</th>
-                      <th className="p-8 font-bold text-slate-600 text-sm uppercase tracking-widest text-center">Ano Eleição</th>
-                      <th className="p-8 font-bold text-slate-600 text-sm uppercase tracking-widest text-center">Status</th>
-                      <th className="p-8 font-bold text-slate-600 text-sm uppercase tracking-widest text-right">Gerenciar</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {units.map(u => (
-                      <tr key={u.id} className="hover:bg-blue-50/40 transition-colors group">
-                        <td className="p-8">
-                          <div className="font-bold text-slate-900 text-xl mb-2">{safeRender(u.nomeUnidade)}</div>
-                          <div className="text-base text-slate-500 flex items-center gap-2"><MapPin size={18}/> {safeRender(u.cidade)}</div>
-                        </td>
-                        <td className="p-8">
-                          <div className="text-lg font-medium text-slate-700 mb-2">{safeRender(u.nomeDiretor)}</div>
-                          <div className="text-base text-slate-400 flex items-center gap-2">
-                            {getWhatsappLink(u.telefone) ? (
-                              <a
-                                href={getWhatsappLink(u.telefone)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-emerald-600 hover:text-emerald-700 transition-colors"
-                                aria-label="Abrir conversa no WhatsApp"
-                              >
-                                <Phone size={18}/>
-                              </a>
-                            ) : (
-                              <Phone size={18}/>
-                            )}
-                            {safeRender(u.telefone)}
-                          </div>
-                        </td>
-                        <td className="p-8 text-center font-bold">
-                          <span className={`inline-flex items-center justify-center px-4 py-2 rounded-full border text-sm font-bold ${getAnoEleicaoBadge(u.anoEleicao)}`}>
-                            {safeRender(u.anoEleicao)}
-                          </span>
-                        </td>
-                        <td className="p-8 text-center">
-                          <button onClick={() => togglePending(u)} className={`px-6 py-2.5 rounded-full text-sm font-bold uppercase tracking-wide transition-all shadow-sm hover:shadow-md ${u.pendencias ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-emerald-100 text-emerald-700 border border-emerald-200'}`}>
-                            {u.pendencias ? 'Pendente' : 'Regular'}
-                          </button>
-                        </td>
-                        <td className="p-8 text-right">
-                          <div className="flex justify-end gap-4">
-                            <button onClick={() => { setFormData({ ...initialForm, ...u }); setEditingId(u.id); setActivePage('units_add'); }} className="text-blue-600 p-3 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-100"><Edit size={24}/></button>
-                            <button onClick={() => handleDelete(u.id)} className="text-red-600 p-3 hover:bg-red-50 rounded-xl transition-colors border border-transparent hover:border-red-100"><Trash2 size={24}/></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <UnitsManagementScreen
+              units={units}
+              onSelectUnit={(unitId) => { setSelectedUnitId(unitId); setActivePage('asa_unit_detail'); }}
+              onEditUnit={(unit) => { setFormData({ ...initialForm, ...unit }); setEditingId(unit.id); setActivePage('units_add'); }}
+              onDeleteUnit={handleDelete}
+              onTogglePending={togglePending}
+            />
           )}
 
           {activePage === 'units_add' && (
