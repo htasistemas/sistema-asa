@@ -2,13 +2,10 @@
  * SISTEMA DE GESTÃO ASA (Ação Solidária Adventista)
  * =================================================
  * Versão: 4.5 (Tela de Login Premium & Moderna)
- * Tecnologias: React, Tailwind CSS, Firebase (Firestore/Auth), Lucide Icons.
+ * Tecnologias: React, Tailwind CSS, Lucide Icons.
  */
 
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy, serverTimestamp, where, getDocs, getDoc, setDoc } from 'firebase/firestore';
 import { 
   ShieldCheck, LayoutDashboard, Building2, Users, LogOut, Plus, Trash2, Search, Map as MapIcon, 
   AlertTriangle, Menu, X, ChevronDown, ChevronRight, ChevronLeft, Phone, Mail, MapPin, Edit, CheckCircle, 
@@ -80,39 +77,11 @@ const TailwindInjector = () => {
 };
 
 /* ===================================================================
-   2. CONFIGURAÇÃO DO BANCO DE DADOS
+   2. CONFIGURAÇÃO DO BANCO DE DADOS (LOCAL)
    ===================================================================
 */
-const PROD_FIREBASE_CONFIG = null; 
-
-const getEnvVar = (name) => typeof window !== 'undefined' && window[name] ? window[name] : undefined;
-let db, auth;
-let isMock = false;
-let firebaseInitError = null;
-
-try {
-  if (PROD_FIREBASE_CONFIG) {
-    const app = initializeApp(PROD_FIREBASE_CONFIG);
-    auth = getAuth(app);
-    db = getFirestore(app);
-  } else {
-    const envConfig = getEnvVar('__firebase_config');
-    if (envConfig) {
-      const config = JSON.parse(envConfig);
-      if (!config.apiKey || config.apiKey === 'demo') throw new Error("Chave Demo");
-      const app = initializeApp(config);
-      auth = getAuth(app);
-      db = getFirestore(app);
-    } else {
-      throw new Error("Sem config");
-    }
-  }
-} catch (e) {
-  firebaseInitError = e;
-}
-
-const appId = getEnvVar('__app_id') || 'default-app-id';
-const initialToken = getEnvVar('__initial_auth_token');
+const isMock = true;
+const LOCAL_USER_KEY = 'asa_local_user';
 
 const mockDB = {
   units: [],
@@ -213,6 +182,36 @@ const mockDB = {
     mockDB.load();
     mockDB.scoreSnapshots.push({ id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, ...data });
     mockDB.save();
+  },
+  exportAll: () => {
+    mockDB.load();
+    return {
+      meta: {
+        app: 'sistema-asa',
+        version: 1,
+        exportedAt: new Date().toISOString()
+      },
+      data: {
+        units: mockDB.units,
+        unitLife: mockDB.unitLife,
+        unitSubcollections: mockDB.unitSubcollections,
+        catalogs: mockDB.catalogs,
+        scoreSnapshots: mockDB.scoreSnapshots
+      }
+    };
+  },
+  importAll: (payload) => {
+    const data = payload?.data || payload;
+    if (!data || (!data.unitLife && !data.unitSubcollections && !data.catalogs && !data.scoreSnapshots)) {
+      return false;
+    }
+    mockDB.units = Array.isArray(data.units) ? data.units : [];
+    mockDB.unitLife = data.unitLife || {};
+    mockDB.unitSubcollections = data.unitSubcollections || {};
+    mockDB.catalogs = data.catalogs || { unidade_etapas: [], unidade_metas: [], unidade_selos: [] };
+    mockDB.scoreSnapshots = Array.isArray(data.scoreSnapshots) ? data.scoreSnapshots : [];
+    mockDB.save();
+    return true;
   }
 };
 if (isMock) mockDB.load();
@@ -598,6 +597,7 @@ const LoginScreen = ({ onLogin, loading }) => {
                 <div className="mb-8 text-center">
                    <h2 className="text-2xl font-bold text-slate-800">Bem-vindo de volta</h2>
                    <p className="text-slate-500 mt-1">Acesse sua conta para continuar</p>
+                   <p className="text-xs text-slate-400 mt-2">Os dados são salvos localmente no dispositivo.</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -1825,7 +1825,8 @@ const BackupScreen = ({ units, showToast }) => {
   const [importing, setImporting] = useState(false);
 
   const handleExport = () => {
-    const blob = new Blob([JSON.stringify({ units }, null, 2)], { type: 'application/json' });
+    const payload = isMock ? mockDB.exportAll() : { units };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -1905,7 +1906,12 @@ const BackupScreen = ({ units, showToast }) => {
              reader.onload = async (evt) => {
                  try {
                      const json = JSON.parse(evt.target.result);
-                     await processImportData(json.units || json.data || []);
+                     if (isMock && mockDB.importAll(json)) {
+                       showToast('Backup restaurado!', 'success');
+                       window.dispatchEvent(new Event('storage'));
+                     } else {
+                       await processImportData(json.units || json.data || []);
+                     }
                  } catch(err) { showToast('JSON inválido.', 'error'); } finally { setImporting(false); e.target.value = null; }
              };
              reader.readAsText(file);
@@ -1926,12 +1932,12 @@ const BackupScreen = ({ units, showToast }) => {
       <div className="bg-white p-10 rounded-3xl border border-slate-200 shadow-sm hover:shadow-lg transition-all">
          <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-blue-600"><Download size={36}/></div>
          <h3 className="text-2xl font-bold text-slate-800 mb-3">Backup de Segurança</h3>
-         <p className="text-slate-500 mb-8 text-lg leading-relaxed">Baixe uma cópia completa dos dados para segurança.</p>
+         <p className="text-slate-500 mb-8 text-lg leading-relaxed">Baixe uma cópia completa dos dados locais em JSON para guardar com segurança.</p>
          <Button onClick={handleExport} className="w-full">Baixar JSON</Button>
       </div>
       <div className="bg-white p-10 rounded-3xl border border-slate-200 relative">
          <h3 className="text-2xl font-bold text-slate-800 mb-3 flex gap-3"><Upload className="text-amber-600" size={32}/> Importar Dados</h3>
-         <p className="text-slate-500 mb-8 text-lg leading-relaxed">Carregue planilha (.xlsx, .csv) ou backup.</p>
+         <p className="text-slate-500 mb-8 text-lg leading-relaxed">Restaure um backup JSON completo ou importe planilha (.xlsx, .csv).</p>
          <div className="relative group cursor-pointer">
             <div className="absolute inset-0 bg-slate-50 rounded-xl border-2 border-dashed border-slate-300 group-hover:border-blue-500 transition-colors z-0"></div>
             <div className="relative z-10 py-12 text-center">
@@ -2010,12 +2016,14 @@ const Dashboard = ({ user, onLogout }) => {
 
   useEffect(() => {
     if (isMock) {
-      const load = () => setUnits([...mockDB.units]); load();
-      const interval = setInterval(() => {
-        const current = JSON.parse(localStorage.getItem('asa_units_mock') || '[]');
-        if(current.length !== units.length) setUnits(current);
-      }, 2000);
-      return () => clearInterval(interval);
+      const load = () => {
+        mockDB.load();
+        setUnits([...mockDB.units]);
+      };
+      load();
+      const handleStorage = () => load();
+      window.addEventListener('storage', handleStorage);
+      return () => window.removeEventListener('storage', handleStorage);
     }
     const q = query(getCollectionRef(COLLECTIONS.units), orderBy('nomeUnidade'));
     return onSnapshot(q, s => setUnits(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => { console.error(e); });
@@ -2039,10 +2047,15 @@ const Dashboard = ({ user, onLogout }) => {
 
     const subscribeCatalogs = () => {
       if (isMock) {
-        setEtapasCatalog(mockDB.getCatalog(COLLECTIONS.etapas));
-        setMetasCatalog(mockDB.getCatalog(COLLECTIONS.metas));
-        setSelosCatalog(mockDB.getCatalog(COLLECTIONS.selos));
-        return () => {};
+        const loadCatalogs = () => {
+          setEtapasCatalog(mockDB.getCatalog(COLLECTIONS.etapas));
+          setMetasCatalog(mockDB.getCatalog(COLLECTIONS.metas));
+          setSelosCatalog(mockDB.getCatalog(COLLECTIONS.selos));
+        };
+        loadCatalogs();
+        const handleStorage = () => loadCatalogs();
+        window.addEventListener('storage', handleStorage);
+        return () => window.removeEventListener('storage', handleStorage);
       }
       const unsubEtapas = onSnapshot(getCollectionRef(COLLECTIONS.etapas), snapshot => {
         setEtapasCatalog(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
@@ -2527,46 +2540,29 @@ const Dashboard = ({ user, onLogout }) => {
 
 // --- APP (INICIALIZAÇÃO) ---
 const App = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (firebaseInitError) {
-      setLoading(false);
-      return;
+  const [user, setUser] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return JSON.parse(localStorage.getItem(LOCAL_USER_KEY));
+    } catch {
+      return null;
     }
-    const initAuth = async () => {
-      try {
-        if (initialToken) await signInWithCustomToken(auth, initialToken);
-        else await signInAnonymously(auth);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    initAuth();
-    return onAuthStateChanged(auth, setUser);
-  }, []);
+  });
+  const [loading, setLoading] = useState(false);
 
-  if (firebaseInitError) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-xl bg-white border border-slate-200 rounded-3xl shadow-lg p-10 text-center">
-          <div className="mx-auto mb-6 w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center text-3xl font-bold">!</div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-3">Configuração do Firebase pendente</h1>
-          <p className="text-slate-500 text-base leading-relaxed">
-            Para usar o sistema somente online, configure as credenciais do Firebase (Firestore + Auth).
-            Assim que as chaves estiverem disponíveis, recarregue a página.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const handleLogin = (email) => {
+    const nextUser = { email, loggedInAt: new Date().toISOString() };
+    localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(nextUser));
+    setUser(nextUser);
+    setLoading(false);
+  };
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-900"></div></div>;
+  const handleLogout = () => {
+    localStorage.removeItem(LOCAL_USER_KEY);
+    setUser(null);
+  };
 
-  return user ? <Dashboard user={user} onLogout={() => { signOut(auth); window.location.reload(); }} /> : <LoginScreen onLogin={() => setLoading(true)} loading={loading} />;
+  return user ? <Dashboard user={user} onLogout={handleLogout} /> : <LoginScreen onLogin={handleLogin} loading={loading} />;
 };
 
 export default App;
