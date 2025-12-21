@@ -5,7 +5,7 @@
  * Tecnologias: React, Tailwind CSS, Firebase (Firestore/Auth), Lucide Icons.
  */
 
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy, serverTimestamp, where, getDocs } from 'firebase/firestore';
@@ -669,8 +669,9 @@ const Dashboard = ({ user, onLogout }) => {
     backup: 'Backup e Dados',
   };
 
-  const initialForm = { nomeUnidade: '', nomeDiretor: '', anoEleicao: new Date().getFullYear(), email: '', telefone: '', cep: '', logradouro: '', numero: '', bairro: '', cidade: '', uf: '', pendencias: false, status: 'Ativo' };
+  const initialForm = { nomeUnidade: '', nomeDiretor: '', anoEleicao: new Date().getFullYear(), email: '', telefone: '', cep: '', logradouro: '', numero: '', bairro: '', cidade: '', uf: '', viceDiretor: '', secretario: '', tesoureiro: '', pendencias: false, status: 'Ativo' };
   const [formData, setFormData] = useState(initialForm);
+  const lastCepLookup = useRef('');
 
   const showToast = (msg, type = 'success') => { setToast({ show: true, message: msg, type }); setTimeout(() => setToast(p => ({ ...p, show: false })), 3000); };
 
@@ -713,11 +714,25 @@ const Dashboard = ({ user, onLogout }) => {
     showToast("Status alterado");
   };
 
-  const handleCepBlur = async () => {
-    if (formData.cep.length >= 8) {
-      const addr = await fetchAddressByCEP(formData.cep);
-      if (addr) { setFormData(p => ({ ...p, logradouro: addr.logradouro, bairro: addr.bairro, cidade: addr.localidade, uf: addr.uf })); showToast("Endereço preenchido!"); }
+  const handleCepLookup = async (cepValue) => {
+    const clean = String(cepValue).replace(/\D/g, '');
+    if (clean.length !== 8 || clean === lastCepLookup.current) return;
+    lastCepLookup.current = clean;
+    const addr = await fetchAddressByCEP(clean);
+    if (addr) {
+      setFormData(p => ({ ...p, logradouro: addr.logradouro, bairro: addr.bairro, cidade: addr.localidade, uf: addr.uf }));
+      showToast("Endereço preenchido!");
     }
+  };
+
+  const handleCepBlur = async () => {
+    await handleCepLookup(formData.cep);
+  };
+
+  const handleCepChange = (e) => {
+    const masked = maskCEP(e.target.value);
+    setFormData(prev => ({ ...prev, cep: masked }));
+    handleCepLookup(masked);
   };
 
   const stats = {
@@ -823,7 +838,7 @@ const Dashboard = ({ user, onLogout }) => {
                         </td>
                         <td className="p-8 text-right">
                           <div className="flex justify-end gap-4">
-                            <button onClick={() => { setFormData(u); setEditingId(u.id); setActivePage('units_add'); }} className="text-blue-600 p-3 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-100"><Edit size={24}/></button>
+                            <button onClick={() => { setFormData({ ...initialForm, ...u }); setEditingId(u.id); setActivePage('units_add'); }} className="text-blue-600 p-3 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-100"><Edit size={24}/></button>
                             <button onClick={() => handleDelete(u.id)} className="text-red-600 p-3 hover:bg-red-50 rounded-xl transition-colors border border-transparent hover:border-red-100"><Trash2 size={24}/></button>
                           </div>
                         </td>
@@ -867,7 +882,7 @@ const Dashboard = ({ user, onLogout }) => {
                     <div className="md:col-span-3">
                       <label className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 block">CEP <span className="text-red-500">*</span></label>
                       <input className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-amber-100 focus:border-amber-500 outline-none font-mono text-lg font-medium" 
-                        value={formData.cep} onChange={e => setFormData({...formData, cep: maskCEP(e.target.value)})} onBlur={handleCepBlur} placeholder="00000-000" />
+                        value={formData.cep} onChange={handleCepChange} onBlur={handleCepBlur} placeholder="00000-000" />
                     </div>
                     <div className="md:col-span-7">
                       <label className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 block">Endereço (Logradouro)</label>
@@ -934,6 +949,33 @@ const Dashboard = ({ user, onLogout }) => {
                          <div className="absolute left-5 top-5 text-slate-400"><Calendar size={24}/></div>
                          <input type="number" className="w-full p-5 pl-14 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 outline-none text-lg font-medium" required
                            value={formData.anoEleicao} onChange={e => setFormData({...formData, anoEleicao: e.target.value})} placeholder="2025" />
+                      </div>
+                    </div>
+                    <div className="md:col-span-2 pt-4">
+                      <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 block">Equipe da Diretoria (opcional)</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 block">Vice Diretor(a)</label>
+                      <div className="relative">
+                         <div className="absolute left-5 top-5 text-slate-400"><User size={24}/></div>
+                         <input className="w-full p-5 pl-14 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 outline-none text-lg font-medium"
+                           value={formData.viceDiretor} onChange={e => setFormData({...formData, viceDiretor: smartFormat(e.target.value)})} placeholder="Nome completo" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 block">Secretário(a)</label>
+                      <div className="relative">
+                         <div className="absolute left-5 top-5 text-slate-400"><User size={24}/></div>
+                         <input className="w-full p-5 pl-14 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 outline-none text-lg font-medium"
+                           value={formData.secretario} onChange={e => setFormData({...formData, secretario: smartFormat(e.target.value)})} placeholder="Nome completo" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 block">Tesoureiro(a)</label>
+                      <div className="relative">
+                         <div className="absolute left-5 top-5 text-slate-400"><User size={24}/></div>
+                         <input className="w-full p-5 pl-14 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 outline-none text-lg font-medium"
+                           value={formData.tesoureiro} onChange={e => setFormData({...formData, tesoureiro: smartFormat(e.target.value)})} placeholder="Nome completo" />
                       </div>
                     </div>
                     <div className="md:col-span-2 pt-2">
