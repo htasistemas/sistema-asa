@@ -99,6 +99,104 @@ const defaultSelosCatalog = [
   { codigo: 'unidade_excelencia', nome: 'Unidade Excelência', validade_dias: 365, ativo: true }
 ];
 
+const defaultAcaoAtividadesCatalog = [
+  { id: 'oracao_10_dias', titulo: '10 Dias de Oração', descricao: 'Consagração anual e mobilização espiritual.', periodo_referencia: '2026-02', peso_score: 4, ativo: true },
+  { id: 'treinamento_elo', titulo: 'Treinamento ELO', descricao: 'Capacitação de líderes e voluntários.', periodo_referencia: '2026-03', peso_score: 3, ativo: true },
+  { id: 'mutirao_pascoa', titulo: 'Mutirão de Páscoa', descricao: 'Ação solidária de Páscoa com distribuição de esperança.', periodo_referencia: '2026-03', peso_score: 4, ativo: true },
+  { id: 'vida_por_vidas', titulo: 'Vida por Vidas', descricao: 'Doação de sangue e mobilização comunitária.', periodo_referencia: '2026-06', peso_score: 4, ativo: true },
+  { id: 'confraternizacao', titulo: 'Confraternização', descricao: 'Integração e fortalecimento das equipes.', periodo_referencia: '2026-06', peso_score: 2, ativo: true },
+  { id: 'quebrando_silencio', titulo: 'Quebrando o Silêncio', descricao: 'Passeata e campanha contra a violência.', periodo_referencia: '2026-08', peso_score: 4, ativo: true },
+  { id: 'acao_comunitaria', titulo: 'Ação Comunitária', descricao: 'Projeto local de impacto social.', periodo_referencia: '2026-09', peso_score: 3, ativo: true },
+  { id: 'campanha_natal', titulo: 'Natal Solidário', descricao: 'Mobilização solidária de encerramento do ano.', periodo_referencia: '2026-12', peso_score: 4, ativo: true }
+];
+
+const defaultAgendaAtividades = [
+  {
+    id: 'agenda-fev-oracao',
+    titulo: '10 Dias de Oração',
+    descricao: 'Consagração anual com envolvimento de toda a unidade.',
+    periodo_referencia: '2026-02',
+    data: '2026-02-19',
+    status: 'planejada',
+    unidadeId: ''
+  },
+  {
+    id: 'agenda-mar-elo',
+    titulo: 'Treinamento ELO',
+    descricao: 'Encontro de capacitação para líderes.',
+    periodo_referencia: '2026-03',
+    data: '2026-03-07',
+    status: 'planejada',
+    unidadeId: ''
+  },
+  {
+    id: 'agenda-mar-pascoa',
+    titulo: 'Mutirão de Páscoa',
+    descricao: 'Ação solidária com arrecadação e entrega.',
+    periodo_referencia: '2026-03',
+    data: '2026-03-28',
+    status: 'planejada',
+    unidadeId: ''
+  },
+  {
+    id: 'agenda-jun-vida',
+    titulo: 'Vida por Vidas',
+    descricao: 'Mobilização para doação de sangue.',
+    periodo_referencia: '2026-06',
+    data: '2026-06-13',
+    status: 'planejada',
+    unidadeId: ''
+  },
+  {
+    id: 'agenda-ago-silencio',
+    titulo: 'Quebrando o Silêncio',
+    descricao: 'Passeata e conscientização contra a violência.',
+    periodo_referencia: '2026-08',
+    data: '2026-08-22',
+    status: 'planejada',
+    unidadeId: ''
+  }
+];
+
+const defaultMessageTemplates = [
+  {
+    id: 'prestacao_atraso',
+    categoria: 'PRESTACAO_CONTAS',
+    titulo: 'Atraso de Prestação de Contas',
+    corpo: 'Olá, [DIRETOR]. Identificamos atraso na prestação de contas da unidade [UNIDADE]. Precisamos regularizar até [DATA]. Conte conosco para apoiar no processo.'
+  },
+  {
+    id: 'relatorio_atraso',
+    categoria: 'RELATORIO',
+    titulo: 'Atraso no Envio de Relatório',
+    corpo: 'Olá, [DIRETOR]. O relatório mensal da unidade [UNIDADE] ainda não foi enviado. Envie até [DATA] para manter o score em dia.'
+  },
+  {
+    id: 'aviso_evento',
+    categoria: 'EVENTO',
+    titulo: 'Aviso de Evento',
+    corpo: 'Olá, [DIRETOR]! Lembrete do evento "[EVENTO]" em [DATA]. Contamos com a participação da unidade [UNIDADE].'
+  },
+  {
+    id: 'mensagem_atividade',
+    categoria: 'ATIVIDADE',
+    titulo: 'Mensagem sobre Atividade',
+    corpo: 'Olá, [DIRETOR]! A atividade "[ATIVIDADE]" está programada para [DATA]. Avise-nos sobre a realização pela unidade [UNIDADE].'
+  },
+  {
+    id: 'agradecimento',
+    categoria: 'AGRADECIMENTO',
+    titulo: 'Agradecimento',
+    corpo: 'Olá, [DIRETOR]! Parabéns pelo comprometimento da unidade [UNIDADE]. Agradecemos por toda dedicação.'
+  },
+  {
+    id: 'elogio',
+    categoria: 'ELOGIO',
+    titulo: 'Elogio',
+    corpo: 'Olá, [DIRETOR]! Registro de excelência: a unidade [UNIDADE] tem se destacado nas ações. Continuem assim!'
+  }
+];
+
 const generateUUID = () => {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -112,6 +210,9 @@ const createBaseData = () => ({
   etapas_catalogo: [],
   metas_catalogo: [],
   selos_catalogo: [...defaultSelosCatalog],
+  acao_atividades_catalogo: [...defaultAcaoAtividadesCatalog],
+  agenda_atividades: [...defaultAgendaAtividades],
+  mensagens: [],
   score_snapshot: []
 });
 
@@ -174,6 +275,9 @@ const loadData = () => {
       etapas_catalogo: Array.isArray(parsed?.etapas_catalogo) ? parsed.etapas_catalogo : [],
       metas_catalogo: Array.isArray(parsed?.metas_catalogo) ? parsed.metas_catalogo : [],
       selos_catalogo: Array.isArray(parsed?.selos_catalogo) ? parsed.selos_catalogo : [...defaultSelosCatalog],
+      acao_atividades_catalogo: Array.isArray(parsed?.acao_atividades_catalogo) ? parsed.acao_atividades_catalogo : [...defaultAcaoAtividadesCatalog],
+      agenda_atividades: Array.isArray(parsed?.agenda_atividades) ? parsed.agenda_atividades : [...defaultAgendaAtividades],
+      mensagens: Array.isArray(parsed?.mensagens) ? parsed.mensagens : [],
       score_snapshot: Array.isArray(parsed?.score_snapshot) ? parsed.score_snapshot : []
     };
   } catch {
@@ -188,7 +292,9 @@ const saveData = (data) => {
 const mockDB = {
   data: createBaseData(),
   units: [],
-  catalogs: { etapas_catalogo: [], metas_catalogo: [], selos_catalogo: [], tipos_acao: [] },
+  catalogs: { etapas_catalogo: [], metas_catalogo: [], selos_catalogo: [], tipos_acao: [], acao_atividades_catalogo: [] },
+  agendaAtividades: [],
+  mensagens: [],
   scoreSnapshots: [],
   load: () => {
     mockDB.data = loadData();
@@ -197,8 +303,11 @@ const mockDB = {
       etapas_catalogo: mockDB.data.etapas_catalogo,
       metas_catalogo: mockDB.data.metas_catalogo,
       selos_catalogo: mockDB.data.selos_catalogo,
-      tipos_acao: mockDB.data.tipos_acao
+      tipos_acao: mockDB.data.tipos_acao,
+      acao_atividades_catalogo: mockDB.data.acao_atividades_catalogo
     };
+    mockDB.agendaAtividades = mockDB.data.agenda_atividades;
+    mockDB.mensagens = mockDB.data.mensagens;
     mockDB.scoreSnapshots = mockDB.data.score_snapshot;
   },
   save: () => {
@@ -207,6 +316,9 @@ const mockDB = {
     mockDB.data.metas_catalogo = mockDB.catalogs.metas_catalogo;
     mockDB.data.selos_catalogo = mockDB.catalogs.selos_catalogo;
     mockDB.data.tipos_acao = mockDB.catalogs.tipos_acao;
+    mockDB.data.acao_atividades_catalogo = mockDB.catalogs.acao_atividades_catalogo;
+    mockDB.data.agenda_atividades = mockDB.agendaAtividades;
+    mockDB.data.mensagens = mockDB.mensagens;
     mockDB.data.score_snapshot = mockDB.scoreSnapshots;
     saveData(mockDB.data);
     if (typeof window !== 'undefined') {
@@ -311,6 +423,38 @@ const mockDB = {
     mockDB.catalogs[name] = (mockDB.catalogs[name] || []).filter(item => item.id !== id);
     mockDB.save();
   },
+  getAgenda: () => {
+    mockDB.load();
+    return mockDB.agendaAtividades || [];
+  },
+  addAgendaItem: (data) => {
+    mockDB.load();
+    const id = data.id || generateUUID();
+    mockDB.agendaAtividades = [...(mockDB.agendaAtividades || []), { id, ...data }];
+    mockDB.save();
+    return id;
+  },
+  updateAgendaItem: (id, data) => {
+    mockDB.load();
+    mockDB.agendaAtividades = (mockDB.agendaAtividades || []).map(item => item.id === id ? { ...item, ...data } : item);
+    mockDB.save();
+  },
+  deleteAgendaItem: (id) => {
+    mockDB.load();
+    mockDB.agendaAtividades = (mockDB.agendaAtividades || []).filter(item => item.id !== id);
+    mockDB.save();
+  },
+  getMensagens: () => {
+    mockDB.load();
+    return mockDB.mensagens || [];
+  },
+  addMensagem: (data) => {
+    mockDB.load();
+    const id = generateUUID();
+    mockDB.mensagens = [...(mockDB.mensagens || []), { id, ...data }];
+    mockDB.save();
+    return id;
+  },
   addScoreSnapshot: (data) => {
     mockDB.load();
     mockDB.scoreSnapshots.push({ id: generateUUID(), ...data });
@@ -340,6 +484,9 @@ const mockDB = {
       etapas_catalogo: Array.isArray(data.etapas_catalogo) ? data.etapas_catalogo : [],
       metas_catalogo: Array.isArray(data.metas_catalogo) ? data.metas_catalogo : [],
       selos_catalogo: Array.isArray(data.selos_catalogo) ? data.selos_catalogo : [...defaultSelosCatalog],
+      acao_atividades_catalogo: Array.isArray(data.acao_atividades_catalogo) ? data.acao_atividades_catalogo : [...defaultAcaoAtividadesCatalog],
+      agenda_atividades: Array.isArray(data.agenda_atividades) ? data.agenda_atividades : [...defaultAgendaAtividades],
+      mensagens: Array.isArray(data.mensagens) ? data.mensagens : [],
       score_snapshot: Array.isArray(data.score_snapshot) ? data.score_snapshot : []
     };
     mockDB.units = mockDB.data.unidades;
@@ -347,8 +494,11 @@ const mockDB = {
       etapas_catalogo: mockDB.data.etapas_catalogo,
       metas_catalogo: mockDB.data.metas_catalogo,
       selos_catalogo: mockDB.data.selos_catalogo,
-      tipos_acao: mockDB.data.tipos_acao
+      tipos_acao: mockDB.data.tipos_acao,
+      acao_atividades_catalogo: mockDB.data.acao_atividades_catalogo
     };
+    mockDB.agendaAtividades = mockDB.data.agenda_atividades;
+    mockDB.mensagens = mockDB.data.mensagens;
     mockDB.scoreSnapshots = mockDB.data.score_snapshot;
     mockDB.save();
     return true;
@@ -386,6 +536,9 @@ const COLLECTIONS = {
   metas: 'metas_catalogo',
   selos: 'selos_catalogo',
   tiposAcao: 'tipos_acao',
+  acaoAtividades: 'acao_atividades_catalogo',
+  agendaAtividades: 'agenda_atividades',
+  mensagens: 'mensagens',
   scoreSnapshots: 'score_snapshot'
 };
 
@@ -418,7 +571,24 @@ const calculateRegularidade = (unidade, now = new Date()) => {
   return 'INATIVA';
 };
 
-const calculateScoreUnidade = ({ unidade, etapasCatalog, metasCatalog, now = new Date() }) => {
+const calculateParticipationBonus = ({ unidade, atividadesCatalog, period }) => {
+  const activitiesInPeriod = (atividadesCatalog || []).filter(atividade => atividade.ativo !== false && atividade.periodo_referencia === period);
+  const entries = (unidade.participacao_mes || []).filter(item => item.periodo_referencia === period && item.atividadeId);
+  const completedIds = new Set(entries.filter(item => item.concluida).map(item => item.atividadeId));
+  const totalPeso = sum(activitiesInPeriod.map(atividade => Number(atividade.peso_score) || 0));
+  const completedPeso = sum(activitiesInPeriod.filter(atividade => completedIds.has(atividade.id)).map(atividade => Number(atividade.peso_score) || 0));
+  const maxBonus = 10;
+  const bonus = totalPeso ? (completedPeso / totalPeso) * maxBonus : 0;
+  return {
+    bonus: Math.min(maxBonus, bonus),
+    totalPeso,
+    completedPeso,
+    totalAtividades: activitiesInPeriod.length,
+    concluidas: activitiesInPeriod.filter(atividade => completedIds.has(atividade.id)).length
+  };
+};
+
+const calculateScoreUnidade = ({ unidade, etapasCatalog, metasCatalog, atividadesCatalog = [], now = new Date() }) => {
   const period = getCurrentMonth(now);
   const statusByEtapa = Object.fromEntries((unidade.etapas_status || []).map(status => [status.etapaId, status]));
   const mandatoryEtapas = etapasCatalog.filter(etapa => etapa.obrigatoria && etapa.ativo !== false);
@@ -451,7 +621,10 @@ const calculateScoreUnidade = ({ unidade, etapasCatalog, metasCatalog, now = new
   const tarefasRaw = Math.max(100 - (criticalOverdue * 20), 0);
   const scoreTarefas = tarefasRaw * 0.1;
 
-  const total = sum([scoreEtapas, scoreMetas, scoreAcoes, scoreTarefas]);
+  const participation = calculateParticipationBonus({ unidade, atividadesCatalog, period });
+  const scoreParticipacao = roundScore(participation.bonus);
+
+  const total = sum([scoreEtapas, scoreMetas, scoreAcoes, scoreTarefas, scoreParticipacao]);
   const scoreTotal = roundScore(total);
 
   return {
@@ -460,6 +633,8 @@ const calculateScoreUnidade = ({ unidade, etapasCatalog, metasCatalog, now = new
     score_metas: roundScore(scoreMetas),
     score_acoes: roundScore(scoreAcoes),
     score_tarefas: roundScore(scoreTarefas),
+    score_participacao: scoreParticipacao,
+    participacao_bonus: participation,
     classificacao: classificationFromScore(scoreTotal),
     etapa_percentual: etapaPercent,
     meta_percentual: metaPercent
@@ -939,6 +1114,432 @@ const UnitLifeScreen = ({ units, showToast }) => {
   );
 };
 
+const AcaoSolidariaScreen = ({ units, etapasCatalog, metasCatalog, selosCatalog, acaoAtividadesCatalog, agendaAtividades, mensagens, showToast }) => {
+  const [selectedUnitId, setSelectedUnitId] = useState('');
+  const [periodoAtividades, setPeriodoAtividades] = useState(getCurrentMonth());
+  const [selectedMessageUnits, setSelectedMessageUnits] = useState([]);
+  const [sendToAll, setSendToAll] = useState(false);
+  const [messageForm, setMessageForm] = useState({
+    templateId: '',
+    categoria: 'ATIVIDADE',
+    assunto: '',
+    corpo: ''
+  });
+  const [agendaForm, setAgendaForm] = useState({
+    titulo: '',
+    descricao: '',
+    periodo_referencia: getCurrentMonth(),
+    data: '',
+    status: 'planejada',
+    unidadeId: ''
+  });
+  const [editingAgendaId, setEditingAgendaId] = useState(null);
+
+  useEffect(() => {
+    if (!selectedUnitId && units.length) {
+      setSelectedUnitId(units[0].id);
+    }
+    if (!selectedMessageUnits.length && units.length) {
+      setSelectedMessageUnits([units[0].id]);
+    }
+  }, [units, selectedUnitId, selectedMessageUnits.length]);
+
+  const selectedUnit = units.find(unit => unit.id === selectedUnitId);
+  const participacaoAtual = selectedUnit?.participacao_mes || [];
+  const atividadesDoPeriodo = acaoAtividadesCatalog.filter(atividade => atividade.ativo !== false && atividade.periodo_referencia === periodoAtividades);
+  const participacaoConcluida = new Set(participacaoAtual.filter(item => item.periodo_referencia === periodoAtividades && item.concluida).map(item => item.atividadeId));
+  const unidadeBase = selectedUnit ? { ...selectedUnit, participacao_mes: participacaoAtual } : { participacao_mes: [] };
+  const participacaoResumo = calculateParticipationBonus({
+    unidade: unidadeBase,
+    atividadesCatalog: acaoAtividadesCatalog,
+    period: periodoAtividades
+  });
+  const agendaList = agendaAtividades || [];
+
+  const applyScoreUpdate = async (unit, participacoes) => {
+    if (!unit) return;
+    const scoreData = calculateScoreUnidade({
+      unidade: { ...unit, participacao_mes: participacoes },
+      etapasCatalog,
+      metasCatalog,
+      atividadesCatalog: acaoAtividadesCatalog
+    });
+    const updatedSelos = normalizeSelos(selosCatalog, { ...unit, acoes: unit.acoes || [] }, scoreData, new Date());
+    if (isMock) {
+      mockDB.update(unit.id, {
+        scoreAtual: scoreData.score_total,
+        scoreEtapas: scoreData.score_etapas,
+        scoreMetas: scoreData.score_metas,
+        scoreAcoes: scoreData.score_acoes,
+        scoreTarefas: scoreData.score_tarefas,
+        scoreParticipacao: scoreData.score_participacao,
+        classificacaoAtual: scoreData.classificacao,
+        selos_conquistados: updatedSelos,
+        updatedAt: new Date().toISOString()
+      });
+      mockDB.addScoreSnapshot({
+        unidadeId: unit.id,
+        periodo_referencia: getCurrentMonth(),
+        score_total: scoreData.score_total,
+        score_etapas: scoreData.score_etapas,
+        score_metas: scoreData.score_metas,
+        score_acoes: scoreData.score_acoes,
+        score_tarefas: scoreData.score_tarefas,
+        score_participacao: scoreData.score_participacao,
+        classificacao: scoreData.classificacao,
+        detalhes_json: scoreData,
+        createdAt: new Date().toISOString()
+      });
+    }
+  };
+
+  const handleToggleAtividade = async (atividadeId, concluida) => {
+    if (!selectedUnit) {
+      showToast('Selecione uma unidade para registrar a atividade.', 'error');
+      return;
+    }
+    const existing = participacaoAtual.find(item => item.periodo_referencia === periodoAtividades && item.atividadeId === atividadeId);
+    const payload = {
+      atividadeId,
+      periodo_referencia: periodoAtividades,
+      concluida,
+      updatedAt: new Date().toISOString()
+    };
+    if (isMock) {
+      if (existing?.id) mockDB.updateSubDoc(selectedUnit.id, 'participacao_mes', existing.id, payload);
+      else mockDB.addSubDoc(selectedUnit.id, 'participacao_mes', payload);
+      const updatedParticipacao = mockDB.getSubcollection(selectedUnit.id, 'participacao_mes');
+      await applyScoreUpdate(selectedUnit, updatedParticipacao);
+      showToast('Atividade atualizada para a unidade.', 'success');
+    }
+  };
+
+  const handleSelectAllUnits = () => {
+    if (sendToAll) {
+      setSendToAll(false);
+      setSelectedMessageUnits([]);
+      return;
+    }
+    setSendToAll(true);
+    setSelectedMessageUnits(units.map(unit => unit.id));
+  };
+
+  const handleToggleMessageUnit = (unitId) => {
+    setSelectedMessageUnits(prev => prev.includes(unitId) ? prev.filter(id => id !== unitId) : [...prev, unitId]);
+  };
+
+  const handleTemplateChange = (templateId) => {
+    const template = defaultMessageTemplates.find(item => item.id === templateId);
+    if (!template) return;
+    setMessageForm({
+      templateId,
+      categoria: template.categoria,
+      assunto: template.titulo,
+      corpo: template.corpo
+    });
+  };
+
+  const handleSendMessage = () => {
+    const destinatarios = sendToAll ? units.map(unit => unit.id) : selectedMessageUnits;
+    if (!destinatarios.length) {
+      showToast('Selecione ao menos uma unidade.', 'error');
+      return;
+    }
+    if (!messageForm.assunto || !messageForm.corpo) {
+      showToast('Preencha assunto e mensagem.', 'error');
+      return;
+    }
+    if (isMock) {
+      mockDB.addMensagem({
+        categoria: messageForm.categoria,
+        assunto: messageForm.assunto,
+        corpo: messageForm.corpo,
+        destinatarios,
+        enviadoEm: new Date().toISOString()
+      });
+      showToast('Mensagem registrada com sucesso.', 'success');
+      setMessageForm(prev => ({ ...prev, templateId: '', assunto: '', corpo: '' }));
+    }
+  };
+
+  const handleAgendaSave = (e) => {
+    e.preventDefault();
+    if (!agendaForm.titulo) {
+      showToast('Informe o título da atividade.', 'error');
+      return;
+    }
+    const payload = {
+      ...agendaForm,
+      periodo_referencia: agendaForm.periodo_referencia || getCurrentMonth()
+    };
+    if (isMock) {
+      if (editingAgendaId) {
+        mockDB.updateAgendaItem(editingAgendaId, payload);
+        showToast('Atividade atualizada.', 'success');
+      } else {
+        mockDB.addAgendaItem(payload);
+        showToast('Atividade adicionada na agenda.', 'success');
+      }
+      setAgendaForm({ titulo: '', descricao: '', periodo_referencia: getCurrentMonth(), data: '', status: 'planejada', unidadeId: '' });
+      setEditingAgendaId(null);
+    }
+  };
+
+  const handleAgendaEdit = (item) => {
+    setEditingAgendaId(item.id);
+    setAgendaForm({
+      titulo: item.titulo || '',
+      descricao: item.descricao || '',
+      periodo_referencia: item.periodo_referencia || getCurrentMonth(),
+      data: item.data || '',
+      status: item.status || 'planejada',
+      unidadeId: item.unidadeId || ''
+    });
+  };
+
+  const handleAgendaDelete = (id) => {
+    if (!window.confirm('Excluir atividade da agenda?')) return;
+    if (isMock) {
+      mockDB.deleteAgendaItem(id);
+      showToast('Atividade removida.', 'success');
+    }
+  };
+
+  const handleAgendaMove = (id, direction) => {
+    const statuses = ['planejada', 'em_andamento', 'concluida'];
+    const item = agendaList.find(agenda => agenda.id === id);
+    if (!item) return;
+    const currentIndex = statuses.indexOf(item.status);
+    const nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+    if (nextIndex < 0 || nextIndex >= statuses.length) return;
+    if (isMock) {
+      mockDB.updateAgendaItem(id, { status: statuses[nextIndex] });
+    }
+  };
+
+  const agendaColumns = [
+    { key: 'planejada', label: 'Planejamento', tone: 'blue' },
+    { key: 'em_andamento', label: 'Em andamento', tone: 'amber' },
+    { key: 'concluida', label: 'Concluídas', tone: 'emerald' }
+  ];
+
+  const agendaByStatus = agendaColumns.reduce((acc, column) => {
+    acc[column.key] = agendaList.filter(item => item.status === column.key);
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-10 animate-in fade-in">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-extrabold text-slate-800">Ação Solidária Adventista</h2>
+          <p className="text-slate-500">Controle de atividades, comunicação e agenda integrada com diretores.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-2xl px-4 py-3">
+            <Target size={18} className="text-blue-600" />
+            <span className="text-sm font-bold text-slate-600">Score + Selos em tempo real</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="xl:col-span-2 space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><Calendar className="text-blue-600" size={24} /> Atividades da Ação (por mês)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Unidade</label>
+                <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={selectedUnitId} onChange={e => setSelectedUnitId(e.target.value)}>
+                  <option value="">Selecione</option>
+                  {units.map(unit => (
+                    <option key={unit.id} value={unit.id}>{safeRender(getUnitName(unit))}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Período</label>
+                <input type="month" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={periodoAtividades} onChange={e => setPeriodoAtividades(e.target.value)} />
+              </div>
+              <div className="flex flex-col justify-center">
+                <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100">
+                  <p className="text-xs uppercase font-bold text-blue-500">Bônus no score</p>
+                  <p className="text-2xl font-extrabold text-blue-700">+{participacaoResumo.bonus.toFixed(1)} pts</p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {atividadesDoPeriodo.length === 0 ? (
+                <EmptyState title="Sem atividades para este mês" description="Atualize o catálogo de atividades para este período." icon={Calendar} />
+              ) : (
+                atividadesDoPeriodo.map(atividade => {
+                  const checked = participacaoConcluida.has(atividade.id);
+                  return (
+                    <label key={atividade.id} className="flex items-start gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-white transition">
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-5 w-5 rounded border-slate-300 text-blue-600"
+                        checked={checked}
+                        onChange={e => handleToggleAtividade(atividade.id, e.target.checked)}
+                      />
+                      <div className="flex-1">
+                        <p className="text-base font-bold text-slate-800">{atividade.titulo}</p>
+                        <p className="text-sm text-slate-500">{atividade.descricao}</p>
+                      </div>
+                      <span className="text-xs font-bold uppercase text-blue-600 bg-white border border-blue-100 px-3 py-1 rounded-full">
+                        +{atividade.peso_score} pts
+                      </span>
+                    </label>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3"><FileText className="text-amber-600" size={24} /> Agenda de Atividades (Kanban)</h3>
+              <span className="text-sm text-slate-500">Use os botões para mover entre etapas</span>
+            </div>
+            <form onSubmit={handleAgendaSave} className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-8">
+              <input className="md:col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" placeholder="Título" value={agendaForm.titulo} onChange={e => setAgendaForm(prev => ({ ...prev, titulo: e.target.value }))} />
+              <input className="md:col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" placeholder="Descrição" value={agendaForm.descricao} onChange={e => setAgendaForm(prev => ({ ...prev, descricao: e.target.value }))} />
+              <input type="month" className="p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={agendaForm.periodo_referencia} onChange={e => setAgendaForm(prev => ({ ...prev, periodo_referencia: e.target.value }))} />
+              <input type="date" className="p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={agendaForm.data} onChange={e => setAgendaForm(prev => ({ ...prev, data: e.target.value }))} />
+              <select className="p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={agendaForm.status} onChange={e => setAgendaForm(prev => ({ ...prev, status: e.target.value }))}>
+                <option value="planejada">Planejada</option>
+                <option value="em_andamento">Em andamento</option>
+                <option value="concluida">Concluída</option>
+              </select>
+              <select className="p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={agendaForm.unidadeId} onChange={e => setAgendaForm(prev => ({ ...prev, unidadeId: e.target.value }))}>
+                <option value="">Diretor responsável</option>
+                {units.map(unit => (
+                  <option key={unit.id} value={unit.id}>{safeRender(getUnitName(unit))}</option>
+                ))}
+              </select>
+              <div className="md:col-span-6 flex flex-wrap gap-3 justify-end">
+                {editingAgendaId && (
+                  <Button variant="outline" onClick={() => { setEditingAgendaId(null); setAgendaForm({ titulo: '', descricao: '', periodo_referencia: getCurrentMonth(), data: '', status: 'planejada', unidadeId: '' }); }}>
+                    Cancelar edição
+                  </Button>
+                )}
+                <Button type="submit" className="px-6 py-3">
+                  <Plus size={18} /> {editingAgendaId ? 'Atualizar' : 'Adicionar'}
+                </Button>
+              </div>
+            </form>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {agendaColumns.map(column => (
+                <div key={column.key} className="bg-slate-50 rounded-3xl border border-slate-100 p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-bold uppercase text-slate-500">{column.label}</h4>
+                    <StatusBadge label={agendaByStatus[column.key].length} tone={column.tone} />
+                  </div>
+                  <div className="space-y-4">
+                    {agendaByStatus[column.key].length === 0 ? (
+                      <EmptyState title="Sem atividades" description="Adicione uma atividade para começar." icon={Calendar} />
+                    ) : (
+                      agendaByStatus[column.key].map(item => (
+                        <div key={item.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-base font-bold text-slate-800">{item.titulo}</p>
+                              <p className="text-xs text-slate-500">{item.descricao}</p>
+                              <p className="text-xs text-slate-400 mt-2">Mês: {item.periodo_referencia} • Data: {item.data || 'N/D'}</p>
+                              {item.unidadeId && (
+                                <p className="text-xs text-slate-500 mt-1">Diretor: {safeRender(getUnitName(units.find(unit => unit.id === item.unidadeId) || {}))}</p>
+                              )}
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <button onClick={() => handleAgendaEdit(item)} className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-200"><Edit size={16} /></button>
+                              <button onClick={() => handleAgendaDelete(item.id)} className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:text-rose-600 hover:border-rose-200"><Trash2 size={16} /></button>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 mt-4">
+                            <button onClick={() => handleAgendaMove(item.id, 'prev')} className="text-xs font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1">
+                              <ChevronLeft size={14} /> Voltar
+                            </button>
+                            <button onClick={() => handleAgendaMove(item.id, 'next')} className="text-xs font-bold text-slate-500 hover:text-slate-700 flex items-center gap-1">
+                              Avançar <ChevronRight size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><Mail className="text-blue-600" size={24} /> Mensagens Personalizadas</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Modelo rápido</label>
+                <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={messageForm.templateId} onChange={e => handleTemplateChange(e.target.value)}>
+                  <option value="">Selecione um modelo</option>
+                  {defaultMessageTemplates.map(template => (
+                    <option key={template.id} value={template.id}>{template.titulo}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Categoria</label>
+                <input className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={messageForm.categoria} onChange={e => setMessageForm(prev => ({ ...prev, categoria: e.target.value }))} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Assunto</label>
+                <input className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={messageForm.assunto} onChange={e => setMessageForm(prev => ({ ...prev, assunto: e.target.value }))} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Mensagem</label>
+                <textarea rows="4" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={messageForm.corpo} onChange={e => setMessageForm(prev => ({ ...prev, corpo: e.target.value }))} />
+              </div>
+              <div className="pt-2">
+                <label className="flex items-center gap-3 text-sm font-semibold text-slate-600">
+                  <input type="checkbox" checked={sendToAll} onChange={handleSelectAllUnits} />
+                  Enviar para todas as unidades
+                </label>
+              </div>
+              <div className="max-h-48 overflow-y-auto space-y-2 border border-slate-100 rounded-2xl p-4 bg-slate-50">
+                {units.map(unit => (
+                  <label key={unit.id} className="flex items-center gap-3 text-sm text-slate-600">
+                    <input type="checkbox" checked={sendToAll || selectedMessageUnits.includes(unit.id)} onChange={() => handleToggleMessageUnit(unit.id)} disabled={sendToAll} />
+                    {safeRender(getUnitName(unit))} <span className="text-xs text-slate-400">({unit.nomeDiretor || 'Diretor'})</span>
+                  </label>
+                ))}
+              </div>
+              <Button onClick={handleSendMessage} className="w-full py-4">
+                <Mail size={18} /> Registrar envio
+              </Button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-3"><AlertTriangle className="text-amber-600" size={24} /> Histórico recente</h3>
+            {(mensagens || []).length === 0 ? (
+              <EmptyState title="Nenhuma mensagem enviada" description="Envie comunicados para diretores ou unidades." icon={Mail} />
+            ) : (
+              <div className="space-y-3">
+                {mensagens.slice(-5).reverse().map(item => (
+                  <div key={item.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <p className="text-xs text-slate-400">{new Date(item.enviadoEm).toLocaleString('pt-BR')}</p>
+                    <p className="text-sm font-bold text-slate-700">{item.assunto}</p>
+                    <p className="text-xs text-slate-500">Destinatários: {item.destinatarios.length}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const UnitDashboardScreen = ({ units, tiposAcaoCatalog, scoreSnapshots, showToast }) => {
   const [pendencias, setPendencias] = useState([]);
   const [loadingPendencias, setLoadingPendencias] = useState(false);
@@ -1264,14 +1865,15 @@ const UnitsManagementScreen = ({ units, onSelectUnit, onEditUnit, onDeleteUnit, 
   );
 };
 
-const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tiposAcaoCatalog, showToast, onBack, onCatalogRefresh }) => {
+const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tiposAcaoCatalog, acaoAtividadesCatalog, showToast, onBack, onCatalogRefresh }) => {
   const [activeTab, setActiveTab] = useState('geral');
   const [etapasStatus, setEtapasStatus] = useState([]);
   const [metasStatus, setMetasStatus] = useState([]);
   const [tarefas, setTarefas] = useState([]);
   const [acoes, setAcoes] = useState([]);
   const [selosConquistados, setSelosConquistados] = useState([]);
-  const [participacaoMes, setParticipacaoMes] = useState(null);
+  const [participacaoMeses, setParticipacaoMeses] = useState([]);
+  const [participacaoPeriodo, setParticipacaoPeriodo] = useState(getCurrentMonth());
   const [etapasDrafts, setEtapasDrafts] = useState({});
   const [metaForm, setMetaForm] = useState({
     metaId: '',
@@ -1310,17 +1912,13 @@ const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tip
     responsavel: ''
   });
   const [editingAcaoId, setEditingAcaoId] = useState(null);
-  const [participacaoForm, setParticipacaoForm] = useState({
-    periodo_referencia: getCurrentMonth(),
-    pontuacao: 0,
-    observacao: ''
-  });
   const [etapaCatalogForm, setEtapaCatalogForm] = useState({ codigo: '', nome: '', descricao: '', ordem: 1, obrigatoria: false, peso: 0, ativo: true });
   const [metaCatalogForm, setMetaCatalogForm] = useState({ codigo: '', nome: '', descricao: '', periodicidade: 'MENSAL', tipo: 'QUANTITATIVA', peso: 0, ativo: true });
   const [seloCatalogForm, setSeloCatalogForm] = useState({ codigo: '', nome: '', descricao: '', criterio_json: '{}', validade_dias: 30, ativo: true });
 
   useEffect(() => {
     if (!unit) return;
+    setParticipacaoPeriodo(getCurrentMonth());
     if (isMock) {
       setEtapasStatus(mockDB.getSubcollection(unit.id, 'etapas_status'));
       setMetasStatus(mockDB.getSubcollection(unit.id, 'metas_status'));
@@ -1328,9 +1926,7 @@ const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tip
       setAcoes(mockDB.getSubcollection(unit.id, 'acoes'));
       setSelosConquistados(mockDB.getSubcollection(unit.id, 'selos_conquistados'));
       const participacoes = mockDB.getSubcollection(unit.id, 'participacao_mes');
-      const current = participacoes.find(item => item.periodo_referencia === getCurrentMonth()) || null;
-      setParticipacaoMes(current);
-      if (current) setParticipacaoForm({ periodo_referencia: current.periodo_referencia, pontuacao: current.pontuacao, observacao: current.observacao || '' });
+      setParticipacaoMeses(participacoes);
     } else {
       const unsubEtapas = onSnapshot(getUnitSubcollectionRef(unit.id, 'etapas_status'), snapshot => {
         setEtapasStatus(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
@@ -1348,9 +1944,7 @@ const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tip
         setSelosConquistados(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
       });
       const unsubParticipacao = onSnapshot(getUnitSubcollectionRef(unit.id, 'participacao_mes'), snapshot => {
-        const current = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })).find(item => item.periodo_referencia === getCurrentPeriod()) || null;
-        setParticipacaoMes(current);
-        if (current) setParticipacaoForm({ periodo_referencia: current.periodo_referencia, pontuacao: current.pontuacao, observacao: current.observacao || '' });
+        setParticipacaoMeses(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
       });
       return () => {
         unsubEtapas();
@@ -1382,6 +1976,15 @@ const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tip
 
   if (!unit) return null;
 
+  const atividadesDoPeriodo = acaoAtividadesCatalog.filter(atividade => atividade.ativo !== false && atividade.periodo_referencia === participacaoPeriodo);
+  const participacaoSelecionada = participacaoMeses.filter(item => item.periodo_referencia === participacaoPeriodo);
+  const participacaoConcluidaIds = new Set(participacaoSelecionada.filter(item => item.concluida).map(item => item.atividadeId));
+  const participacaoResumo = calculateParticipationBonus({
+    unidade: { ...unit, participacao_mes: participacaoMeses },
+    atividadesCatalog: acaoAtividadesCatalog,
+    period: participacaoPeriodo
+  });
+
   const updateUnitSummary = async (summary) => {
     if (isMock) {
       mockDB.update(unit.id, summary);
@@ -1399,6 +2002,7 @@ const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tip
       score_metas: scoreData.score_metas,
       score_acoes: scoreData.score_acoes,
       score_tarefas: scoreData.score_tarefas,
+      score_participacao: scoreData.score_participacao,
       classificacao: scoreData.classificacao,
       detalhes_json: scoreData,
       createdAt: isMock ? new Date().toISOString() : serverTimestamp()
@@ -1429,17 +2033,20 @@ const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tip
     const currentMetasStatus = override.metasStatus || metasStatus;
     const currentTarefas = override.tarefas || tarefas;
     const currentAcoes = override.acoes || acoes;
+    const currentParticipacao = override.participacaoMeses || participacaoMeses;
     const unidade = {
       ...unit,
       etapas_status: currentEtapasStatus,
       metas_status: currentMetasStatus,
       tarefas: currentTarefas,
-      acoes: currentAcoes
+      acoes: currentAcoes,
+      participacao_mes: currentParticipacao
     };
     const scoreData = calculateScoreUnidade({
       unidade,
       etapasCatalog,
-      metasCatalog
+      metasCatalog,
+      atividadesCatalog: acaoAtividadesCatalog
     });
     const pendencias = getPendenciaResumo({ etapasCatalog, etapasStatus: currentEtapasStatus, tarefas: currentTarefas });
     const regularidadeAtual = calculateRegularidade(unidade);
@@ -1449,6 +2056,7 @@ const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tip
       scoreMetas: scoreData.score_metas,
       scoreAcoes: scoreData.score_acoes,
       scoreTarefas: scoreData.score_tarefas,
+      scoreParticipacao: scoreData.score_participacao,
       classificacaoAtual: scoreData.classificacao,
       regularidadeAtual,
       temPendencias: pendencias.temPendencias,
@@ -1683,20 +2291,24 @@ const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tip
     await runAutomation();
   };
 
-  const handleParticipacaoSave = async () => {
+  const handleToggleParticipacao = async (atividadeId, concluida) => {
     const payload = {
-      periodo_referencia: participacaoForm.periodo_referencia,
-      pontuacao: Number(participacaoForm.pontuacao) || 0,
-      observacao: participacaoForm.observacao
+      atividadeId,
+      periodo_referencia: participacaoPeriodo,
+      concluida,
+      updatedAt: new Date().toISOString()
     };
+    const existing = participacaoMeses.find(item => item.atividadeId === atividadeId && item.periodo_referencia === participacaoPeriodo);
     if (isMock) {
-      if (participacaoMes?.id) mockDB.updateSubDoc(unit.id, 'participacao_mes', participacaoMes.id, payload);
+      if (existing?.id) mockDB.updateSubDoc(unit.id, 'participacao_mes', existing.id, payload);
       else mockDB.addSubDoc(unit.id, 'participacao_mes', payload);
       const participacoes = mockDB.getSubcollection(unit.id, 'participacao_mes');
-      const current = participacoes.find(item => item.periodo_referencia === getCurrentMonth()) || null;
-      setParticipacaoMes(current);
-    } else if (participacaoMes?.id) {
-      await updateDoc(getUnitSubDocRef(unit.id, 'participacao_mes', participacaoMes.id), payload);
+      setParticipacaoMeses(participacoes);
+      await runAutomation({ participacaoMeses: participacoes });
+      return;
+    }
+    if (existing?.id) {
+      await updateDoc(getUnitSubDocRef(unit.id, 'participacao_mes', existing.id), payload);
     } else {
       await addDoc(getUnitSubcollectionRef(unit.id, 'participacao_mes'), payload);
     }
@@ -1772,7 +2384,7 @@ const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tip
             variant="outline"
             className="px-5 py-3"
             onClick={async () => {
-              await updateSelos(calculateScoreUnidade({ unidade: { ...unit, etapas_status: etapasStatus, metas_status: metasStatus, tarefas, acoes }, etapasCatalog, metasCatalog }));
+              await updateSelos(calculateScoreUnidade({ unidade: { ...unit, etapas_status: etapasStatus, metas_status: metasStatus, tarefas, acoes, participacao_mes: participacaoMeses }, etapasCatalog, metasCatalog, atividadesCatalog: acaoAtividadesCatalog }));
               showToast('Selos recalculados', 'success');
             }}
           >
@@ -1803,7 +2415,7 @@ const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tip
                 <ScoreBadge score={unit.scoreAtual || 0} />
                 <div className="text-sm text-slate-500">Última atualização: {unit.updatedAt ? toDate(unit.updatedAt)?.toLocaleDateString('pt-BR') : 'N/D'}</div>
               </div>
-              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-600">
+              <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4 text-sm text-slate-600">
                 <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
                   <p className="font-bold text-slate-700">Etapas</p>
                   <p className="text-2xl font-extrabold text-slate-800">{unit.scoreEtapas || 0}</p>
@@ -1820,6 +2432,10 @@ const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tip
                   <p className="font-bold text-slate-700">Organização</p>
                   <p className="text-2xl font-extrabold text-slate-800">{unit.scoreTarefas || 0}</p>
                 </div>
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                  <p className="font-bold text-slate-700">Participação</p>
+                  <p className="text-2xl font-extrabold text-slate-800">{unit.scoreParticipacao || 0}</p>
+                </div>
               </div>
             </div>
 
@@ -1828,19 +2444,46 @@ const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, tip
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-1">
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Período</label>
-                  <input className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={participacaoForm.periodo_referencia} onChange={e => setParticipacaoForm(prev => ({ ...prev, periodo_referencia: e.target.value }))} />
+                  <input type="month" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={participacaoPeriodo} onChange={e => setParticipacaoPeriodo(e.target.value)} />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Pontuação (0-100)</label>
-                  <input type="number" min="0" max="100" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={participacaoForm.pontuacao} onChange={e => setParticipacaoForm(prev => ({ ...prev, pontuacao: e.target.value }))} />
+                <div className="md:col-span-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                      <p className="text-xs uppercase font-bold text-slate-500">Atividades concluídas</p>
+                      <p className="text-2xl font-extrabold text-slate-800">{participacaoResumo.concluidas}/{participacaoResumo.totalAtividades}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100">
+                      <p className="text-xs uppercase font-bold text-blue-500">Bônus no score</p>
+                      <p className="text-2xl font-extrabold text-blue-700">+{participacaoResumo.bonus.toFixed(1)} pts</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="md:col-span-3">
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Observação</label>
-                  <textarea className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" rows="3" value={participacaoForm.observacao} onChange={e => setParticipacaoForm(prev => ({ ...prev, observacao: e.target.value }))} />
+                <div className="md:col-span-3 space-y-3">
+                  {atividadesDoPeriodo.length === 0 ? (
+                    <EmptyState title="Sem atividades no período" description="Cadastre atividades no catálogo da ação solidária." icon={Calendar} />
+                  ) : (
+                    atividadesDoPeriodo.map(atividade => {
+                      const checked = participacaoConcluidaIds.has(atividade.id);
+                      return (
+                        <label key={atividade.id} className="flex items-start gap-4 p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-white transition">
+                          <input
+                            type="checkbox"
+                            className="mt-1 h-5 w-5 rounded border-slate-300 text-blue-600"
+                            checked={checked}
+                            onChange={e => handleToggleParticipacao(atividade.id, e.target.checked)}
+                          />
+                          <div className="flex-1">
+                            <p className="text-base font-bold text-slate-800">{atividade.titulo}</p>
+                            <p className="text-sm text-slate-500">{atividade.descricao}</p>
+                          </div>
+                          <span className="text-xs font-bold uppercase text-blue-600 bg-white border border-blue-100 px-3 py-1 rounded-full">
+                            +{atividade.peso_score} pts
+                          </span>
+                        </label>
+                      );
+                    })
+                  )}
                 </div>
-              </div>
-              <div className="mt-4 flex justify-end">
-                <Button onClick={handleParticipacaoSave} className="px-6 py-3">Salvar Participação</Button>
               </div>
             </div>
           </div>
@@ -2384,6 +3027,7 @@ const Dashboard = ({ user, onLogout }) => {
     'units_list',
     'units_add',
     'asa_unit_detail',
+    'acao_solidaria',
     'unit_life',
     'map',
     'backup',
@@ -2403,6 +3047,9 @@ const Dashboard = ({ user, onLogout }) => {
   const [metasCatalog, setMetasCatalog] = useState([]);
   const [selosCatalog, setSelosCatalog] = useState([]);
   const [tiposAcaoCatalog, setTiposAcaoCatalog] = useState([]);
+  const [acaoAtividadesCatalog, setAcaoAtividadesCatalog] = useState([]);
+  const [agendaAtividades, setAgendaAtividades] = useState([]);
+  const [mensagens, setMensagens] = useState([]);
   const [scoreSnapshots, setScoreSnapshots] = useState([]);
   const [selectedUnitId, setSelectedUnitId] = useState(null);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -2415,6 +3062,7 @@ const Dashboard = ({ user, onLogout }) => {
     units_list: 'Listagem de Unidades',
     units_add: 'Cadastro de Unidade',
     asa_unit_detail: 'Detalhe da Unidade',
+    acao_solidaria: 'Ação Solidária',
     unit_life: 'Vida da Unidade',
     map: 'Georreferenciamento',
     backup: 'Backup e Dados',
@@ -2431,6 +3079,7 @@ const Dashboard = ({ user, onLogout }) => {
     classificacaoAtual: 'REGULAR',
     regularidadeAtual: 'REGULAR',
     temPendencias: false,
+    scoreParticipacao: 0,
     etapas_status: [],
     metas_status: [],
     tarefas: [],
@@ -2472,6 +3121,8 @@ const Dashboard = ({ user, onLogout }) => {
         mockDB.load();
         setUnits([...mockDB.units]);
         setScoreSnapshots([...mockDB.scoreSnapshots]);
+        setAgendaAtividades([...mockDB.getAgenda()]);
+        setMensagens([...mockDB.getMensagens()]);
       };
       load();
       const handleStorage = () => load();
@@ -2517,6 +3168,21 @@ const Dashboard = ({ user, onLogout }) => {
       }
     };
 
+    const seedAcaoAtividades = async () => {
+      if (isMock) {
+        const current = mockDB.getCatalog(COLLECTIONS.acaoAtividades);
+        if (current.length === 0) {
+          defaultAcaoAtividadesCatalog.forEach(item => mockDB.addCatalogDoc(COLLECTIONS.acaoAtividades, item));
+        }
+        setAcaoAtividadesCatalog(mockDB.getCatalog(COLLECTIONS.acaoAtividades));
+      } else {
+        const snapshot = await getDocs(getCollectionRef(COLLECTIONS.acaoAtividades));
+        if (snapshot.empty) {
+          await Promise.all(defaultAcaoAtividadesCatalog.map(item => addDoc(getCollectionRef(COLLECTIONS.acaoAtividades), item)));
+        }
+      }
+    };
+
     const subscribeCatalogs = () => {
       if (isMock) {
         const loadCatalogs = () => {
@@ -2524,6 +3190,7 @@ const Dashboard = ({ user, onLogout }) => {
           setMetasCatalog(mockDB.getCatalog(COLLECTIONS.metas));
           setSelosCatalog(mockDB.getCatalog(COLLECTIONS.selos));
           setTiposAcaoCatalog(mockDB.getCatalog(COLLECTIONS.tiposAcao));
+          setAcaoAtividadesCatalog(mockDB.getCatalog(COLLECTIONS.acaoAtividades));
         };
         loadCatalogs();
         const handleStorage = () => loadCatalogs();
@@ -2546,16 +3213,21 @@ const Dashboard = ({ user, onLogout }) => {
       const unsubTipos = onSnapshot(getCollectionRef(COLLECTIONS.tiposAcao), snapshot => {
         setTiposAcaoCatalog(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
       });
+      const unsubAcaoAtividades = onSnapshot(getCollectionRef(COLLECTIONS.acaoAtividades), snapshot => {
+        setAcaoAtividadesCatalog(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+      });
       return () => {
         unsubEtapas();
         unsubMetas();
         unsubSelos();
         unsubTipos();
+        unsubAcaoAtividades();
       };
     };
 
     seedSelosCatalog();
     seedTiposAcao();
+    seedAcaoAtividades();
     return subscribeCatalogs();
   }, []);
 
@@ -2648,6 +3320,7 @@ const Dashboard = ({ user, onLogout }) => {
       setMetasCatalog(mockDB.getCatalog(COLLECTIONS.metas));
       setSelosCatalog(mockDB.getCatalog(COLLECTIONS.selos));
       setTiposAcaoCatalog(mockDB.getCatalog(COLLECTIONS.tiposAcao));
+      setAcaoAtividadesCatalog(mockDB.getCatalog(COLLECTIONS.acaoAtividades));
     }
   };
 
@@ -2680,6 +3353,7 @@ const Dashboard = ({ user, onLogout }) => {
               <SubMenuItem label="Unidades" isActive={activePage === 'units_list' || activePage === 'units_add' || activePage === 'asa_unit_detail'} onClick={() => { setActivePage('units_list'); setSidebarOpen(false); }} />
             </div>
           )}
+          <SidebarItem icon={Star} label="Ação Solidária" isActive={activePage === 'acao_solidaria'} onClick={() => { setActivePage('acao_solidaria'); setSidebarOpen(false); }} />
           <SidebarItem icon={HeartHandshake} label="Vida da Unidade" isActive={activePage === 'unit_life'} onClick={() => { setActivePage('unit_life'); setSidebarOpen(false); }} />
           <SidebarItem icon={MapIcon} label="Georreferenciamento" isActive={activePage === 'map'} onClick={() => { setActivePage('map'); setSidebarOpen(false); }} />
           <div className="pt-8">
@@ -2733,6 +3407,7 @@ const Dashboard = ({ user, onLogout }) => {
               metasCatalog={metasCatalog}
               selosCatalog={selosCatalog}
               tiposAcaoCatalog={tiposAcaoCatalog}
+              acaoAtividadesCatalog={acaoAtividadesCatalog}
               showToast={showToast}
               onBack={() => { setActivePage('units_list'); setSelectedUnitId(null); }}
               onCatalogRefresh={refreshMockCatalogs}
@@ -2919,6 +3594,18 @@ const Dashboard = ({ user, onLogout }) => {
           )}
 
           {activePage === 'unit_life' && <UnitLifeScreen units={units} showToast={showToast} />}
+          {activePage === 'acao_solidaria' && (
+            <AcaoSolidariaScreen
+              units={units}
+              etapasCatalog={etapasCatalog}
+              metasCatalog={metasCatalog}
+              selosCatalog={selosCatalog}
+              acaoAtividadesCatalog={acaoAtividadesCatalog}
+              agendaAtividades={agendaAtividades}
+              mensagens={mensagens}
+              showToast={showToast}
+            />
+          )}
           {activePage === 'backup' && <BackupScreen units={units} showToast={showToast} />}
 
           {activePage === 'map' && (
