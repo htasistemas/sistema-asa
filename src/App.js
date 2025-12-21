@@ -1933,8 +1933,19 @@ const BackupScreen = ({ units, showToast }) => {
 
 // --- DASHBOARD (PRINCIPAL) ---
 const Dashboard = ({ user, onLogout }) => {
-  const [activePage, setActivePage] = useState('dashboard');
-  const [menuState, setMenuState] = useState({ management: true, asa: true });
+  const getMenuKeyForPage = (page) => {
+    if (['units_list', 'units_add'].includes(page)) return 'management';
+    if (['asa_dashboard', 'asa_units', 'asa_unit_detail'].includes(page)) return 'asa';
+    return null;
+  };
+
+  const initialActivePage = (() => {
+    if (typeof window === 'undefined') return 'dashboard';
+    return localStorage.getItem('activePage') || 'dashboard';
+  })();
+
+  const [activePage, setActivePage] = useState(initialActivePage);
+  const [openMenuKey, setOpenMenuKey] = useState(() => getMenuKeyForPage(initialActivePage));
   const [units, setUnits] = useState([]);
   const [etapasCatalog, setEtapasCatalog] = useState([]);
   const [metasCatalog, setMetasCatalog] = useState([]);
@@ -1963,6 +1974,14 @@ const Dashboard = ({ user, onLogout }) => {
   const selectedUnit = units.find(unit => unit.id === selectedUnitId);
 
   const showToast = (msg, type = 'success') => { setToast({ show: true, message: msg, type }); setTimeout(() => setToast(p => ({ ...p, show: false })), 3000); };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('activePage', activePage);
+    }
+    const menuKey = getMenuKeyForPage(activePage);
+    setOpenMenuKey(menuKey);
+  }, [activePage]);
 
   useEffect(() => {
     if (isMock) {
@@ -2115,15 +2134,29 @@ const Dashboard = ({ user, onLogout }) => {
         <nav className="flex-1 p-8 space-y-3 overflow-y-auto">
           <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-6 ml-4">MENU PRINCIPAL</p>
           <SidebarItem icon={LayoutDashboard} label="Visão Geral" isActive={activePage === 'dashboard'} onClick={() => { setActivePage('dashboard'); setSidebarOpen(false); }} />
-          <SidebarItem icon={Building2} label="Cadastros" hasSubmenu isOpen={menuState.management} onClick={() => setMenuState(p => ({...p, management: !p.management}))} />
-          {menuState.management && (
+          <SidebarItem
+            icon={Building2}
+            label="Cadastros"
+            hasSubmenu
+            isOpen={openMenuKey === 'management'}
+            isActive={openMenuKey === 'management' || ['units_list', 'units_add'].includes(activePage)}
+            onClick={() => setOpenMenuKey(prev => (prev === 'management' ? null : 'management'))}
+          />
+          {openMenuKey === 'management' && (
             <div className="pl-6 space-y-2 mt-2 border-l-2 border-slate-700 ml-8">
               <SubMenuItem label="Listagem" isActive={activePage === 'units_list'} onClick={() => { setActivePage('units_list'); setSidebarOpen(false); }} />
               <SubMenuItem label="Unidade" isActive={activePage === 'units_add'} onClick={() => { setFormData(initialForm); setEditingId(null); setActivePage('units_add'); setSidebarOpen(false); }} />
             </div>
           )}
-          <SidebarItem icon={Award} label="ASA" hasSubmenu isOpen={menuState.asa} onClick={() => setMenuState(p => ({...p, asa: !p.asa}))} />
-          {menuState.asa && (
+          <SidebarItem
+            icon={Award}
+            label="ASA"
+            hasSubmenu
+            isOpen={openMenuKey === 'asa'}
+            isActive={openMenuKey === 'asa' || ['asa_dashboard', 'asa_units', 'asa_unit_detail'].includes(activePage)}
+            onClick={() => setOpenMenuKey(prev => (prev === 'asa' ? null : 'asa'))}
+          />
+          {openMenuKey === 'asa' && (
             <div className="pl-6 space-y-2 mt-2 border-l-2 border-slate-700 ml-8">
               <SubMenuItem label="Dashboard Unidades" isActive={activePage === 'asa_dashboard'} onClick={() => { setActivePage('asa_dashboard'); setSidebarOpen(false); }} />
               <SubMenuItem label="Unidades" isActive={activePage === 'asa_units' || activePage === 'asa_unit_detail'} onClick={() => { setActivePage('asa_units'); setSidebarOpen(false); }} />
