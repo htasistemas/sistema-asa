@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirestore, collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy, serverTimestamp, where, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy, serverTimestamp, where, getDocs, getDoc, setDoc } from 'firebase/firestore';
 import { 
   ShieldCheck, LayoutDashboard, Building2, Users, LogOut, Plus, Trash2, Search, Map as MapIcon, 
   AlertTriangle, Menu, X, ChevronDown, ChevronRight, ChevronLeft, Phone, Mail, MapPin, Edit, CheckCircle, 
@@ -88,6 +88,7 @@ const PROD_FIREBASE_CONFIG = null;
 const getEnvVar = (name) => typeof window !== 'undefined' && window[name] ? window[name] : undefined;
 let db, auth;
 let isMock = false;
+let firebaseInitError = null;
 
 try {
   if (PROD_FIREBASE_CONFIG) {
@@ -107,7 +108,7 @@ try {
     }
   }
 } catch (e) {
-  isMock = true;
+  firebaseInitError = e;
 }
 
 const appId = getEnvVar('__app_id') || 'default-app-id';
@@ -679,20 +680,33 @@ const UnitLifeScreen = ({ units, showToast }) => {
         setLifeData({ docs: '', reports: '', team: '', structure: '', finance: '', excellenceByMonth: {} });
         return;
     }
-    if (isMock) {
-        setLifeData(mockDB.getLife(selectedUnitId));
-    } else {
-        const saved = localStorage.getItem(`life_${selectedUnitId}`);
-        if(saved) setLifeData(JSON.parse(saved));
-        else setLifeData({ docs: '', reports: '', team: '', structure: '', finance: '', excellenceByMonth: {} });
-    }
-  }, [selectedUnitId]);
+    const loadLifeData = async () => {
+      try {
+        const docRef = doc(getUnitSubcollectionRef(selectedUnitId, 'unit_life'), 'info');
+        const snapshot = await getDoc(docRef);
+        if (snapshot.exists()) {
+          setLifeData(snapshot.data());
+        } else {
+          setLifeData({ docs: '', reports: '', team: '', structure: '', finance: '', excellenceByMonth: {} });
+        }
+      } catch (error) {
+        console.error(error);
+        showToast('Erro ao carregar vida da unidade.', 'error');
+      }
+    };
+    loadLifeData();
+  }, [selectedUnitId, showToast]);
 
-  const handleSaveLife = () => {
+  const handleSaveLife = async () => {
       if(!selectedUnitId) return;
-      if(isMock) mockDB.updateLife(selectedUnitId, lifeData);
-      else localStorage.setItem(`life_${selectedUnitId}`, JSON.stringify(lifeData));
-      showToast("Dados da Vida da Unidade salvos!", "success");
+      try {
+        const docRef = doc(getUnitSubcollectionRef(selectedUnitId, 'unit_life'), 'info');
+        await setDoc(docRef, { ...lifeData, updatedAt: serverTimestamp() }, { merge: true });
+        showToast("Dados da Vida da Unidade salvos!", "success");
+      } catch (error) {
+        console.error(error);
+        showToast("Erro ao salvar Vida da Unidade.", "error");
+      }
   };
 
   const toggleMonthExcellence = (monthIndex) => {
@@ -1935,13 +1949,25 @@ const BackupScreen = ({ units, showToast }) => {
 const Dashboard = ({ user, onLogout }) => {
   const getMenuKeyForPage = (page) => {
     if (['units_list', 'units_add'].includes(page)) return 'management';
-    if (['asa_dashboard', 'asa_units', 'asa_unit_detail'].includes(page)) return 'asa';
+    if (['asa_units', 'asa_unit_detail'].includes(page)) return 'asa';
     return null;
   };
 
+  const availablePages = new Set([
+    'dashboard',
+    'units_list',
+    'units_add',
+    'asa_units',
+    'asa_unit_detail',
+    'unit_life',
+    'map',
+    'backup',
+  ]);
+
   const initialActivePage = (() => {
     if (typeof window === 'undefined') return 'dashboard';
-    return localStorage.getItem('activePage') || 'dashboard';
+    const stored = localStorage.getItem('activePage') || 'dashboard';
+    return availablePages.has(stored) ? stored : 'dashboard';
   })();
 
   const [activePage, setActivePage] = useState(initialActivePage);
@@ -1960,7 +1986,6 @@ const Dashboard = ({ user, onLogout }) => {
     dashboard: 'Visão Geral',
     units_list: 'Listagem de Unidades',
     units_add: 'Cadastro de Unidade',
-    asa_dashboard: 'Dashboard Unidades',
     asa_units: 'Unidades ASA',
     asa_unit_detail: 'Detalhe da Unidade',
     unit_life: 'Vida da Unidade',
@@ -1993,7 +2018,7 @@ const Dashboard = ({ user, onLogout }) => {
       return () => clearInterval(interval);
     }
     const q = query(getCollectionRef(COLLECTIONS.units), orderBy('nomeUnidade'));
-    return onSnapshot(q, s => setUnits(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => { console.error(e); isMock = true; });
+    return onSnapshot(q, s => setUnits(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => { console.error(e); });
   }, []);
 
   useEffect(() => {
@@ -2153,12 +2178,11 @@ const Dashboard = ({ user, onLogout }) => {
             label="ASA"
             hasSubmenu
             isOpen={openMenuKey === 'asa'}
-            isActive={openMenuKey === 'asa' || ['asa_dashboard', 'asa_units', 'asa_unit_detail'].includes(activePage)}
+            isActive={openMenuKey === 'asa' || ['asa_units', 'asa_unit_detail'].includes(activePage)}
             onClick={() => setOpenMenuKey(prev => (prev === 'asa' ? null : 'asa'))}
           />
           {openMenuKey === 'asa' && (
             <div className="pl-6 space-y-2 mt-2 border-l-2 border-slate-700 ml-8">
-              <SubMenuItem label="Dashboard Unidades" isActive={activePage === 'asa_dashboard'} onClick={() => { setActivePage('asa_dashboard'); setSidebarOpen(false); }} />
               <SubMenuItem label="Unidades" isActive={activePage === 'asa_units' || activePage === 'asa_unit_detail'} onClick={() => { setActivePage('asa_units'); setSidebarOpen(false); }} />
             </div>
           )}
@@ -2189,7 +2213,7 @@ const Dashboard = ({ user, onLogout }) => {
           </div>
           <div className="flex items-center gap-6">
              <div className="text-base font-semibold text-slate-500 flex items-center gap-3 bg-slate-100 px-5 py-2.5 rounded-full shadow-inner">
-               {isMock ? <span className="text-amber-600 flex items-center gap-2"><AlertTriangle size={20}/> Offline</span> : <span className="text-emerald-600 flex items-center gap-2"><Cloud size={20}/> Online</span>}
+               <span className="text-emerald-600 flex items-center gap-2"><Cloud size={20}/> Online</span>
              </div>
              <button onClick={onLogout} className="text-base text-red-600 hover:text-white border-2 border-red-200 hover:bg-red-600 font-bold px-6 py-2.5 rounded-xl transition-all duration-200">Sair</button>
           </div>
@@ -2197,16 +2221,15 @@ const Dashboard = ({ user, onLogout }) => {
 
         <div className="app-content flex-1 overflow-y-auto p-8 md:p-12 scrollbar-hide">
           {activePage === 'dashboard' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              <StatCard title="Total de Unidades" value={stats.total} icon={Building2} color="bg-blue-600" />
-              <StatCard title="Ações Realizadas" value={stats.actions} icon={Users} color="bg-emerald-500" />
-              <StatCard title="Pendências" value={stats.pending} icon={AlertTriangle} color="bg-amber-500" />
-              <StatCard title="Desatualizadas" value={stats.outdated} icon={Clock} color="bg-rose-500" />
+            <div className="space-y-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <StatCard title="Total de Unidades" value={stats.total} icon={Building2} color="bg-blue-600" />
+                <StatCard title="Ações Realizadas" value={stats.actions} icon={Users} color="bg-emerald-500" />
+                <StatCard title="Pendências" value={stats.pending} icon={AlertTriangle} color="bg-amber-500" />
+                <StatCard title="Desatualizadas" value={stats.outdated} icon={Clock} color="bg-rose-500" />
+              </div>
+              <UnitDashboardScreen units={units} showToast={showToast} />
             </div>
-          )}
-
-          {activePage === 'asa_dashboard' && (
-            <UnitDashboardScreen units={units} showToast={showToast} />
           )}
 
           {activePage === 'asa_units' && (
@@ -2508,8 +2531,7 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isMock) {
-      setUser({ uid: 'mock-user' });
+    if (firebaseInitError) {
       setLoading(false);
       return;
     }
@@ -2518,9 +2540,7 @@ const App = () => {
         if (initialToken) await signInWithCustomToken(auth, initialToken);
         else await signInAnonymously(auth);
       } catch (e) {
-        isMock = true; 
-        mockDB.load();
-        setUser({ uid: 'mock-user' });
+        console.error(e);
       } finally {
         setLoading(false);
       }
@@ -2529,9 +2549,24 @@ const App = () => {
     return onAuthStateChanged(auth, setUser);
   }, []);
 
+  if (firebaseInitError) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50 p-6">
+        <div className="max-w-xl bg-white border border-slate-200 rounded-3xl shadow-lg p-10 text-center">
+          <div className="mx-auto mb-6 w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center text-3xl font-bold">!</div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-3">Configuração do Firebase pendente</h1>
+          <p className="text-slate-500 text-base leading-relaxed">
+            Para usar o sistema somente online, configure as credenciais do Firebase (Firestore + Auth).
+            Assim que as chaves estiverem disponíveis, recarregue a página.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) return <div className="h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-900"></div></div>;
 
-  return user ? <Dashboard user={user} onLogout={() => { if(!isMock) signOut(auth); window.location.reload(); }} /> : <LoginScreen onLogin={() => setLoading(true)} loading={loading} />;
+  return user ? <Dashboard user={user} onLogout={() => { signOut(auth); window.location.reload(); }} /> : <LoginScreen onLogin={() => setLoading(true)} loading={loading} />;
 };
 
 export default App;
