@@ -11,10 +11,10 @@ import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, 
 import { getFirestore, collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc, orderBy, serverTimestamp, where, getDocs } from 'firebase/firestore';
 import { 
   ShieldCheck, LayoutDashboard, Building2, Users, LogOut, Plus, Trash2, Search, Map as MapIcon, 
-  AlertTriangle, Menu, X, ChevronDown, ChevronRight, Phone, Mail, MapPin, Edit, CheckCircle, 
+  AlertTriangle, Menu, X, ChevronDown, ChevronRight, ChevronLeft, Phone, Mail, MapPin, Edit, CheckCircle, 
   Clock, Database, Download, Upload, RefreshCw, Cloud, Check, Calendar, AlertOctagon, 
   ExternalLink, FileSpreadsheet, Locate, HeartHandshake, FileText, Award, Layers, DollarSign,
-  Star, Medal, Trophy, Lock, User
+  Star, Medal, Trophy, Lock, User, Target
 } from 'lucide-react';
 
 /* ===================================================================
@@ -116,15 +116,30 @@ const initialToken = getEnvVar('__initial_auth_token');
 const mockDB = {
   units: [],
   unitLife: {}, 
+  unitSubcollections: {},
+  catalogs: { unidade_etapas: [], unidade_metas: [], unidade_selos: [] },
+  scoreSnapshots: [],
   load: () => { 
     try { 
       mockDB.units = JSON.parse(localStorage.getItem('asa_units_mock') || '[]'); 
       mockDB.unitLife = JSON.parse(localStorage.getItem('asa_life_mock') || '{}');
-    } catch { mockDB.units = []; mockDB.unitLife = {}; } 
+      mockDB.unitSubcollections = JSON.parse(localStorage.getItem('asa_unit_subcollections_mock') || '{}');
+      mockDB.catalogs = JSON.parse(localStorage.getItem('asa_unit_catalogs_mock') || '{"unidade_etapas":[],"unidade_metas":[],"unidade_selos":[]}');
+      mockDB.scoreSnapshots = JSON.parse(localStorage.getItem('asa_unit_scores_mock') || '[]');
+    } catch { 
+      mockDB.units = []; 
+      mockDB.unitLife = {}; 
+      mockDB.unitSubcollections = {};
+      mockDB.catalogs = { unidade_etapas: [], unidade_metas: [], unidade_selos: [] };
+      mockDB.scoreSnapshots = [];
+    } 
   },
   save: () => {
     localStorage.setItem('asa_units_mock', JSON.stringify(mockDB.units));
     localStorage.setItem('asa_life_mock', JSON.stringify(mockDB.unitLife));
+    localStorage.setItem('asa_unit_subcollections_mock', JSON.stringify(mockDB.unitSubcollections));
+    localStorage.setItem('asa_unit_catalogs_mock', JSON.stringify(mockDB.catalogs));
+    localStorage.setItem('asa_unit_scores_mock', JSON.stringify(mockDB.scoreSnapshots));
   },
   add: (data) => { mockDB.load(); mockDB.units.push({ id: Date.now().toString(), ...data, createdAt: new Date().toISOString() }); mockDB.save(); },
   update: (id, data) => { mockDB.load(); const idx = mockDB.units.findIndex(u => u.id === id); if(idx>-1) { mockDB.units[idx] = {...mockDB.units[idx], ...data}; mockDB.save(); } },
@@ -137,6 +152,66 @@ const mockDB = {
   getLife: (unitId) => {
     mockDB.load();
     return mockDB.unitLife[unitId] || {};
+  },
+  ensureUnitSubcollections: (unitId) => {
+    if (!mockDB.unitSubcollections[unitId]) {
+      mockDB.unitSubcollections[unitId] = { etapas_status: [], metas_status: [], tarefas: [], selos_conquistados: [], participacao_mes: [] };
+    }
+  },
+  getSubcollection: (unitId, name) => {
+    mockDB.load();
+    mockDB.ensureUnitSubcollections(unitId);
+    return mockDB.unitSubcollections[unitId]?.[name] || [];
+  },
+  addSubDoc: (unitId, name, data) => {
+    mockDB.load();
+    mockDB.ensureUnitSubcollections(unitId);
+    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    mockDB.unitSubcollections[unitId][name].push({ id, ...data });
+    mockDB.save();
+    return id;
+  },
+  updateSubDoc: (unitId, name, id, data) => {
+    mockDB.load();
+    mockDB.ensureUnitSubcollections(unitId);
+    const idx = mockDB.unitSubcollections[unitId][name].findIndex(item => item.id === id);
+    if (idx > -1) {
+      mockDB.unitSubcollections[unitId][name][idx] = { ...mockDB.unitSubcollections[unitId][name][idx], ...data };
+      mockDB.save();
+    }
+  },
+  deleteSubDoc: (unitId, name, id) => {
+    mockDB.load();
+    mockDB.ensureUnitSubcollections(unitId);
+    mockDB.unitSubcollections[unitId][name] = mockDB.unitSubcollections[unitId][name].filter(item => item.id !== id);
+    mockDB.save();
+  },
+  getCatalog: (name) => {
+    mockDB.load();
+    return mockDB.catalogs[name] || [];
+  },
+  addCatalogDoc: (name, data) => {
+    mockDB.load();
+    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    mockDB.catalogs[name] = [...(mockDB.catalogs[name] || []), { id, ...data }];
+    mockDB.save();
+    return id;
+  },
+  updateCatalogDoc: (name, id, data) => {
+    mockDB.load();
+    const catalog = mockDB.catalogs[name] || [];
+    mockDB.catalogs[name] = catalog.map(item => item.id === id ? { ...item, ...data } : item);
+    mockDB.save();
+  },
+  deleteCatalogDoc: (name, id) => {
+    mockDB.load();
+    mockDB.catalogs[name] = (mockDB.catalogs[name] || []).filter(item => item.id !== id);
+    mockDB.save();
+  },
+  addScoreSnapshot: (data) => {
+    mockDB.load();
+    mockDB.scoreSnapshots.push({ id: `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, ...data });
+    mockDB.save();
   }
 };
 if (isMock) mockDB.load();
@@ -148,6 +223,139 @@ if (isMock) mockDB.load();
 const safeRender = (val) => val === null || val === undefined || typeof val === 'object' ? '' : String(val);
 const maskCEP = (value) => safeRender(value).replace(/\D/g, '').replace(/^(\d{5})(\d)/, '$1-$2').slice(0, 9);
 const maskPhone = (value) => safeRender(value).replace(/\D/g, '').replace(/^(\d{2})(\d)/g, '($1) $2').replace(/(\d)(\d{4})$/, '$1-$2').slice(0, 15);
+const getCurrentPeriod = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+const toDate = (value) => {
+  if (!value) return null;
+  if (value?.toDate) return value.toDate();
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+const isPastDate = (value) => {
+  const date = toDate(value);
+  if (!date) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date < today;
+};
+const sum = (values) => values.reduce((acc, val) => acc + val, 0);
+const roundScore = (value) => Math.max(0, Math.min(100, Math.round(value)));
+
+const COLLECTIONS = {
+  units: 'asa_units',
+  etapas: 'unidade_etapas',
+  metas: 'unidade_metas',
+  selos: 'unidade_selos',
+  scoreSnapshots: 'unidade_score_snapshot'
+};
+
+const getCollectionRef = (name, ...rest) => collection(db, 'artifacts', appId, 'public', 'data', name, ...rest);
+const getDocRef = (name, ...rest) => doc(db, 'artifacts', appId, 'public', 'data', name, ...rest);
+const getUnitSubcollectionRef = (unitId, subcollection) => collection(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.units, unitId, subcollection);
+const getUnitSubDocRef = (unitId, subcollection, docId) => doc(db, 'artifacts', appId, 'public', 'data', COLLECTIONS.units, unitId, subcollection, docId);
+
+const classificationFromScore = (score) => {
+  if (score >= 90) return 'EXCELENCIA';
+  if (score >= 80) return 'DESTAQUE';
+  if (score >= 60) return 'REGULAR';
+  if (score >= 40) return 'PENDENCIAS';
+  return 'CRITICA';
+};
+
+const calculateUnitScore = ({ etapasCatalog, etapasStatus, metasCatalog, metasStatus, tarefas, participacao, now = new Date() }) => {
+  const period = getCurrentPeriod(now);
+  const activeEtapas = etapasCatalog.filter(etapa => etapa.ativo !== false);
+  const mandatoryEtapas = activeEtapas.filter(etapa => etapa.obrigatoria);
+  const statusByEtapa = Object.fromEntries(etapasStatus.map(status => [status.etapaId, status]));
+  const mandatoryDone = mandatoryEtapas.filter(etapa => statusByEtapa[etapa.id]?.status === 'CONCLUIDA').length;
+  const etapaPercent = mandatoryEtapas.length ? (mandatoryDone / mandatoryEtapas.length) * 100 : 0;
+  const scoreEtapas = etapaPercent * 0.3;
+
+  const activeMetas = metasCatalog.filter(meta => meta.ativo !== false);
+  const activeMetaIds = new Set(activeMetas.map(meta => meta.id));
+  const metasInPeriod = metasStatus.filter(meta => meta.periodo_referencia === period && activeMetaIds.has(meta.metaId));
+  const metasAchieved = metasInPeriod.filter(meta => meta.status === 'ATINGIDA').length;
+  const metaPercent = metasInPeriod.length ? (metasAchieved / metasInPeriod.length) * 100 : 0;
+  const scoreMetas = metaPercent * 0.3;
+
+  const completedTasksInMonth = tarefas.filter(task => task.status === 'CONCLUIDA' && getCurrentPeriod(toDate(task.data_conclusao) || now) === period);
+  const criticalOverdue = tarefas.filter(task => task.prioridade === 'CRITICA' && task.status !== 'CONCLUIDA' && task.status !== 'CANCELADA' && isPastDate(task.data_limite) && getCurrentPeriod(toDate(task.data_limite) || now) === period).length;
+  const baseRegularity = completedTasksInMonth.length > 0 ? 100 : 0;
+  const regularityRaw = Math.max(baseRegularity - (criticalOverdue * 20), 0);
+  const scoreRegularidade = regularityRaw * 0.2;
+
+  const docEtapaIds = activeEtapas.filter(etapa => ['documentacao_basica', 'prestacao_contas'].includes(etapa.codigo)).map(etapa => etapa.id);
+  const docCompleted = docEtapaIds.filter(id => statusByEtapa[id]?.status === 'CONCLUIDA').length;
+  const docRaw = docCompleted === 2 ? 100 : docCompleted === 1 ? 50 : 0;
+  const scoreDocumentacao = docRaw * 0.1;
+
+  const participacaoRaw = participacao?.pontuacao || 0;
+  const scoreParticipacao = participacaoRaw * 0.1;
+
+  const total = sum([scoreEtapas, scoreMetas, scoreRegularidade, scoreDocumentacao, scoreParticipacao]);
+  const scoreTotal = roundScore(total);
+
+  return {
+    score_total: scoreTotal,
+    score_etapas: roundScore(scoreEtapas),
+    score_metas: roundScore(scoreMetas),
+    score_regularidade: roundScore(scoreRegularidade),
+    score_documentacao: roundScore(scoreDocumentacao),
+    score_participacao: roundScore(scoreParticipacao),
+    classificacao: classificationFromScore(scoreTotal),
+    etapa_percentual: etapaPercent,
+    meta_percentual: metaPercent,
+    regularidade_raw: regularityRaw,
+    documentacao_raw: docRaw,
+    participacao_raw: participacaoRaw
+  };
+};
+
+const getPendenciaResumo = ({ etapasCatalog, etapasStatus, tarefas }) => {
+  const statusByEtapa = Object.fromEntries(etapasStatus.map(status => [status.etapaId, status]));
+  const mandatoryEtapas = etapasCatalog.filter(etapa => etapa.obrigatoria && etapa.ativo !== false);
+  const etapasAtrasadas = mandatoryEtapas.filter(etapa => statusByEtapa[etapa.id]?.status !== 'CONCLUIDA' && isPastDate(statusByEtapa[etapa.id]?.data_limite)).length;
+  const tarefasVencidas = tarefas.filter(task => task.status !== 'CONCLUIDA' && task.status !== 'CANCELADA' && isPastDate(task.data_limite)).length;
+  return {
+    etapasAtrasadasCount: etapasAtrasadas,
+    tarefasVencidasCount: tarefasVencidas,
+    temPendencias: etapasAtrasadas > 0 || tarefasVencidas > 0
+  };
+};
+
+const defaultSelosCatalog = [
+  {
+    codigo: 'unidade_pontual',
+    nome: 'Unidade Pontual',
+    descricao: 'Nenhuma tarefa vencida no mês.',
+    criterio_json: { regra: 'sem_tarefa_vencida_mes' },
+    validade_dias: 30,
+    ativo: true
+  },
+  {
+    codigo: 'unidade_organizada',
+    nome: 'Unidade Organizada',
+    descricao: '100% das etapas obrigatórias concluídas.',
+    criterio_json: { regra: 'etapas_obrigatorias_100' },
+    validade_dias: 90,
+    ativo: true
+  },
+  {
+    codigo: 'unidade_ativa',
+    nome: 'Unidade Ativa',
+    descricao: 'Ao menos 2 tarefas concluídas no mês.',
+    criterio_json: { regra: 'tarefas_concluidas_mes', minimo: 2 },
+    validade_dias: 30,
+    ativo: true
+  },
+  {
+    codigo: 'unidade_excelencia',
+    nome: 'Unidade Excelência',
+    descricao: 'Score total igual ou acima de 90.',
+    criterio_json: { regra: 'score_minimo', minimo: 90 },
+    validade_dias: 60,
+    ativo: true
+  }
+];
 
 const smartFormat = (text) => {
   if (!text) return "";
@@ -280,6 +488,40 @@ const Toast = ({ message, type, show, onClose }) => {
     </div>
   );
 };
+
+const StatusBadge = ({ label, tone = 'slate' }) => {
+  const tones = {
+    slate: 'bg-slate-100 text-slate-700 border-slate-200',
+    amber: 'bg-amber-100 text-amber-700 border-amber-200',
+    emerald: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    rose: 'bg-rose-100 text-rose-700 border-rose-200',
+    blue: 'bg-blue-100 text-blue-700 border-blue-200',
+    purple: 'bg-purple-100 text-purple-700 border-purple-200'
+  };
+  return <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border ${tones[tone] || tones.slate}`}>{label}</span>;
+};
+
+const ScoreBadge = ({ score }) => {
+  const numeric = Number(score) || 0;
+  const classification = classificationFromScore(numeric);
+  const tone = classification === 'EXCELENCIA' ? 'emerald' : classification === 'DESTAQUE' ? 'blue' : classification === 'REGULAR' ? 'slate' : classification === 'PENDENCIAS' ? 'amber' : 'rose';
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-lg font-bold text-slate-800">{numeric}</span>
+      <StatusBadge label={classification} tone={tone} />
+    </div>
+  );
+};
+
+const EmptyState = ({ title, description, icon: Icon }) => (
+  <div className="flex flex-col items-center justify-center text-center p-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+    <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-slate-200 flex items-center justify-center text-slate-400 mb-4">
+      {Icon ? <Icon size={28} /> : null}
+    </div>
+    <h4 className="text-lg font-bold text-slate-700">{title}</h4>
+    {description && <p className="text-sm text-slate-500 mt-2 max-w-md">{description}</p>}
+  </div>
+);
 
 const SidebarItem = ({ icon: Icon, label, isActive, onClick, hasSubmenu, isOpen }) => (
   <button onClick={onClick} className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl transition-all duration-200 group ${isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50 scale-[1.02]' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
@@ -538,6 +780,1033 @@ const UnitLifeScreen = ({ units, showToast }) => {
   );
 };
 
+const UnitDashboardScreen = ({ units, showToast }) => {
+  const [pendencias, setPendencias] = useState([]);
+  const [loadingPendencias, setLoadingPendencias] = useState(false);
+
+  useEffect(() => {
+    const loadPendencias = async () => {
+      setLoadingPendencias(true);
+      const pendenciasList = [];
+      for (const unit of units) {
+        try {
+          const tarefas = isMock ? mockDB.getSubcollection(unit.id, 'tarefas') : (await getDocs(getUnitSubcollectionRef(unit.id, 'tarefas'))).docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+          const etapasStatus = isMock ? mockDB.getSubcollection(unit.id, 'etapas_status') : (await getDocs(getUnitSubcollectionRef(unit.id, 'etapas_status'))).docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+          const etapasCatalog = isMock ? mockDB.getCatalog(COLLECTIONS.etapas) : (await getDocs(getCollectionRef(COLLECTIONS.etapas))).docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+          const statusByEtapa = Object.fromEntries(etapasStatus.map(status => [status.etapaId, status]));
+          etapasCatalog.forEach(etapa => {
+            const status = statusByEtapa[etapa.id];
+            if (etapa.obrigatoria && status?.status !== 'CONCLUIDA' && isPastDate(status?.data_limite)) {
+              pendenciasList.push({
+                id: `${unit.id}_${etapa.id}`,
+                unitId: unit.id,
+                unitName: unit.nomeUnidade,
+                tipo: 'Etapa',
+                titulo: etapa.nome,
+                data_limite: status?.data_limite
+              });
+            }
+          });
+          tarefas.forEach(task => {
+            if (task.status !== 'CONCLUIDA' && task.status !== 'CANCELADA' && isPastDate(task.data_limite)) {
+              pendenciasList.push({
+                id: `${unit.id}_${task.id}`,
+                unitId: unit.id,
+                unitName: unit.nomeUnidade,
+                tipo: 'Tarefa',
+                titulo: task.titulo,
+                data_limite: task.data_limite
+              });
+            }
+          });
+        } catch (error) {
+          console.error(error);
+          showToast('Erro ao carregar pendências', 'error');
+        }
+      }
+      setPendencias(pendenciasList);
+      setLoadingPendencias(false);
+    };
+
+    if (units.length) loadPendencias();
+    else setPendencias([]);
+  }, [units, showToast]);
+
+  const total = units.length;
+  const compliant = total ? Math.round((units.filter(unit => (unit.scoreAtual || 0) >= 60).length / total) * 100) : 0;
+  const pendingCount = units.filter(unit => unit.temPendencias || unit.pendencias).length;
+  const sortedByScore = [...units].sort((a, b) => (b.scoreAtual || 0) - (a.scoreAtual || 0));
+  const destaque = sortedByScore.slice(0, 5);
+  const criticas = [...units].sort((a, b) => (a.scoreAtual || 0) - (b.scoreAtual || 0)).slice(0, 5);
+
+  return (
+    <div className="space-y-10 animate-in fade-in">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <StatCard title="Total de Unidades" value={total} icon={Building2} color="bg-blue-600" />
+        <StatCard title="% em Conformidade" value={`${compliant}%`} icon={CheckCircle} color="bg-emerald-600" />
+        <StatCard title="Unidades com Pendências" value={pendingCount} icon={AlertTriangle} color="bg-amber-500" />
+        <StatCard title="Pendências Identificadas" value={pendencias.length} icon={AlertOctagon} color="bg-rose-500" />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+          <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><Star className="text-blue-600" size={24} /> Top 5 Destaque</h3>
+          {destaque.length === 0 ? (
+            <EmptyState title="Sem unidades cadastradas" description="Cadastre unidades para acompanhar o desempenho." icon={Building2} />
+          ) : (
+            <div className="space-y-4">
+              {destaque.map(unit => (
+                <div key={unit.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div>
+                    <p className="font-bold text-slate-700">{unit.nomeUnidade}</p>
+                    <p className="text-xs text-slate-500">{unit.regiao || 'Região não informada'}</p>
+                  </div>
+                  <ScoreBadge score={unit.scoreAtual || 0} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+          <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><AlertTriangle className="text-rose-600" size={24} /> Top 5 Críticas</h3>
+          {criticas.length === 0 ? (
+            <EmptyState title="Sem unidades cadastradas" description="Cadastre unidades para acompanhar o desempenho." icon={Building2} />
+          ) : (
+            <div className="space-y-4">
+              {criticas.map(unit => (
+                <div key={unit.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div>
+                    <p className="font-bold text-slate-700">{unit.nomeUnidade}</p>
+                    <p className="text-xs text-slate-500">{unit.regiao || 'Região não informada'}</p>
+                  </div>
+                  <ScoreBadge score={unit.scoreAtual || 0} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+          <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><AlertOctagon className="text-amber-600" size={24} /> Pendências</h3>
+          {loadingPendencias ? (
+            <div className="text-slate-500">Carregando pendências...</div>
+          ) : pendencias.length === 0 ? (
+            <EmptyState title="Nenhuma pendência" description="Não há tarefas ou etapas vencidas." icon={CheckCircle} />
+          ) : (
+            <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+              {pendencias.map(item => (
+                <div key={item.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-slate-700">{item.titulo}</p>
+                      <p className="text-xs text-slate-500">{item.unitName}</p>
+                    </div>
+                    <StatusBadge label={item.tipo} tone={item.tipo === 'Tarefa' ? 'rose' : 'amber'} />
+                  </div>
+                  {item.data_limite && (
+                    <p className="text-xs text-slate-500 mt-2">Limite: {toDate(item.data_limite)?.toLocaleDateString('pt-BR')}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const UnitsManagementScreen = ({ units, onSelectUnit }) => {
+  const [filters, setFilters] = useState({ regiao: '', distrito: '', score: '', pendencias: '' });
+
+  const filteredUnits = units.filter(unit => {
+    const matchesRegiao = filters.regiao ? String(unit.regiao || '').toLowerCase().includes(filters.regiao.toLowerCase()) : true;
+    const matchesDistrito = filters.distrito ? String(unit.distrito || '').toLowerCase().includes(filters.distrito.toLowerCase()) : true;
+    const scoreValue = Number(unit.scoreAtual || 0);
+    const matchesScore = filters.score
+      ? filters.score === 'critica'
+        ? scoreValue < 40
+        : filters.score === 'pendencias'
+          ? scoreValue >= 40 && scoreValue < 60
+          : filters.score === 'regular'
+            ? scoreValue >= 60 && scoreValue < 80
+            : filters.score === 'destaque'
+              ? scoreValue >= 80 && scoreValue < 90
+              : scoreValue >= 90
+      : true;
+    const matchesPendencias = filters.pendencias
+      ? filters.pendencias === 'sim'
+        ? unit.temPendencias || unit.pendencias
+        : !(unit.temPendencias || unit.pendencias)
+      : true;
+    return matchesRegiao && matchesDistrito && matchesScore && matchesPendencias;
+  });
+
+  return (
+    <div className="space-y-8 animate-in fade-in">
+      <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+        <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-3"><Building2 className="text-blue-600" size={28} /> Unidades ASA</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <input className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium" placeholder="Filtrar por região" value={filters.regiao} onChange={e => setFilters(prev => ({ ...prev, regiao: e.target.value }))} />
+          <input className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium" placeholder="Filtrar por distrito" value={filters.distrito} onChange={e => setFilters(prev => ({ ...prev, distrito: e.target.value }))} />
+          <select className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium" value={filters.score} onChange={e => setFilters(prev => ({ ...prev, score: e.target.value }))}>
+            <option value="">Score</option>
+            <option value="critica">Crítica</option>
+            <option value="pendencias">Pendências</option>
+            <option value="regular">Regular</option>
+            <option value="destaque">Destaque</option>
+            <option value="excelencia">Excelência</option>
+          </select>
+          <select className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium" value={filters.pendencias} onChange={e => setFilters(prev => ({ ...prev, pendencias: e.target.value }))}>
+            <option value="">Pendências?</option>
+            <option value="sim">Sim</option>
+            <option value="nao">Não</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="overflow-auto">
+          <table className="min-w-full text-left">
+            <thead className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider">
+              <tr>
+                <th className="p-6">Unidade</th>
+                <th className="p-6">Região</th>
+                <th className="p-6">Distrito</th>
+                <th className="p-6">Score</th>
+                <th className="p-6">Pendências</th>
+                <th className="p-6 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUnits.map(unit => (
+                <tr key={unit.id} className="border-t border-slate-100 hover:bg-slate-50/80 transition-colors">
+                  <td className="p-6 font-semibold text-slate-700">{unit.nomeUnidade}</td>
+                  <td className="p-6 text-slate-500">{unit.regiao || '-'}</td>
+                  <td className="p-6 text-slate-500">{unit.distrito || '-'}</td>
+                  <td className="p-6"><ScoreBadge score={unit.scoreAtual || 0} /></td>
+                  <td className="p-6">
+                    {unit.temPendencias || unit.pendencias ? <StatusBadge label="Com Pendências" tone="amber" /> : <StatusBadge label="Sem Pendências" tone="emerald" />}
+                  </td>
+                  <td className="p-6 text-right">
+                    <Button variant="outline" className="px-4 py-2 text-sm" onClick={() => onSelectUnit(unit.id)}>
+                      <ExternalLink size={18} /> Detalhar
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+              {filteredUnits.length === 0 && (
+                <tr>
+                  <td colSpan="6" className="p-10">
+                    <EmptyState title="Nenhuma unidade encontrada" description="Ajuste os filtros para ver mais resultados." icon={Search} />
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const UnitDetailScreen = ({ unit, etapasCatalog, metasCatalog, selosCatalog, showToast, onBack, onCatalogRefresh }) => {
+  const [activeTab, setActiveTab] = useState('geral');
+  const [etapasStatus, setEtapasStatus] = useState([]);
+  const [metasStatus, setMetasStatus] = useState([]);
+  const [tarefas, setTarefas] = useState([]);
+  const [selosConquistados, setSelosConquistados] = useState([]);
+  const [participacaoMes, setParticipacaoMes] = useState(null);
+  const [etapasDrafts, setEtapasDrafts] = useState({});
+  const [metaForm, setMetaForm] = useState({
+    metaId: '',
+    periodo_referencia: getCurrentPeriod(),
+    status: 'PENDENTE',
+    valor_alvo: '',
+    valor_real: '',
+    data_limite: '',
+    data_fechamento: '',
+    responsavel: '',
+    observacao: ''
+  });
+  const [editingMetaId, setEditingMetaId] = useState(null);
+  const [tarefaForm, setTarefaForm] = useState({
+    titulo: '',
+    descricao: '',
+    prioridade: 'MEDIA',
+    status: 'PENDENTE',
+    data_limite: '',
+    data_conclusao: '',
+    responsavel: '',
+    origem: 'MANUAL',
+    penaliza_score: true
+  });
+  const [editingTarefaId, setEditingTarefaId] = useState(null);
+  const [participacaoForm, setParticipacaoForm] = useState({
+    periodo_referencia: getCurrentPeriod(),
+    pontuacao: 0,
+    observacao: ''
+  });
+  const [etapaCatalogForm, setEtapaCatalogForm] = useState({ codigo: '', nome: '', descricao: '', ordem: 1, obrigatoria: false, peso: 0, ativo: true });
+  const [metaCatalogForm, setMetaCatalogForm] = useState({ codigo: '', nome: '', descricao: '', periodicidade: 'MENSAL', tipo: 'QUANTITATIVA', peso: 0, ativo: true });
+  const [seloCatalogForm, setSeloCatalogForm] = useState({ codigo: '', nome: '', descricao: '', criterio_json: '{}', validade_dias: 30, ativo: true });
+
+  useEffect(() => {
+    if (!unit) return;
+    if (isMock) {
+      setEtapasStatus(mockDB.getSubcollection(unit.id, 'etapas_status'));
+      setMetasStatus(mockDB.getSubcollection(unit.id, 'metas_status'));
+      setTarefas(mockDB.getSubcollection(unit.id, 'tarefas'));
+      setSelosConquistados(mockDB.getSubcollection(unit.id, 'selos_conquistados'));
+      const participacoes = mockDB.getSubcollection(unit.id, 'participacao_mes');
+      const current = participacoes.find(item => item.periodo_referencia === getCurrentPeriod()) || null;
+      setParticipacaoMes(current);
+      if (current) setParticipacaoForm({ periodo_referencia: current.periodo_referencia, pontuacao: current.pontuacao, observacao: current.observacao || '' });
+    } else {
+      const unsubEtapas = onSnapshot(getUnitSubcollectionRef(unit.id, 'etapas_status'), snapshot => {
+        setEtapasStatus(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+      });
+      const unsubMetas = onSnapshot(getUnitSubcollectionRef(unit.id, 'metas_status'), snapshot => {
+        setMetasStatus(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+      });
+      const unsubTarefas = onSnapshot(getUnitSubcollectionRef(unit.id, 'tarefas'), snapshot => {
+        setTarefas(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+      });
+      const unsubSelos = onSnapshot(getUnitSubcollectionRef(unit.id, 'selos_conquistados'), snapshot => {
+        setSelosConquistados(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+      });
+      const unsubParticipacao = onSnapshot(getUnitSubcollectionRef(unit.id, 'participacao_mes'), snapshot => {
+        const current = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })).find(item => item.periodo_referencia === getCurrentPeriod()) || null;
+        setParticipacaoMes(current);
+        if (current) setParticipacaoForm({ periodo_referencia: current.periodo_referencia, pontuacao: current.pontuacao, observacao: current.observacao || '' });
+      });
+      return () => {
+        unsubEtapas();
+        unsubMetas();
+        unsubTarefas();
+        unsubSelos();
+        unsubParticipacao();
+      };
+    }
+  }, [unit]);
+
+  useEffect(() => {
+    if (!unit) return;
+    const drafts = {};
+    etapasCatalog.forEach(etapa => {
+      const status = etapasStatus.find(item => item.etapaId === etapa.id);
+      drafts[etapa.id] = {
+        statusDocId: status?.id || null,
+        status: status?.status || 'PENDENTE',
+        data_limite: status?.data_limite ? toDate(status.data_limite)?.toISOString().slice(0, 10) : '',
+        data_conclusao: status?.data_conclusao ? toDate(status.data_conclusao)?.toISOString().slice(0, 10) : '',
+        responsavel: status?.responsavel || '',
+        observacao: status?.observacao || ''
+      };
+    });
+    setEtapasDrafts(drafts);
+  }, [unit, etapasCatalog, etapasStatus]);
+
+  if (!unit) return null;
+
+  const updateUnitSummary = async (summary) => {
+    if (isMock) {
+      mockDB.update(unit.id, summary);
+    } else {
+      await updateDoc(getDocRef(COLLECTIONS.units, unit.id), summary);
+    }
+  };
+
+  const createScoreSnapshot = async (scoreData) => {
+    const snapshotData = {
+      unidadeId: unit.id,
+      periodo_referencia: getCurrentPeriod(),
+      score_total: scoreData.score_total,
+      score_etapas: scoreData.score_etapas,
+      score_metas: scoreData.score_metas,
+      score_regularidade: scoreData.score_regularidade,
+      score_documentacao: scoreData.score_documentacao,
+      score_participacao: scoreData.score_participacao,
+      classificacao: scoreData.classificacao,
+      detalhes_json: scoreData,
+      createdAt: isMock ? new Date().toISOString() : serverTimestamp()
+    };
+    if (isMock) mockDB.addScoreSnapshot(snapshotData);
+    else await addDoc(getCollectionRef(COLLECTIONS.scoreSnapshots), snapshotData);
+  };
+
+  const updateSelos = async (scoreData) => {
+    const now = new Date();
+    const period = getCurrentPeriod(now);
+    const completedTasksInMonth = tarefas.filter(task => task.status === 'CONCLUIDA' && getCurrentPeriod(toDate(task.data_conclusao) || now) === period);
+    const overdueTasksInMonth = tarefas.filter(task => task.status !== 'CONCLUIDA' && task.status !== 'CANCELADA' && isPastDate(task.data_limite) && getCurrentPeriod(toDate(task.data_limite) || now) === period);
+    const mandatoryEtapas = etapasCatalog.filter(etapa => etapa.obrigatoria && etapa.ativo !== false);
+    const statusByEtapa = Object.fromEntries(etapasStatus.map(status => [status.etapaId, status]));
+    const mandatoryDone = mandatoryEtapas.filter(etapa => statusByEtapa[etapa.id]?.status === 'CONCLUIDA').length;
+    const allMandatoryDone = mandatoryEtapas.length > 0 && mandatoryDone === mandatoryEtapas.length;
+    const rules = {
+      unidade_pontual: overdueTasksInMonth.length === 0,
+      unidade_organizada: allMandatoryDone,
+      unidade_ativa: completedTasksInMonth.length >= 2,
+      unidade_excelencia: scoreData.score_total >= 90
+    };
+    for (const selo of selosCatalog.filter(item => item.ativo !== false)) {
+      const meetsRule = rules[selo.codigo] || false;
+      const existing = selosConquistados.find(item => item.seloId === selo.id);
+      const expiryDate = selo.validade_dias ? new Date(now.getTime() + (selo.validade_dias * 86400000)) : null;
+      if (existing) {
+        const isExpired = existing.data_expira && toDate(existing.data_expira) < now;
+        if (isExpired && existing.ativo) {
+          if (isMock) mockDB.updateSubDoc(unit.id, 'selos_conquistados', existing.id, { ativo: false });
+          else await updateDoc(getUnitSubDocRef(unit.id, 'selos_conquistados', existing.id), { ativo: false });
+        }
+        if (meetsRule && (!existing.ativo || isExpired)) {
+          const update = { ativo: true, data_conquista: now.toISOString(), data_expira: expiryDate ? expiryDate.toISOString() : null, motivo: selo.descricao };
+          if (isMock) mockDB.updateSubDoc(unit.id, 'selos_conquistados', existing.id, update);
+          else await updateDoc(getUnitSubDocRef(unit.id, 'selos_conquistados', existing.id), update);
+        } else if (!meetsRule && existing.ativo) {
+          if (isMock) mockDB.updateSubDoc(unit.id, 'selos_conquistados', existing.id, { ativo: false });
+          else await updateDoc(getUnitSubDocRef(unit.id, 'selos_conquistados', existing.id), { ativo: false });
+        }
+      } else if (meetsRule) {
+        const newData = {
+          seloId: selo.id,
+          data_conquista: now.toISOString(),
+          data_expira: expiryDate ? expiryDate.toISOString() : null,
+          ativo: true,
+          motivo: selo.descricao
+        };
+        if (isMock) mockDB.addSubDoc(unit.id, 'selos_conquistados', newData);
+        else await addDoc(getUnitSubcollectionRef(unit.id, 'selos_conquistados'), newData);
+      }
+    }
+  };
+
+  const runAutomation = async (override = {}) => {
+    const currentEtapasStatus = override.etapasStatus || etapasStatus;
+    const currentMetasStatus = override.metasStatus || metasStatus;
+    const currentTarefas = override.tarefas || tarefas;
+    const currentParticipacao = override.participacao || participacaoMes;
+    const scoreData = calculateUnitScore({
+      etapasCatalog,
+      etapasStatus: currentEtapasStatus,
+      metasCatalog,
+      metasStatus: currentMetasStatus,
+      tarefas: currentTarefas,
+      participacao: currentParticipacao
+    });
+    const pendencias = getPendenciaResumo({ etapasCatalog, etapasStatus: currentEtapasStatus, tarefas: currentTarefas });
+    await updateUnitSummary({
+      scoreAtual: scoreData.score_total,
+      scoreEtapas: scoreData.score_etapas,
+      scoreMetas: scoreData.score_metas,
+      scoreRegularidade: scoreData.score_regularidade,
+      scoreDocumentacao: scoreData.score_documentacao,
+      scoreParticipacao: scoreData.score_participacao,
+      classificacaoAtual: scoreData.classificacao,
+      temPendencias: pendencias.temPendencias,
+      tarefasVencidasCount: pendencias.tarefasVencidasCount,
+      etapasAtrasadasCount: pendencias.etapasAtrasadasCount,
+      updatedAt: isMock ? new Date().toISOString() : serverTimestamp()
+    });
+    await createScoreSnapshot(scoreData);
+    await updateSelos(scoreData);
+    showToast('Atualizações aplicadas', 'success');
+  };
+
+  const handleSaveEtapaStatus = async (etapaId) => {
+    const draft = etapasDrafts[etapaId];
+    if (!draft) return;
+    const payload = {
+      etapaId,
+      status: draft.status,
+      data_limite: draft.data_limite || null,
+      data_conclusao: draft.status === 'CONCLUIDA' ? draft.data_conclusao || new Date().toISOString().slice(0, 10) : draft.data_conclusao || null,
+      responsavel: draft.responsavel || '',
+      observacao: draft.observacao || ''
+    };
+    if (isMock) {
+      if (draft.statusDocId) {
+        mockDB.updateSubDoc(unit.id, 'etapas_status', draft.statusDocId, payload);
+      } else {
+        const newId = mockDB.addSubDoc(unit.id, 'etapas_status', payload);
+        setEtapasDrafts(prev => ({ ...prev, [etapaId]: { ...draft, statusDocId: newId } }));
+      }
+      setEtapasStatus(mockDB.getSubcollection(unit.id, 'etapas_status'));
+    } else if (draft.statusDocId) {
+      await updateDoc(getUnitSubDocRef(unit.id, 'etapas_status', draft.statusDocId), payload);
+    } else {
+      const docRef = await addDoc(getUnitSubcollectionRef(unit.id, 'etapas_status'), payload);
+      setEtapasDrafts(prev => ({ ...prev, [etapaId]: { ...draft, statusDocId: docRef.id } }));
+    }
+    await runAutomation();
+  };
+
+  const handleMetaSave = async (e) => {
+    e.preventDefault();
+    const payload = {
+      metaId: metaForm.metaId,
+      periodo_referencia: metaForm.periodo_referencia,
+      status: metaForm.status,
+      valor_alvo: metaForm.valor_alvo,
+      valor_real: metaForm.valor_real,
+      data_limite: metaForm.data_limite || null,
+      data_fechamento: metaForm.data_fechamento || null,
+      responsavel: metaForm.responsavel,
+      observacao: metaForm.observacao
+    };
+    if (!payload.metaId) {
+      showToast('Selecione uma meta', 'error');
+      return;
+    }
+    if (isMock) {
+      if (editingMetaId) mockDB.updateSubDoc(unit.id, 'metas_status', editingMetaId, payload);
+      else mockDB.addSubDoc(unit.id, 'metas_status', payload);
+      setMetasStatus(mockDB.getSubcollection(unit.id, 'metas_status'));
+    } else if (editingMetaId) {
+      await updateDoc(getUnitSubDocRef(unit.id, 'metas_status', editingMetaId), payload);
+    } else {
+      await addDoc(getUnitSubcollectionRef(unit.id, 'metas_status'), payload);
+    }
+    setMetaForm({ metaId: '', periodo_referencia: getCurrentPeriod(), status: 'PENDENTE', valor_alvo: '', valor_real: '', data_limite: '', data_fechamento: '', responsavel: '', observacao: '' });
+    setEditingMetaId(null);
+    await runAutomation();
+  };
+
+  const handleMetaEdit = (meta) => {
+    setEditingMetaId(meta.id);
+    setMetaForm({
+      metaId: meta.metaId,
+      periodo_referencia: meta.periodo_referencia,
+      status: meta.status,
+      valor_alvo: meta.valor_alvo || '',
+      valor_real: meta.valor_real || '',
+      data_limite: meta.data_limite ? toDate(meta.data_limite)?.toISOString().slice(0, 10) : '',
+      data_fechamento: meta.data_fechamento ? toDate(meta.data_fechamento)?.toISOString().slice(0, 10) : '',
+      responsavel: meta.responsavel || '',
+      observacao: meta.observacao || ''
+    });
+  };
+
+  const handleMetaDelete = async (id) => {
+    if (!window.confirm('Remover meta da unidade?')) return;
+    if (isMock) {
+      mockDB.deleteSubDoc(unit.id, 'metas_status', id);
+      setMetasStatus(mockDB.getSubcollection(unit.id, 'metas_status'));
+    } else {
+      await deleteDoc(getUnitSubDocRef(unit.id, 'metas_status', id));
+    }
+    await runAutomation();
+  };
+
+  const handleTarefaSave = async (e) => {
+    e.preventDefault();
+    if (!tarefaForm.titulo) {
+      showToast('Informe o título da tarefa', 'error');
+      return;
+    }
+    const payload = {
+      ...tarefaForm,
+      data_limite: tarefaForm.data_limite || null,
+      data_conclusao: tarefaForm.data_conclusao || null
+    };
+    if (isMock) {
+      if (editingTarefaId) mockDB.updateSubDoc(unit.id, 'tarefas', editingTarefaId, payload);
+      else mockDB.addSubDoc(unit.id, 'tarefas', payload);
+      setTarefas(mockDB.getSubcollection(unit.id, 'tarefas'));
+    } else if (editingTarefaId) {
+      await updateDoc(getUnitSubDocRef(unit.id, 'tarefas', editingTarefaId), payload);
+    } else {
+      await addDoc(getUnitSubcollectionRef(unit.id, 'tarefas'), payload);
+    }
+    setTarefaForm({ titulo: '', descricao: '', prioridade: 'MEDIA', status: 'PENDENTE', data_limite: '', data_conclusao: '', responsavel: '', origem: 'MANUAL', penaliza_score: true });
+    setEditingTarefaId(null);
+    await runAutomation();
+  };
+
+  const handleTarefaEdit = (task) => {
+    setEditingTarefaId(task.id);
+    setTarefaForm({
+      titulo: task.titulo,
+      descricao: task.descricao || '',
+      prioridade: task.prioridade || 'MEDIA',
+      status: task.status || 'PENDENTE',
+      data_limite: task.data_limite ? toDate(task.data_limite)?.toISOString().slice(0, 10) : '',
+      data_conclusao: task.data_conclusao ? toDate(task.data_conclusao)?.toISOString().slice(0, 10) : '',
+      responsavel: task.responsavel || '',
+      origem: task.origem || 'MANUAL',
+      penaliza_score: task.penaliza_score !== false
+    });
+  };
+
+  const handleTarefaDelete = async (id) => {
+    if (!window.confirm('Remover tarefa?')) return;
+    if (isMock) {
+      mockDB.deleteSubDoc(unit.id, 'tarefas', id);
+      setTarefas(mockDB.getSubcollection(unit.id, 'tarefas'));
+    } else {
+      await deleteDoc(getUnitSubDocRef(unit.id, 'tarefas', id));
+    }
+    await runAutomation();
+  };
+
+  const handleParticipacaoSave = async () => {
+    const payload = {
+      periodo_referencia: participacaoForm.periodo_referencia,
+      pontuacao: Number(participacaoForm.pontuacao) || 0,
+      observacao: participacaoForm.observacao
+    };
+    if (isMock) {
+      if (participacaoMes?.id) mockDB.updateSubDoc(unit.id, 'participacao_mes', participacaoMes.id, payload);
+      else mockDB.addSubDoc(unit.id, 'participacao_mes', payload);
+      const participacoes = mockDB.getSubcollection(unit.id, 'participacao_mes');
+      const current = participacoes.find(item => item.periodo_referencia === getCurrentPeriod()) || null;
+      setParticipacaoMes(current);
+    } else if (participacaoMes?.id) {
+      await updateDoc(getUnitSubDocRef(unit.id, 'participacao_mes', participacaoMes.id), payload);
+    } else {
+      await addDoc(getUnitSubcollectionRef(unit.id, 'participacao_mes'), payload);
+    }
+    await runAutomation();
+  };
+
+  const handleAddEtapaCatalog = async (e) => {
+    e.preventDefault();
+    if (!etapaCatalogForm.codigo || !etapaCatalogForm.nome) {
+      showToast('Informe código e nome da etapa', 'error');
+      return;
+    }
+    const payload = { ...etapaCatalogForm, ordem: Number(etapaCatalogForm.ordem) || 0, peso: Number(etapaCatalogForm.peso) || 0 };
+    if (isMock) {
+      mockDB.addCatalogDoc(COLLECTIONS.etapas, payload);
+      onCatalogRefresh?.();
+    } else {
+      await addDoc(getCollectionRef(COLLECTIONS.etapas), payload);
+    }
+    setEtapaCatalogForm({ codigo: '', nome: '', descricao: '', ordem: 1, obrigatoria: false, peso: 0, ativo: true });
+  };
+
+  const handleAddMetaCatalog = async (e) => {
+    e.preventDefault();
+    if (!metaCatalogForm.codigo || !metaCatalogForm.nome) {
+      showToast('Informe código e nome da meta', 'error');
+      return;
+    }
+    const payload = { ...metaCatalogForm, peso: Number(metaCatalogForm.peso) || 0 };
+    if (isMock) {
+      mockDB.addCatalogDoc(COLLECTIONS.metas, payload);
+      onCatalogRefresh?.();
+    } else {
+      await addDoc(getCollectionRef(COLLECTIONS.metas), payload);
+    }
+    setMetaCatalogForm({ codigo: '', nome: '', descricao: '', periodicidade: 'MENSAL', tipo: 'QUANTITATIVA', peso: 0, ativo: true });
+  };
+
+  const handleAddSeloCatalog = async (e) => {
+    e.preventDefault();
+    if (!seloCatalogForm.codigo || !seloCatalogForm.nome) {
+      showToast('Informe código e nome do selo', 'error');
+      return;
+    }
+    let criterioJson = {};
+    try {
+      criterioJson = seloCatalogForm.criterio_json ? JSON.parse(seloCatalogForm.criterio_json) : {};
+    } catch (error) {
+      showToast('criterio_json inválido', 'error');
+      return;
+    }
+    const payload = { ...seloCatalogForm, criterio_json: criterioJson, validade_dias: Number(seloCatalogForm.validade_dias) || 0 };
+    if (isMock) {
+      mockDB.addCatalogDoc(COLLECTIONS.selos, payload);
+      onCatalogRefresh?.();
+    } else {
+      await addDoc(getCollectionRef(COLLECTIONS.selos), payload);
+    }
+    setSeloCatalogForm({ codigo: '', nome: '', descricao: '', criterio_json: '{}', validade_dias: 30, ativo: true });
+  };
+
+  return (
+    <div className="space-y-8 animate-in fade-in">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <button onClick={onBack} className="text-sm font-bold text-blue-600 flex items-center gap-2"><ChevronLeft size={18} /> Voltar</button>
+          <h2 className="text-3xl font-extrabold text-slate-800 mt-2">{unit.nomeUnidade}</h2>
+          <p className="text-sm text-slate-500">{unit.regiao || 'Região não informada'} • {unit.distrito || 'Distrito não informado'}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" className="px-5 py-3" onClick={() => runAutomation()}><RefreshCw size={18} /> Recalcular Score</Button>
+          <Button
+            variant="outline"
+            className="px-5 py-3"
+            onClick={async () => {
+              await updateSelos(calculateUnitScore({ etapasCatalog, etapasStatus, metasCatalog, metasStatus, tarefas, participacao: participacaoMes }));
+              showToast('Selos recalculados', 'success');
+            }}
+          >
+            <Award size={18} /> Recalcular Selos
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        {['geral', 'etapas', 'metas', 'tarefas', 'selos'].map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-3 rounded-full text-sm font-bold ${activeTab === tab ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>
+            {tab === 'geral' && 'Visão Geral'}
+            {tab === 'etapas' && 'Etapas'}
+            {tab === 'metas' && 'Metas'}
+            {tab === 'tarefas' && 'Tarefas'}
+            {tab === 'selos' && 'Selos'}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'geral' && (
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="xl:col-span-2 space-y-6">
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+              <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-3"><LayoutDashboard className="text-blue-600" size={24} /> Score Atual</h3>
+              <div className="flex items-center justify-between">
+                <ScoreBadge score={unit.scoreAtual || 0} />
+                <div className="text-sm text-slate-500">Última atualização: {unit.updatedAt ? toDate(unit.updatedAt)?.toLocaleDateString('pt-BR') : 'N/D'}</div>
+              </div>
+              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-600">
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                  <p className="font-bold text-slate-700">Etapas</p>
+                  <p className="text-2xl font-extrabold text-slate-800">{unit.scoreEtapas || 0}</p>
+                </div>
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                  <p className="font-bold text-slate-700">Metas</p>
+                  <p className="text-2xl font-extrabold text-slate-800">{unit.scoreMetas || 0}</p>
+                </div>
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                  <p className="font-bold text-slate-700">Regularidade</p>
+                  <p className="text-2xl font-extrabold text-slate-800">{unit.scoreRegularidade || 0}</p>
+                </div>
+                <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                  <p className="font-bold text-slate-700">Documentação</p>
+                  <p className="text-2xl font-extrabold text-slate-800">{unit.scoreDocumentacao || 0}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+              <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-3"><Users className="text-blue-600" size={24} /> Participação Mensal</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-1">
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Período</label>
+                  <input className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={participacaoForm.periodo_referencia} onChange={e => setParticipacaoForm(prev => ({ ...prev, periodo_referencia: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Pontuação (0-100)</label>
+                  <input type="number" min="0" max="100" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" value={participacaoForm.pontuacao} onChange={e => setParticipacaoForm(prev => ({ ...prev, pontuacao: e.target.value }))} />
+                </div>
+                <div className="md:col-span-3">
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Observação</label>
+                  <textarea className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-medium" rows="3" value={participacaoForm.observacao} onChange={e => setParticipacaoForm(prev => ({ ...prev, observacao: e.target.value }))} />
+                </div>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <Button onClick={handleParticipacaoSave} className="px-6 py-3">Salvar Participação</Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+              <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-3"><AlertTriangle className="text-amber-600" size={24} /> Pendências</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Etapas atrasadas</span>
+                  <span className="font-bold text-slate-700">{unit.etapasAtrasadasCount || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Tarefas vencidas</span>
+                  <span className="font-bold text-slate-700">{unit.tarefasVencidasCount || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Status</span>
+                  {unit.temPendencias || unit.pendencias ? <StatusBadge label="Com Pendências" tone="amber" /> : <StatusBadge label="Regular" tone="emerald" />}
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+              <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-3"><Award className="text-blue-600" size={24} /> Selos Ativos</h3>
+              {selosConquistados.filter(selo => selo.ativo).length === 0 ? (
+                <EmptyState title="Nenhum selo ativo" description="Recalcule os selos após atualizar tarefas ou etapas." icon={Award} />
+              ) : (
+                <div className="space-y-3">
+                  {selosConquistados.filter(selo => selo.ativo).map(selo => {
+                    const catalog = selosCatalog.find(item => item.id === selo.seloId);
+                    return (
+                      <div key={selo.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                        <p className="font-bold text-slate-700">{catalog?.nome || 'Selo'}</p>
+                        <p className="text-xs text-slate-500">{catalog?.descricao}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'etapas' && (
+        <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-6">
+          <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3"><Layers className="text-blue-600" size={24} /> Etapas de Maturidade</h3>
+          <form onSubmit={handleAddEtapaCatalog} className="grid grid-cols-1 md:grid-cols-6 gap-4 bg-slate-50 border border-slate-100 p-4 rounded-2xl">
+            <input className="p-3 bg-white border border-slate-200 rounded-xl" placeholder="Código" value={etapaCatalogForm.codigo} onChange={e => setEtapaCatalogForm(prev => ({ ...prev, codigo: e.target.value }))} />
+            <input className="md:col-span-2 p-3 bg-white border border-slate-200 rounded-xl" placeholder="Nome" value={etapaCatalogForm.nome} onChange={e => setEtapaCatalogForm(prev => ({ ...prev, nome: e.target.value }))} />
+            <input className="md:col-span-2 p-3 bg-white border border-slate-200 rounded-xl" placeholder="Descrição" value={etapaCatalogForm.descricao} onChange={e => setEtapaCatalogForm(prev => ({ ...prev, descricao: e.target.value }))} />
+            <input type="number" className="p-3 bg-white border border-slate-200 rounded-xl" placeholder="Ordem" value={etapaCatalogForm.ordem} onChange={e => setEtapaCatalogForm(prev => ({ ...prev, ordem: e.target.value }))} />
+            <input type="number" className="p-3 bg-white border border-slate-200 rounded-xl" placeholder="Peso" value={etapaCatalogForm.peso} onChange={e => setEtapaCatalogForm(prev => ({ ...prev, peso: e.target.value }))} />
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-600">
+              <input type="checkbox" checked={etapaCatalogForm.obrigatoria} onChange={e => setEtapaCatalogForm(prev => ({ ...prev, obrigatoria: e.target.checked }))} />
+              Obrigatória
+            </label>
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-600">
+              <input type="checkbox" checked={etapaCatalogForm.ativo} onChange={e => setEtapaCatalogForm(prev => ({ ...prev, ativo: e.target.checked }))} />
+              Ativa
+            </label>
+            <div className="md:col-span-6 flex justify-end">
+              <Button type="submit" className="px-6 py-3">Adicionar Etapa</Button>
+            </div>
+          </form>
+          {etapasCatalog.length === 0 ? (
+            <EmptyState title="Nenhuma etapa cadastrada" description="Cadastre etapas no catálogo para acompanhar o status." icon={Layers} />
+          ) : (
+            <div className="space-y-4">
+              {etapasCatalog.sort((a, b) => (a.ordem || 0) - (b.ordem || 0)).map(etapa => (
+                <div key={etapa.id} className="p-6 rounded-3xl border border-slate-100 bg-slate-50">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h4 className="text-lg font-bold text-slate-700">{etapa.nome}</h4>
+                      <p className="text-sm text-slate-500">{etapa.descricao}</p>
+                      {etapa.obrigatoria && <StatusBadge label="Obrigatória" tone="amber" />}
+                    </div>
+                    <Button variant="outline" className="px-4 py-2 text-sm" onClick={() => handleSaveEtapaStatus(etapa.id)}><CheckCircle size={16} /> Salvar</Button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Status</label>
+                      <select className="w-full p-3 bg-white border border-slate-200 rounded-xl" value={etapasDrafts[etapa.id]?.status || 'PENDENTE'} onChange={e => setEtapasDrafts(prev => ({ ...prev, [etapa.id]: { ...prev[etapa.id], status: e.target.value } }))}>
+                        <option value="PENDENTE">Pendente</option>
+                        <option value="EM_ANDAMENTO">Em andamento</option>
+                        <option value="CONCLUIDA">Concluída</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data limite</label>
+                      <input type="date" className="w-full p-3 bg-white border border-slate-200 rounded-xl" value={etapasDrafts[etapa.id]?.data_limite || ''} onChange={e => setEtapasDrafts(prev => ({ ...prev, [etapa.id]: { ...prev[etapa.id], data_limite: e.target.value } }))} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Conclusão</label>
+                      <input type="date" className="w-full p-3 bg-white border border-slate-200 rounded-xl" value={etapasDrafts[etapa.id]?.data_conclusao || ''} onChange={e => setEtapasDrafts(prev => ({ ...prev, [etapa.id]: { ...prev[etapa.id], data_conclusao: e.target.value } }))} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Responsável</label>
+                      <input className="w-full p-3 bg-white border border-slate-200 rounded-xl" value={etapasDrafts[etapa.id]?.responsavel || ''} onChange={e => setEtapasDrafts(prev => ({ ...prev, [etapa.id]: { ...prev[etapa.id], responsavel: e.target.value } }))} />
+                    </div>
+                    <div className="md:col-span-5">
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Observação</label>
+                      <textarea className="w-full p-3 bg-white border border-slate-200 rounded-xl" rows="2" value={etapasDrafts[etapa.id]?.observacao || ''} onChange={e => setEtapasDrafts(prev => ({ ...prev, [etapa.id]: { ...prev[etapa.id], observacao: e.target.value } }))} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'metas' && (
+        <div className="space-y-8">
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3 mb-4"><Target className="text-emerald-600" size={24} /> Catálogo de Metas</h3>
+            <form onSubmit={handleAddMetaCatalog} className="grid grid-cols-1 md:grid-cols-6 gap-4">
+              <input className="p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="Código" value={metaCatalogForm.codigo} onChange={e => setMetaCatalogForm(prev => ({ ...prev, codigo: e.target.value }))} />
+              <input className="md:col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="Nome" value={metaCatalogForm.nome} onChange={e => setMetaCatalogForm(prev => ({ ...prev, nome: e.target.value }))} />
+              <input className="md:col-span-2 p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="Descrição" value={metaCatalogForm.descricao} onChange={e => setMetaCatalogForm(prev => ({ ...prev, descricao: e.target.value }))} />
+              <select className="p-3 bg-slate-50 border border-slate-200 rounded-xl" value={metaCatalogForm.periodicidade} onChange={e => setMetaCatalogForm(prev => ({ ...prev, periodicidade: e.target.value }))}>
+                <option value="MENSAL">Mensal</option>
+                <option value="TRIMESTRAL">Trimestral</option>
+                <option value="ANUAL">Anual</option>
+              </select>
+              <select className="p-3 bg-slate-50 border border-slate-200 rounded-xl" value={metaCatalogForm.tipo} onChange={e => setMetaCatalogForm(prev => ({ ...prev, tipo: e.target.value }))}>
+                <option value="QUANTITATIVA">Quantitativa</option>
+                <option value="QUALITATIVA">Qualitativa</option>
+              </select>
+              <input type="number" className="p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="Peso" value={metaCatalogForm.peso} onChange={e => setMetaCatalogForm(prev => ({ ...prev, peso: e.target.value }))} />
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                <input type="checkbox" checked={metaCatalogForm.ativo} onChange={e => setMetaCatalogForm(prev => ({ ...prev, ativo: e.target.checked }))} />
+                Ativa
+              </label>
+              <div className="md:col-span-6 flex justify-end">
+                <Button type="submit" className="px-6 py-3">Adicionar Meta</Button>
+              </div>
+            </form>
+          </div>
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3 mb-4"><Target className="text-blue-600" size={24} /> Metas Institucionais</h3>
+            <form onSubmit={handleMetaSave} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <select className="p-3 bg-slate-50 border border-slate-200 rounded-xl" value={metaForm.metaId} onChange={e => setMetaForm(prev => ({ ...prev, metaId: e.target.value }))}>
+                <option value="">Meta</option>
+                {metasCatalog.map(meta => <option key={meta.id} value={meta.id}>{meta.nome}</option>)}
+              </select>
+              <input className="p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="Período (YYYY-MM)" value={metaForm.periodo_referencia} onChange={e => setMetaForm(prev => ({ ...prev, periodo_referencia: e.target.value }))} />
+              <select className="p-3 bg-slate-50 border border-slate-200 rounded-xl" value={metaForm.status} onChange={e => setMetaForm(prev => ({ ...prev, status: e.target.value }))}>
+                <option value="PENDENTE">Pendente</option>
+                <option value="EM_ANDAMENTO">Em andamento</option>
+                <option value="ATINGIDA">Atingida</option>
+                <option value="NAO_ATINGIDA">Não atingida</option>
+              </select>
+              <input className="p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="Responsável" value={metaForm.responsavel} onChange={e => setMetaForm(prev => ({ ...prev, responsavel: e.target.value }))} />
+              <input className="p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="Valor alvo" value={metaForm.valor_alvo} onChange={e => setMetaForm(prev => ({ ...prev, valor_alvo: e.target.value }))} />
+              <input className="p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="Valor real" value={metaForm.valor_real} onChange={e => setMetaForm(prev => ({ ...prev, valor_real: e.target.value }))} />
+              <input type="date" className="p-3 bg-slate-50 border border-slate-200 rounded-xl" value={metaForm.data_limite} onChange={e => setMetaForm(prev => ({ ...prev, data_limite: e.target.value }))} />
+              <input type="date" className="p-3 bg-slate-50 border border-slate-200 rounded-xl" value={metaForm.data_fechamento} onChange={e => setMetaForm(prev => ({ ...prev, data_fechamento: e.target.value }))} />
+              <textarea className="md:col-span-4 p-3 bg-slate-50 border border-slate-200 rounded-xl" rows="2" placeholder="Observação" value={metaForm.observacao} onChange={e => setMetaForm(prev => ({ ...prev, observacao: e.target.value }))} />
+              <div className="md:col-span-4 flex justify-end">
+                <Button type="submit" className="px-6 py-3">{editingMetaId ? 'Atualizar Meta' : 'Adicionar Meta'}</Button>
+              </div>
+            </form>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <h4 className="text-lg font-bold text-slate-700 mb-4">Metas Registradas</h4>
+            {metasStatus.length === 0 ? (
+              <EmptyState title="Nenhuma meta registrada" description="Use o formulário acima para registrar metas." icon={Target} />
+            ) : (
+              <div className="space-y-4">
+                {metasStatus.map(meta => {
+                  const catalog = metasCatalog.find(item => item.id === meta.metaId);
+                  return (
+                    <div key={meta.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                      <div>
+                        <p className="font-bold text-slate-700">{catalog?.nome || 'Meta'}</p>
+                        <p className="text-xs text-slate-500">Período: {meta.periodo_referencia}</p>
+                        <p className="text-xs text-slate-500">Responsável: {meta.responsavel || '-'}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <StatusBadge label={meta.status} tone={meta.status === 'ATINGIDA' ? 'emerald' : meta.status === 'NAO_ATINGIDA' ? 'rose' : 'amber'} />
+                        <button onClick={() => handleMetaEdit(meta)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit size={18} /></button>
+                        <button onClick={() => handleMetaDelete(meta.id)} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"><Trash2 size={18} /></button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'tarefas' && (
+        <div className="space-y-8">
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3 mb-4"><CheckCircle className="text-blue-600" size={24} /> Tarefas da Unidade</h3>
+            <form onSubmit={handleTarefaSave} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <input className="p-3 bg-slate-50 border border-slate-200 rounded-xl md:col-span-2" placeholder="Título" value={tarefaForm.titulo} onChange={e => setTarefaForm(prev => ({ ...prev, titulo: e.target.value }))} />
+              <select className="p-3 bg-slate-50 border border-slate-200 rounded-xl" value={tarefaForm.prioridade} onChange={e => setTarefaForm(prev => ({ ...prev, prioridade: e.target.value }))}>
+                <option value="BAIXA">Baixa</option>
+                <option value="MEDIA">Média</option>
+                <option value="ALTA">Alta</option>
+                <option value="CRITICA">Crítica</option>
+              </select>
+              <select className="p-3 bg-slate-50 border border-slate-200 rounded-xl" value={tarefaForm.status} onChange={e => setTarefaForm(prev => ({ ...prev, status: e.target.value }))}>
+                <option value="PENDENTE">Pendente</option>
+                <option value="EM_ANDAMENTO">Em andamento</option>
+                <option value="CONCLUIDA">Concluída</option>
+                <option value="CANCELADA">Cancelada</option>
+              </select>
+              <input type="date" className="p-3 bg-slate-50 border border-slate-200 rounded-xl" value={tarefaForm.data_limite} onChange={e => setTarefaForm(prev => ({ ...prev, data_limite: e.target.value }))} />
+              <input type="date" className="p-3 bg-slate-50 border border-slate-200 rounded-xl" value={tarefaForm.data_conclusao} onChange={e => setTarefaForm(prev => ({ ...prev, data_conclusao: e.target.value }))} />
+              <input className="p-3 bg-slate-50 border border-slate-200 rounded-xl" placeholder="Responsável" value={tarefaForm.responsavel} onChange={e => setTarefaForm(prev => ({ ...prev, responsavel: e.target.value }))} />
+              <select className="p-3 bg-slate-50 border border-slate-200 rounded-xl" value={tarefaForm.origem} onChange={e => setTarefaForm(prev => ({ ...prev, origem: e.target.value }))}>
+                <option value="MANUAL">Manual</option>
+                <option value="SISTEMA">Sistema</option>
+              </select>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                <input type="checkbox" checked={tarefaForm.penaliza_score} onChange={e => setTarefaForm(prev => ({ ...prev, penaliza_score: e.target.checked }))} />
+                Penaliza score
+              </label>
+              <textarea className="md:col-span-4 p-3 bg-slate-50 border border-slate-200 rounded-xl" rows="2" placeholder="Descrição" value={tarefaForm.descricao} onChange={e => setTarefaForm(prev => ({ ...prev, descricao: e.target.value }))} />
+              <div className="md:col-span-4 flex justify-end">
+                <Button type="submit" className="px-6 py-3">{editingTarefaId ? 'Atualizar Tarefa' : 'Adicionar Tarefa'}</Button>
+              </div>
+            </form>
+          </div>
+
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+            <h4 className="text-lg font-bold text-slate-700 mb-4">Tarefas Registradas</h4>
+            {tarefas.length === 0 ? (
+              <EmptyState title="Nenhuma tarefa registrada" description="Use o formulário acima para registrar tarefas." icon={CheckCircle} />
+            ) : (
+              <div className="space-y-4">
+                {tarefas.map(task => (
+                  <div key={task.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                      <p className="font-bold text-slate-700">{task.titulo}</p>
+                      <p className="text-xs text-slate-500">Responsável: {task.responsavel || '-'}</p>
+                      {task.data_limite && <p className="text-xs text-slate-500">Limite: {toDate(task.data_limite)?.toLocaleDateString('pt-BR')}</p>}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <StatusBadge label={task.status} tone={task.status === 'CONCLUIDA' ? 'emerald' : task.status === 'CANCELADA' ? 'slate' : 'amber'} />
+                      <StatusBadge label={task.prioridade} tone={task.prioridade === 'CRITICA' ? 'rose' : task.prioridade === 'ALTA' ? 'amber' : 'slate'} />
+                      <button onClick={() => handleTarefaEdit(task)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit size={18} /></button>
+                      <button onClick={() => handleTarefaDelete(task.id)} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"><Trash2 size={18} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'selos' && (
+        <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+          <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3"><Trophy className="text-blue-600" size={24} /> Selos de Destaque</h3>
+          <form onSubmit={handleAddSeloCatalog} className="grid grid-cols-1 md:grid-cols-6 gap-4 mt-6 bg-slate-50 border border-slate-100 p-4 rounded-2xl">
+            <input className="p-3 bg-white border border-slate-200 rounded-xl" placeholder="Código" value={seloCatalogForm.codigo} onChange={e => setSeloCatalogForm(prev => ({ ...prev, codigo: e.target.value }))} />
+            <input className="md:col-span-2 p-3 bg-white border border-slate-200 rounded-xl" placeholder="Nome" value={seloCatalogForm.nome} onChange={e => setSeloCatalogForm(prev => ({ ...prev, nome: e.target.value }))} />
+            <input className="md:col-span-2 p-3 bg-white border border-slate-200 rounded-xl" placeholder="Descrição" value={seloCatalogForm.descricao} onChange={e => setSeloCatalogForm(prev => ({ ...prev, descricao: e.target.value }))} />
+            <input type="number" className="p-3 bg-white border border-slate-200 rounded-xl" placeholder="Validade (dias)" value={seloCatalogForm.validade_dias} onChange={e => setSeloCatalogForm(prev => ({ ...prev, validade_dias: e.target.value }))} />
+            <textarea className="md:col-span-5 p-3 bg-white border border-slate-200 rounded-xl" rows="2" placeholder="criterio_json" value={seloCatalogForm.criterio_json} onChange={e => setSeloCatalogForm(prev => ({ ...prev, criterio_json: e.target.value }))} />
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-600">
+              <input type="checkbox" checked={seloCatalogForm.ativo} onChange={e => setSeloCatalogForm(prev => ({ ...prev, ativo: e.target.checked }))} />
+              Ativo
+            </label>
+            <div className="md:col-span-6 flex justify-end">
+              <Button type="submit" className="px-6 py-3">Adicionar Selo</Button>
+            </div>
+          </form>
+          {selosCatalog.length === 0 ? (
+            <EmptyState title="Nenhum selo cadastrado" description="Cadastre selos no catálogo para ativar a gamificação." icon={Trophy} />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {selosCatalog.map(selo => {
+                const conquistado = selosConquistados.find(item => item.seloId === selo.id && item.ativo);
+                return (
+                  <div key={selo.id} className={`p-6 rounded-3xl border ${conquistado ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-lg font-bold text-slate-700">{selo.nome}</h4>
+                      {conquistado ? <StatusBadge label="Ativo" tone="emerald" /> : <StatusBadge label="Inativo" tone="slate" />}
+                    </div>
+                    <p className="text-sm text-slate-500">{selo.descricao}</p>
+                    {conquistado && (
+                      <p className="text-xs text-slate-500 mt-2">Expira: {conquistado.data_expira ? toDate(conquistado.data_expira)?.toLocaleDateString('pt-BR') : 'Sem expiração'}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const BackupScreen = ({ units, showToast }) => {
   const [importing, setImporting] = useState(false);
 
@@ -665,8 +1934,12 @@ const BackupScreen = ({ units, showToast }) => {
 // --- DASHBOARD (PRINCIPAL) ---
 const Dashboard = ({ user, onLogout }) => {
   const [activePage, setActivePage] = useState('dashboard');
-  const [menuState, setMenuState] = useState({ management: true });
+  const [menuState, setMenuState] = useState({ management: true, asa: true });
   const [units, setUnits] = useState([]);
+  const [etapasCatalog, setEtapasCatalog] = useState([]);
+  const [metasCatalog, setMetasCatalog] = useState([]);
+  const [selosCatalog, setSelosCatalog] = useState([]);
+  const [selectedUnitId, setSelectedUnitId] = useState(null);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [searchTerm, setSearchTerm] = useState('');
@@ -676,14 +1949,18 @@ const Dashboard = ({ user, onLogout }) => {
     dashboard: 'Visão Geral',
     units_list: 'Listagem de Unidades',
     units_add: 'Cadastro de Unidade',
+    asa_dashboard: 'Dashboard Unidades',
+    asa_units: 'Unidades ASA',
+    asa_unit_detail: 'Detalhe da Unidade',
     unit_life: 'Vida da Unidade',
     map: 'Georreferenciamento',
     backup: 'Backup e Dados',
   };
 
-  const initialForm = { nomeUnidade: '', nomeDiretor: '', anoEleicao: new Date().getFullYear(), email: '', telefone: '', cep: '', logradouro: '', numero: '', bairro: '', cidade: '', uf: '', viceDiretor: '', secretario: '', tesoureiro: '', pendencias: false, status: 'Ativo' };
+  const initialForm = { nomeUnidade: '', nomeDiretor: '', regiao: '', distrito: '', anoEleicao: new Date().getFullYear(), email: '', telefone: '', cep: '', logradouro: '', numero: '', bairro: '', cidade: '', uf: '', viceDiretor: '', secretario: '', tesoureiro: '', pendencias: false, status: 'Ativo' };
   const [formData, setFormData] = useState(initialForm);
   const lastCepLookup = useRef('');
+  const selectedUnit = units.find(unit => unit.id === selectedUnitId);
 
   const showToast = (msg, type = 'success') => { setToast({ show: true, message: msg, type }); setTimeout(() => setToast(p => ({ ...p, show: false })), 3000); };
 
@@ -696,18 +1973,75 @@ const Dashboard = ({ user, onLogout }) => {
       }, 2000);
       return () => clearInterval(interval);
     }
-    const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'asa_units'), orderBy('nomeUnidade'));
+    const q = query(getCollectionRef(COLLECTIONS.units), orderBy('nomeUnidade'));
     return onSnapshot(q, s => setUnits(s.docs.map(d => ({ id: d.id, ...d.data() }))), e => { console.error(e); isMock = true; });
+  }, []);
+
+  useEffect(() => {
+    const seedSelosCatalog = async () => {
+      if (isMock) {
+        const current = mockDB.getCatalog(COLLECTIONS.selos);
+        if (current.length === 0) {
+          defaultSelosCatalog.forEach(item => mockDB.addCatalogDoc(COLLECTIONS.selos, item));
+        }
+        setSelosCatalog(mockDB.getCatalog(COLLECTIONS.selos));
+      } else {
+        const snapshot = await getDocs(getCollectionRef(COLLECTIONS.selos));
+        if (snapshot.empty) {
+          await Promise.all(defaultSelosCatalog.map(item => addDoc(getCollectionRef(COLLECTIONS.selos), item)));
+        }
+      }
+    };
+
+    const subscribeCatalogs = () => {
+      if (isMock) {
+        setEtapasCatalog(mockDB.getCatalog(COLLECTIONS.etapas));
+        setMetasCatalog(mockDB.getCatalog(COLLECTIONS.metas));
+        setSelosCatalog(mockDB.getCatalog(COLLECTIONS.selos));
+        return () => {};
+      }
+      const unsubEtapas = onSnapshot(getCollectionRef(COLLECTIONS.etapas), snapshot => {
+        setEtapasCatalog(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+      });
+      const unsubMetas = onSnapshot(getCollectionRef(COLLECTIONS.metas), snapshot => {
+        setMetasCatalog(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+      });
+      const unsubSelos = onSnapshot(getCollectionRef(COLLECTIONS.selos), snapshot => {
+        setSelosCatalog(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+      });
+      return () => {
+        unsubEtapas();
+        unsubMetas();
+        unsubSelos();
+      };
+    };
+
+    seedSelosCatalog();
+    return subscribeCatalogs();
   }, []);
 
   const handleSave = async (e) => {
     e.preventDefault();
     try {
       const missing = getMissingFields(formData);
-      const dataToSave = { ...formData, pendencias: missing.length > 0 || formData.pendencias, updatedAt: isMock ? new Date().toISOString() : serverTimestamp() };
+      const dataToSave = { 
+        ...formData, 
+        pendencias: missing.length > 0 || formData.pendencias,
+        scoreAtual: formData.scoreAtual ?? 0,
+        scoreEtapas: formData.scoreEtapas ?? 0,
+        scoreMetas: formData.scoreMetas ?? 0,
+        scoreRegularidade: formData.scoreRegularidade ?? 0,
+        scoreDocumentacao: formData.scoreDocumentacao ?? 0,
+        scoreParticipacao: formData.scoreParticipacao ?? 0,
+        classificacaoAtual: formData.classificacaoAtual ?? 'CRITICA',
+        temPendencias: formData.temPendencias ?? false,
+        tarefasVencidasCount: formData.tarefasVencidasCount ?? 0,
+        etapasAtrasadasCount: formData.etapasAtrasadasCount ?? 0,
+        updatedAt: isMock ? new Date().toISOString() : serverTimestamp()
+      };
       if (isMock) { editingId ? mockDB.update(editingId, dataToSave) : mockDB.add(dataToSave); }
       else {
-        const ref = editingId ? doc(db, 'artifacts', appId, 'public', 'data', 'asa_units', editingId) : collection(db, 'artifacts', appId, 'public', 'data', 'asa_units');
+        const ref = editingId ? getDocRef(COLLECTIONS.units, editingId) : getCollectionRef(COLLECTIONS.units);
         editingId ? (delete dataToSave.id, await updateDoc(ref, dataToSave)) : (dataToSave.createdAt = serverTimestamp(), await addDoc(ref, dataToSave));
       }
       showToast(editingId ? "Atualizado!" : "Cadastrado!"); setFormData(initialForm); setEditingId(null); setActivePage('units_list');
@@ -716,13 +2050,13 @@ const Dashboard = ({ user, onLogout }) => {
 
   const handleDelete = async (id) => {
     if(window.confirm("Confirmar exclusão?")) {
-      isMock ? mockDB.delete(id) : await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'asa_units', id));
+      isMock ? mockDB.delete(id) : await deleteDoc(getDocRef(COLLECTIONS.units, id));
       showToast("Excluído!");
     }
   };
 
   const togglePending = async (unit) => {
-    isMock ? mockDB.update(unit.id, { pendencias: !unit.pendencias }) : await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'asa_units', unit.id), { pendencias: !unit.pendencias });
+    isMock ? mockDB.update(unit.id, { pendencias: !unit.pendencias }) : await updateDoc(getDocRef(COLLECTIONS.units, unit.id), { pendencias: !unit.pendencias });
     showToast("Status alterado");
   };
 
@@ -750,13 +2084,20 @@ const Dashboard = ({ user, onLogout }) => {
   const stats = {
     total: units.length,
     outdated: units.filter(u => isOutdated(u.updatedAt)).length,
-    pending: units.filter(u => u.pendencias).length,
+    pending: units.filter(u => u.temPendencias || u.pendencias).length,
     actions: units.reduce((a, b) => a + (parseInt(b.acoesRealizadas)||0), 0)
   };
 
   const filteredMapUnits = units.filter(u => String(u.nomeUnidade).toLowerCase().includes(searchTerm.toLowerCase()));
   const handleNameFormat = (e) => setFormData(prev => ({...prev, nomeUnidade: smartFormat(e.target.value)}));
   const handleDirectorNameFormat = (e) => setFormData(prev => ({...prev, nomeDiretor: smartFormat(e.target.value)}));
+  const refreshMockCatalogs = () => {
+    if (isMock) {
+      setEtapasCatalog(mockDB.getCatalog(COLLECTIONS.etapas));
+      setMetasCatalog(mockDB.getCatalog(COLLECTIONS.metas));
+      setSelosCatalog(mockDB.getCatalog(COLLECTIONS.selos));
+    }
+  };
 
   return (
     <div className="h-screen-safe bg-slate-50 text-slate-800 font-sans overflow-hidden flex text-lg">
@@ -781,6 +2122,13 @@ const Dashboard = ({ user, onLogout }) => {
               <SubMenuItem label="Unidade" isActive={activePage === 'units_add'} onClick={() => { setFormData(initialForm); setEditingId(null); setActivePage('units_add'); setSidebarOpen(false); }} />
             </div>
           )}
+          <SidebarItem icon={Award} label="ASA" hasSubmenu isOpen={menuState.asa} onClick={() => setMenuState(p => ({...p, asa: !p.asa}))} />
+          {menuState.asa && (
+            <div className="pl-6 space-y-2 mt-2 border-l-2 border-slate-700 ml-8">
+              <SubMenuItem label="Dashboard Unidades" isActive={activePage === 'asa_dashboard'} onClick={() => { setActivePage('asa_dashboard'); setSidebarOpen(false); }} />
+              <SubMenuItem label="Unidades" isActive={activePage === 'asa_units' || activePage === 'asa_unit_detail'} onClick={() => { setActivePage('asa_units'); setSidebarOpen(false); }} />
+            </div>
+          )}
           <SidebarItem icon={HeartHandshake} label="Vida da Unidade" isActive={activePage === 'unit_life'} onClick={() => { setActivePage('unit_life'); setSidebarOpen(false); }} />
           <SidebarItem icon={MapIcon} label="Georreferenciamento" isActive={activePage === 'map'} onClick={() => { setActivePage('map'); setSidebarOpen(false); }} />
           <div className="pt-8">
@@ -800,7 +2148,7 @@ const Dashboard = ({ user, onLogout }) => {
                </div>
                <div className="flex flex-col">
                  <h1 className="font-bold text-3xl text-slate-800 capitalize tracking-tight">
-                   {pageTitles[activePage] ?? activePage.replace(/_/g, ' ')}
+                   {activePage === 'asa_unit_detail' && selectedUnit ? selectedUnit.nomeUnidade : pageTitles[activePage] ?? activePage.replace(/_/g, ' ')}
                  </h1>
                  <span className="text-sm font-semibold text-slate-400">Versão {APP_VERSION}</span>
                </div>
@@ -822,6 +2170,29 @@ const Dashboard = ({ user, onLogout }) => {
               <StatCard title="Pendências" value={stats.pending} icon={AlertTriangle} color="bg-amber-500" />
               <StatCard title="Desatualizadas" value={stats.outdated} icon={Clock} color="bg-rose-500" />
             </div>
+          )}
+
+          {activePage === 'asa_dashboard' && (
+            <UnitDashboardScreen units={units} showToast={showToast} />
+          )}
+
+          {activePage === 'asa_units' && (
+            <UnitsManagementScreen
+              units={units}
+              onSelectUnit={(unitId) => { setSelectedUnitId(unitId); setActivePage('asa_unit_detail'); }}
+            />
+          )}
+
+          {activePage === 'asa_unit_detail' && selectedUnit && (
+            <UnitDetailScreen
+              unit={selectedUnit}
+              etapasCatalog={etapasCatalog}
+              metasCatalog={metasCatalog}
+              selosCatalog={selosCatalog}
+              showToast={showToast}
+              onBack={() => { setActivePage('asa_units'); setSelectedUnitId(null); }}
+              onCatalogRefresh={refreshMockCatalogs}
+            />
           )}
 
           {activePage === 'units_list' && (
@@ -900,6 +2271,16 @@ const Dashboard = ({ user, onLogout }) => {
                       <label className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 block">Nome da Unidade <span className="text-red-500">*</span></label>
                       <input className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none font-bold text-xl text-slate-800" required
                         value={formData.nomeUnidade} onChange={handleNameFormat} placeholder="Ex: ASA Central..." />
+                    </div>
+                    <div>
+                      <label className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 block">Região</label>
+                      <input className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none text-lg font-medium" 
+                        value={formData.regiao} onChange={e => setFormData({...formData, regiao: smartFormat(e.target.value)})} placeholder="Região" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 block">Distrito</label>
+                      <input className="w-full p-5 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none text-lg font-medium" 
+                        value={formData.distrito} onChange={e => setFormData({...formData, distrito: smartFormat(e.target.value)})} placeholder="Distrito" />
                     </div>
                     <div>
                       <label className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 block">Status Operacional</label>
