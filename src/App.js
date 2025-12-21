@@ -999,6 +999,8 @@ const UnitDashboardScreen = ({ units, tiposAcaoCatalog, scoreSnapshots, showToas
   const inactiveCount = regularidades.filter(status => status === 'INATIVA').length;
   const pendingCount = units.filter(unit => unit.temPendencias || unit.pendencias).length;
   const unitsWithoutAction = units.filter(unit => !(unit.acoes || []).some(acao => acao.status === 'CONCLUIDA' && acao.data_fim?.slice(0, 7) === currentMonth)).length;
+  const unitsWithActionsThisMonth = total - unitsWithoutAction;
+  const unitsWithOpenActions = units.filter(unit => (unit.acoes || []).some(acao => !['CONCLUIDA', 'CANCELADA'].includes(acao.status))).length;
   const sortedByScore = [...units].sort((a, b) => (b.scoreAtual || 0) - (a.scoreAtual || 0));
   const destaque = sortedByScore.slice(0, 5);
   const criticas = [...units].sort((a, b) => (a.scoreAtual || 0) - (b.scoreAtual || 0)).slice(0, 5);
@@ -1016,7 +1018,7 @@ const UnitDashboardScreen = ({ units, tiposAcaoCatalog, scoreSnapshots, showToas
   return (
     <div className="space-y-10 animate-in fade-in">
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard title="Total de Unidades" value={total} icon={Building2} color="bg-blue-600" />
+        <StatCard title="Unidades com ação no mês" value={unitsWithActionsThisMonth} icon={Calendar} color="bg-blue-600" />
         <StatCard title="Unidades Regulares" value={regularCount} icon={CheckCircle} color="bg-emerald-600" />
         <StatCard title="Unidades Irregulares" value={irregularCount} icon={AlertTriangle} color="bg-amber-500" />
         <StatCard title="Unidades Inativas" value={inactiveCount} icon={AlertOctagon} color="bg-rose-500" />
@@ -1024,7 +1026,7 @@ const UnitDashboardScreen = ({ units, tiposAcaoCatalog, scoreSnapshots, showToas
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatCard title="Unidades com Pendências" value={pendingCount} icon={AlertTriangle} color="bg-amber-500" />
-        <StatCard title="Pendências Identificadas" value={pendencias.length} icon={AlertOctagon} color="bg-rose-500" />
+        <StatCard title="Unidades com ações em andamento" value={unitsWithOpenActions} icon={Clock} color="bg-slate-600" />
         <StatCard title="Sem ação no mês" value={unitsWithoutAction} icon={Calendar} color="bg-slate-600" />
         <StatCard title="Ações Concluídas" value={units.reduce((acc, unit) => acc + (unit.acoes || []).filter(acao => acao.status === 'CONCLUIDA').length, 0)} icon={Star} color="bg-blue-600" />
       </div>
