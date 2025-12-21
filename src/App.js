@@ -1,7 +1,7 @@
 /**
  * SISTEMA DE GESTÃO ASA (Ação Solidária Adventista)
  * =================================================
- * Versão: 4.4 (Tela de Login Premium & Moderna)
+ * Versão: 4.5 (Tela de Login Premium & Moderna)
  * Tecnologias: React, Tailwind CSS, Firebase (Firestore/Auth), Lucide Icons.
  */
 
@@ -178,6 +178,18 @@ const isOutdated = (timestamp) => {
     if (isNaN(lastUpdate.getTime())) return true;
     return Math.ceil(Math.abs(new Date() - lastUpdate) / 86400000) > 90;
   } catch { return false; }
+};
+
+const APP_VERSION = '4.5.0';
+const getWhatsappLink = (phone) => {
+  const digits = safeRender(phone).replace(/\D/g, '');
+  return digits ? `https://wa.me/${digits}` : null;
+};
+
+const getAnoEleicaoBadge = (year) => {
+  if (String(year) === '2025') return 'bg-red-50 text-red-600 border-red-200';
+  if (String(year) === '2026') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+  return 'bg-slate-100 text-slate-600 border-slate-200';
 };
 
 const fetchAddressByCEP = async (cep) => {
@@ -782,9 +794,17 @@ const Dashboard = ({ user, onLogout }) => {
         <header className="bg-white border-b px-8 md:px-12 py-6 flex justify-between items-center shrink-0 shadow-sm z-40 h-24">
           <div className="flex items-center gap-6">
              <button onClick={() => setSidebarOpen(true)} className="md:hidden text-slate-600 p-2 rounded-xl hover:bg-slate-100"><Menu size={32}/></button>
-             <h1 className="font-bold text-3xl text-slate-800 capitalize tracking-tight">
-               {pageTitles[activePage] ?? activePage.replace(/_/g, ' ')}
-             </h1>
+             <div className="flex items-center gap-4">
+               <div className="p-2.5 bg-emerald-100 text-emerald-700 rounded-xl shadow-sm">
+                 <HeartHandshake size={26} strokeWidth={2.4} />
+               </div>
+               <div className="flex flex-col">
+                 <h1 className="font-bold text-3xl text-slate-800 capitalize tracking-tight">
+                   {pageTitles[activePage] ?? activePage.replace(/_/g, ' ')}
+                 </h1>
+                 <span className="text-sm font-semibold text-slate-400">Versão {APP_VERSION}</span>
+               </div>
+             </div>
           </div>
           <div className="flex items-center gap-6">
              <div className="text-base font-semibold text-slate-500 flex items-center gap-3 bg-slate-100 px-5 py-2.5 rounded-full shadow-inner">
@@ -826,10 +846,27 @@ const Dashboard = ({ user, onLogout }) => {
                         </td>
                         <td className="p-8">
                           <div className="text-lg font-medium text-slate-700 mb-2">{safeRender(u.nomeDiretor)}</div>
-                          <div className="text-base text-slate-400 flex items-center gap-2"><Phone size={18}/> {safeRender(u.telefone)}</div>
+                          <div className="text-base text-slate-400 flex items-center gap-2">
+                            {getWhatsappLink(u.telefone) ? (
+                              <a
+                                href={getWhatsappLink(u.telefone)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-emerald-600 hover:text-emerald-700 transition-colors"
+                                aria-label="Abrir conversa no WhatsApp"
+                              >
+                                <Phone size={18}/>
+                              </a>
+                            ) : (
+                              <Phone size={18}/>
+                            )}
+                            {safeRender(u.telefone)}
+                          </div>
                         </td>
-                        <td className="p-8 text-center font-bold text-slate-700">
-                          {safeRender(u.anoEleicao)}
+                        <td className="p-8 text-center font-bold">
+                          <span className={`inline-flex items-center justify-center px-4 py-2 rounded-full border text-sm font-bold ${getAnoEleicaoBadge(u.anoEleicao)}`}>
+                            {safeRender(u.anoEleicao)}
+                          </span>
                         </td>
                         <td className="p-8 text-center">
                           <button onClick={() => togglePending(u)} className={`px-6 py-2.5 rounded-full text-sm font-bold uppercase tracking-wide transition-all shadow-sm hover:shadow-md ${u.pendencias ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-emerald-100 text-emerald-700 border border-emerald-200'}`}>
