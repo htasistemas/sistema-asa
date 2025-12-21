@@ -3332,7 +3332,7 @@ const Dashboard = ({ user, onLogout }) => {
       <aside className={`fixed inset-y-0 left-0 z-50 w-80 bg-slate-900 text-white flex flex-col shrink-0 transition-transform duration-300 shadow-2xl ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className="p-10 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="bg-blue-600 p-3 rounded-xl"><ShieldCheck size={32} className="text-white" /></div>
+            <div className="bg-blue-600 p-3 rounded-xl"><HeartHandshake size={32} className="text-white" /></div>
             <div><div className="font-bold text-2xl leading-none">Ação Solidária Adventista</div></div>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="md:hidden text-slate-400"><X size={32}/></button>
@@ -3368,8 +3368,12 @@ const Dashboard = ({ user, onLogout }) => {
           <div className="flex items-center gap-6">
              <button onClick={() => setSidebarOpen(true)} className="md:hidden text-slate-600 p-2 rounded-xl hover:bg-slate-100"><Menu size={32}/></button>
              <div className="flex items-center gap-4">
-               <div className="p-2.5 bg-emerald-100 text-emerald-700 rounded-xl shadow-sm">
-                 <HeartHandshake size={26} strokeWidth={2.4} />
+               <div className="p-2.5 bg-emerald-100 rounded-xl shadow-sm">
+                 <img
+                   src="/img/logo.jpg"
+                   alt="Logomarca ASA"
+                   className="h-7 w-7 object-contain"
+                 />
                </div>
                <div className="flex flex-col">
                  <h1 className="font-bold text-3xl text-slate-800 capitalize tracking-tight">
