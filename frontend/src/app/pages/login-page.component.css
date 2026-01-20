@@ -1,0 +1,198 @@
+/* Base geral da pagina */
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #f4f5f6;
+  color: #1b1f1b;
+  font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+}
+
+.paginaLogin {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 32px 24px;
+  gap: 24px;
+}
+
+/* Card central */
+.cardLogin {
+  width: 100%;
+  max-width: 1080px;
+  background-color: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.12);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+}
+
+/* Coluna do formulario */
+.colunaFormulario {
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 56px 64px;
+}
+
+.conteudoFormulario {
+  width: 100%;
+  max-width: 460px;
+  margin: auto;
+  text-align: center;
+}
+
+.logoAsa {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  margin-bottom: 20px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tituloFormulario {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2a1f;
+}
+
+.subtituloFormulario {
+  margin: 0 0 28px;
+  color: #5f6b5f;
+  font-size: 14px;
+}
+
+.formularioLogin {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.grupoCampo {
+  text-align: left;
+}
+
+.rotuloCampo {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #2e3a2e;
+}
+
+.campoTexto {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #d3d8d3;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.campoTexto:focus {
+  border-color: #2f7a45;
+  box-shadow: 0 0 0 3px rgba(47, 122, 69, 0.15);
+}
+
+.mensagemErro {
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.botaoPrimario {
+  margin-top: 6px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  background-color: #2f7a45;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.botaoPrimario:hover {
+  background-color: #2a6e3f;
+}
+
+.botaoPrimario:active {
+  transform: translateY(1px);
+}
+
+.botaoPrimario:disabled {
+  background-color: #a8b5aa;
+  cursor: not-allowed;
+}
+
+.rodape {
+  text-align: center;
+  color: #7b857b;
+  font-size: 12px;
+}
+
+/* Coluna da imagem */
+.colunaImagem {
+  position: relative;
+  background-image: url("/assets/criancas.jpg");
+  background-size: cover;
+  background-position: center;
+  min-height: 100%;
+}
+
+.sobreposicaoImagem {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.15) 0%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+.textoImagem {
+  position: absolute;
+  left: 28px;
+  bottom: 28px;
+  color: #ffffff;
+  z-index: 1;
+  max-width: 320px;
+}
+
+.tituloImagem {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.subtituloImagem {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* Responsividade */
+@media (max-width: 900px) {
+  .cardLogin {
+    grid-template-columns: 1fr;
+  }
+
+  .colunaFormulario {
+    padding: 36px 24px;
+  }
+
+  .conteudoFormulario {
+    max-width: 100%;
+  }
+
+  .colunaImagem {
+    min-height: 240px;
+  }
+}

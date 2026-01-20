@@ -1,0 +1,86 @@
+/* Arquivo: style.css
+    Função: Estilos globais do sistema, animações e ajustes de layout.
+*/
+
+body {
+    font-family: 'Roboto', sans-serif;
+    transition: background-color 0.3s, color 0.3s;
+    background-color: #f9fafb; /* gray-50 */
+    color: #1f2937; /* gray-800 */
+}
+
+/* Modo Escuro */
+.dark body {
+    background-color: #0d1117; /* gray-950 */
+    color: #f3f4f6; /* gray-100 */
+}
+
+/* Animação de entrada suave */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+
+.dark ::-webkit-scrollbar-thumb { background: #4a5568; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #718096; }
+
+/* Configuração do Mapa Leaflet */
+#map-container {
+    height: calc(100vh - 150px);
+    width: 100%;
+    border-radius: 0.75rem;
+    z-index: 0;
+}
+
+.modal-map-container {
+    height: 250px;
+    width: 100%;
+    border-radius: 0.5rem;
+    margin-top: 10px;
+    z-index: 1;
+}
+
+/* Tooltip personalizada */
+.tooltip-container { position: relative; }
+.tooltip-text {
+    visibility: hidden;
+    width: max-content;
+    max-width: 250px;
+    background-color: #7f1d1d;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 50;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.tooltip-container:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Ajustes de Impressão */
+@media print {
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+    body { background: white; color: black; }
+    #root { margin: 0; padding: 0; }
+    .bg-white { background: white !important; box-shadow: none !important; border: none !important; }
+}

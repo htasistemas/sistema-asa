@@ -1,0 +1,336 @@
+﻿Opção A – Hospedar só o site estático (site.html)
+
+  1. No Hostinger, crie um site/host e aponte o domínio.
+  2. Abra o Gerenciador de Arquivos e envie site.html + pasta img e qualquer assets necessários.
+  3. Renomeie site.html para index.html (o servidor abre o index por padrão).
+  4. Acesse seu domínio e valide.
+
+  Opção B – Hospedar o sistema (Frontend Angular + Backend Java + Banco)
+  Isso exige um plano com suporte a Node/Java e banco (VPS/Cloud). Em hospedagem compartilhada comum, o backend não roda.
+
+  Passo a passo recomendado (VPS):
+
+  1. Crie um VPS na Hostinger (Ubuntu).
+  2. Instale dependências:
+      - Java 17
+      - PostgreSQL
+      - Nginx
+  3. Banco:
+      - Crie DB asa e usuário asa
+      - Rode backend/sql/asa.sql
+  4. Backend (Spring Boot):
+      - Faça build do backend (mvn clean package)
+      - Rode o .jar como serviço (systemd)
+  5. Frontend (Angular):
+      - Faça build (ng build)
+      - Publique a pasta dist/ no Nginx
+  6. Nginx:
+      - Aponte / para o frontend (dist)
+      - Faça proxy /api para o backend (porta 8080)
+  7. SSL:
+      - Use Certbot (Let’s Encrypt)
+  8. Domínio:
+      - Aponte DNS para o IP do VPS
+
+  Se quiser, eu posso te entregar um passo a passo exato com comandos, baseado no seu servidor (ex.: Ubuntu 22.04). Basta me dizer:
+
+  - Qual plano você tem (compartilhado ou VPS)?
+  - Qual domínio vai usar?
+  - O VPS já foi criado?
+
+
+› vps, asammo.com.br, não
+
+
+• Vou fornecer passos para atualizar URLs no backend (application.yml) e frontend, configurar CORS, ajustar banco de dados, incluir configuração
+  Nginx com SSL para domínio de produção, tudo em português e de forma concisa.
+
+• Perfeito. Segue o passo a passo completo para VPS na Hostinger (Ubuntu), com domínio asammo.com.br. Vou deixar comandos prontos.
+
+  1) Criar VPS
+
+  - No painel Hostinger: criar VPS Ubuntu 22.04.
+  - Aponte o DNS do domínio asammo.com.br para o IP do VPS:
+      - A para @ → IP do VPS
+      - A para www → IP do VPS
+
+  2) Acessar o VPS
+
+  ssh root@IP_DO_VPS
+
+  3) Atualizar e instalar dependências
+
+  apt update && apt upgrade -y
+  apt install -y nginx postgresql postgresql-contrib git unzip
+  apt install -y openjdk-17-jdk
+
+  4) Banco PostgreSQL
+
+  sudo -u postgres psql
+
+  No prompt do psql:
+
+  CREATE ROLE asa WITH LOGIN PASSWORD 'asa';
+  CREATE DATABASE asa OWNER asa;
+  \c asa;
+
+  Rode o script do banco (envie backend/sql/asa.sql para o servidor antes):
+
+  psql -U postgres -d asa -f /caminho/para/asa.sql
+
+  5) Backend (Spring Boot)
+  No seu PC local, gere o JAR:
+
+  cd backend
+  mvn clean package
+
+  Envie o JAR para o VPS:
+
+  scp target/*.jar root@IP_DO_VPS:/opt/asa/backend/app.jar
+
+  Crie serviço systemd:
+
+  cat > /etc/systemd/system/asa-backend.service <<'EOF'
+  [Unit]
+  Description=ASA Backend
+  After=network.target
+
+  [Service]
+  User=root
+  WorkingDirectory=/opt/asa/backend
+  ExecStart=/usr/bin/java -jar /opt/asa/backend/app.jar
+  Restart=always
+  Environment=SPRING_PROFILES_ACTIVE=prod
+
+  [Install]
+  WantedBy=multi-user.target
+  EOF
+
+  systemctl daemon-reload
+  systemctl enable asa-backend
+  systemctl start asa-backend
+  systemctl status asa-backend
+
+  6) Frontend (Angular)
+  No seu PC local:
+
+  cd frontend
+  ng build
+
+  Envie a pasta dist/ para o VPS:
+
+  scp -r dist/* root@IP_DO_VPS:/var/www/asa-frontend/
+
+  7) Nginx (frontend + proxy API)
+  Crie o site:
+
+  cat > /etc/nginx/sites-available/asammo.com.br <<'EOF'
+  server {
+      listen 80;
+      server_name asammo.com.br www.asammo.com.br;
+
+      root /var/www/asa-frontend;
+      index index.html;
+
+      location / {
+          try_files $uri $uri/ /index.html;
+      }
+
+      location /api/ {
+          proxy_pass http://localhost:8080/;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+      }
+  }
+  EOF
+
+  ln -s /etc/nginx/sites-available/asammo.com.br /etc/nginx/sites-enabled/
+  nginx -t
+  systemctl restart nginx
+
+  8) SSL
+
+  apt install -y certbot python3-certbot-nginx
+  certbot --nginx -d asammo.com.br -d www.asammo.com.br
+
+  ———
+
+  Ajustes necessários no projeto antes do deploy
+
+  1. backend/src/main/resources/application.yml
+
+  - Ajustar CORS para domínio:
+
+  allowed-origins:
+    - https://asammo.com.br
+    - https://www.asammo.com.br
+
+  (ou usar http se ainda não tiver SSL)
+
+  2. frontend/src/app/services/auth.service.ts
+
+  - Trocar API para domínio:
+
+  private apiUrl = 'https://asammo.com.br/api/auth';
+
+  ———
+
+  Se quiser, posso fazer esses ajustes no código e te entregar tudo pronto para build/deploy.
+
+
+› sim por favor gere tudo em um unico arquivo para que eu possa baixar
+
+
+• Need to clarify the file name, location, OS, and domain since the user wants a single file without special characters; for now, I'll ask where to
+  save.
+
+• Claro. Qual nome e caminho devo usar para gerar esse arquivo único?
+  Ex.: C:\asa\deploy-hostinger.sh ou C:\asa\deploy-hostinger.txt
+
+
+› C:\asa\deploy-hostinger.txt
+
+
+GUIA DE DEPLOY - HOSTINGER VPS (Ubuntu 22.04)
+DOMINIO: asammo.com.br
+
+====================
+1) DNS (Hostinger)
+====================
+Crie os registros:
+- A  @    -> IP do VPS
+- A  www  -> IP do VPS
+
+====================
+2) Acesso ao VPS
+====================
+ssh root@IP_DO_VPS
+
+====================
+3) Atualizacao e Dependencias
+====================
+apt update && apt upgrade -y
+apt install -y nginx postgresql postgresql-contrib git unzip
+apt install -y openjdk-17-jdk
+
+====================
+4) Banco de Dados
+====================
+sudo -u postgres psql
+
+-- Dentro do psql:
+CREATE ROLE asa WITH LOGIN PASSWORD 'asa';
+CREATE DATABASE asa OWNER asa;
+\c asa;
+\q
+
+-- Envie o script SQL para o VPS (ajuste o caminho conforme necessario):
+# No seu PC:
+scp C:\asa\backend\sql\asa.sql root@IP_DO_VPS:/opt/asa/backend/asa.sql
+
+# No VPS:
+psql -U postgres -d asa -f /opt/asa/backend/asa.sql
+
+====================
+5) Backend (Spring Boot)
+====================
+# No seu PC:
+cd C:\asa\backend
+mvn clean package
+
+# Enviar o JAR:
+scp target\*.jar root@IP_DO_VPS:/opt/asa/backend/app.jar
+
+# No VPS:
+cat > /etc/systemd/system/asa-backend.service <<'EOF'
+[Unit]
+Description=ASA Backend
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/opt/asa/backend
+ExecStart=/usr/bin/java -jar /opt/asa/backend/app.jar
+Restart=always
+Environment=SPRING_PROFILES_ACTIVE=prod
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable asa-backend
+systemctl start asa-backend
+systemctl status asa-backend
+
+====================
+6) Frontend (Angular)
+====================
+# No seu PC:
+cd C:\asa\frontend
+ng build
+
+# Enviar o build:
+scp -r dist\* root@IP_DO_VPS:/var/www/asa-frontend/
+
+====================
+7) Nginx (Frontend + API)
+====================
+cat > /etc/nginx/sites-available/asammo.com.br <<'EOF'
+server {
+    listen 80;
+    server_name asammo.com.br www.asammo.com.br;
+
+    root /var/www/asa-frontend;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://localhost:8080/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+EOF
+
+ln -s /etc/nginx/sites-available/asammo.com.br /etc/nginx/sites-enabled/
+nginx -t
+systemctl restart nginx
+
+====================
+8) SSL (Certbot)
+====================
+apt install -y certbot python3-certbot-nginx
+certbot --nginx -d asammo.com.br -d www.asammo.com.br
+
+====================
+9) Ajustes no Codigo (ANTES DO BUILD)
+====================
+
+9.1) Backend - CORS
+Arquivo: C:\asa\backend\src\main\java\br\com\asa\security\SecurityConfig.java
+Ajustar allowed origins para o dominio:
+- https://asammo.com.br
+- https://www.asammo.com.br
+
+9.2) Frontend - URL da API
+Arquivo: C:\asa\frontend\src\app\services\auth.service.ts
+Alterar para:
+private apiUrl = 'https://asammo.com.br/api/auth';
+
+====================
+10) Checklist Rapido
+====================
+- DNS apontado e propagado
+- Backend rodando (systemctl status asa-backend)
+- Nginx ok (nginx -t)
+- SSL ativo (https://asammo.com.br)
+- Frontend carregando
+- Login funcionando

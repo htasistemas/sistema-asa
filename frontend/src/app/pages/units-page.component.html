@@ -1,0 +1,386 @@
+﻿<section class="paginaCadastroUnidade">
+  <div class="cabecalhoImpressao">
+    <div class="flex items-start">
+      <img class="logoImpressao" src="assets/logo.jpg" alt="ASA" />
+      <div>
+        <h1 class="tituloImpressao">Sistema ASA - Cadastro da Unidade</h1>
+        <div class="metaImpressao">Relatorio de cadastro</div>
+      </div>
+    </div>
+    <div class="metaImpressao">Emissao: {{ dataImpressao | date:'dd/MM/yyyy HH:mm' }}</div>
+  </div>
+  <div class="topoPagina">
+    <div class="linhaTopo">
+      <span class="identificadorModulo">Cadastro</span>
+      <p class="subtituloPagina">Gerencie as informacoes basicas das unidades ASA.</p>
+    </div>
+    <h2 class="tituloPagina">Cadastro da Unidade</h2>
+  </div>
+
+  <div class="barraAcoes barraAcoesDireita">
+    <button type="button" class="botaoAcao" (click)="iniciarNovaUnidade()">
+      <span class="iconeAcao" aria-hidden="true">
+        <svg class="iconeSvg" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14"></path>
+        </svg>
+      </span>
+      <span>Novo</span>
+    </button>
+    <button type="button" class="botaoAcao botaoPrimario" (click)="salvarUnidade()">
+      <span class="iconeAcao" aria-hidden="true">
+        <svg class="iconeSvg" viewBox="0 0 24 24">
+          <path d="M5 5h12l2 2v12H5z"></path>
+          <path d="M8 5v6h8V5"></path>
+          <path d="M8 19v-6h8v6"></path>
+        </svg>
+      </span>
+      <span>Salvar</span>
+    </button>
+    <button type="button" class="botaoAcao" (click)="alternarFiltroBusca()">
+      <span class="iconeAcao" aria-hidden="true">
+        <svg class="iconeSvg" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="6"></circle>
+          <path d="M20 20l-3-3"></path>
+        </svg>
+      </span>
+      <span>Buscar</span>
+    </button>
+    <button type="button" class="botaoAcao" (click)="editarUnidadeSelecionada()" [disabled]="!unidadeSelecionada">
+      <span class="iconeAcao" aria-hidden="true">
+        <svg class="iconeSvg" viewBox="0 0 24 24">
+          <path d="M4 20l4-1 9-9-3-3-9 9-1 4z"></path>
+          <path d="M13 6l3 3"></path>
+        </svg>
+      </span>
+      <span>Editar</span>
+    </button>
+    <button type="button" class="botaoAcao" (click)="imprimirCadastro()">
+      <span class="iconeAcao" aria-hidden="true">
+        <svg class="iconeSvg" viewBox="0 0 24 24">
+          <path d="M7 7h10v4H7z"></path>
+          <path d="M7 17h10v-4H7z"></path>
+          <path d="M5 9V5h14v4"></path>
+          <path d="M5 15v4h14v-4"></path>
+        </svg>
+      </span>
+      <span>Imprimir</span>
+    </button>
+    <button type="button" class="botaoAcao botaoPerigo" (click)="excluirUnidadeSelecionada()" [disabled]="!unidadeSelecionada">
+      <span class="iconeAcao" aria-hidden="true">
+        <svg class="iconeSvg" viewBox="0 0 24 24">
+          <path d="M4 7h16"></path>
+          <path d="M9 7V5h6v2"></path>
+          <path d="M7 7l1 12h8l1-12"></path>
+          <path d="M10 11v6M14 11v6"></path>
+        </svg>
+      </span>
+      <span>Excluir</span>
+    </button>
+  </div>
+
+  <div class="cartaoFormulario" *ngIf="mostrarFormulario">
+    <div class="cabecalhoFormulario">
+      <h3 class="tituloSecao">Cadastro da unidade</h3>
+      <button type="button" class="botaoFecharFormulario" (click)="fecharFormulario()">Fechar</button>
+    </div>
+    <form class="formularioUnidade">
+      <div class="grupoFormulario">
+        <div class="cabecalhoGrupo">Identificacao</div>
+        <div class="gradeGrupo">
+          <div class="linhaFormulario">
+            <label class="rotuloCampo" for="nomeUnidade">Nome da Unidade <span class="campoObrigatorio">*</span></label>
+            <input
+              id="nomeUnidade"
+              name="nomeUnidade"
+              type="text"
+              class="campoTexto"
+              placeholder="Digite o nome completo"
+              [(ngModel)]="novaUnidade.nomeUnidade"
+              (input)="aoDigitarNomeUnidade($event)"
+              required
+            />
+          </div>
+
+          <div class="linhaFormulario">
+            <label class="rotuloCampo" for="diretorUnidade">Diretor(a) <span class="campoObrigatorio">*</span></label>
+            <input
+              id="diretorUnidade"
+              name="diretorUnidade"
+              type="text"
+              class="campoTexto campoDiretor"
+              placeholder="Informe o responsavel"
+              [(ngModel)]="novaUnidade.diretor"
+              (input)="aoDigitarDiretor($event)"
+              required
+            />
+          </div>
+
+          <div class="linhaFormulario campoAnoEleicao">
+            <label class="rotuloCampo" for="anoEleicao">Ano Eleicao <span class="campoObrigatorio">*</span></label>
+            <input
+              id="anoEleicao"
+              name="anoEleicao"
+              type="number"
+              class="campoTexto"
+              [class.campoTextoInvalido]="anoEleicaoInvalido()"
+              placeholder="2026"
+              [(ngModel)]="novaUnidade.anoEleicao"
+              required
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="grupoFormulario">
+        <div class="cabecalhoGrupo">Contato e localizacao</div>
+        <div class="gradeGrupo">
+      <div class="linhaFormulario">
+        <label class="rotuloCampo" for="telefoneUnidade">Telefone</label>
+        <input
+          id="telefoneUnidade"
+          name="telefoneUnidade"
+          type="text"
+          class="campoTexto"
+          placeholder="(00) 00000-0000"
+          [(ngModel)]="novaUnidade.telefone"
+          (input)="aplicarMascaraTelefone()"
+          inputmode="tel"
+          maxlength="15"
+        />
+      </div>
+
+          <div class="linhaFormulario">
+            <label class="rotuloCampo" for="emailUnidade">E-mail da unidade</label>
+            <input
+              id="emailUnidade"
+              name="emailUnidade"
+              type="email"
+              class="campoTexto"
+              placeholder="email@exemplo.com"
+              [(ngModel)]="novaUnidade.emailUnidade"
+              (blur)="validarEmailUnidade()"
+              pattern="^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+              inputmode="email"
+            />
+          </div>
+
+          <div class="linhaFormulario">
+            <label class="rotuloCampo" for="enderecoCompleto">Endereco completo</label>
+            <textarea
+              id="enderecoCompleto"
+              name="enderecoCompleto"
+              class="campoTexto campoTextoEndereco"
+              placeholder="Rua, numero, complemento"
+              [(ngModel)]="novaUnidade.enderecoCompleto"
+              (input)="aoDigitarTextoTitulo($event, 'enderecoCompleto')"
+              rows="1"
+            ></textarea>
+          </div>
+
+          <div class="linhaFormulario">
+            <label class="rotuloCampo" for="bairroUnidade">Bairro</label>
+            <input
+              id="bairroUnidade"
+              name="bairroUnidade"
+              type="text"
+              class="campoTexto"
+              placeholder="Digite o bairro"
+              [(ngModel)]="novaUnidade.bairro"
+              (input)="aoDigitarTextoTitulo($event, 'bairro')"
+            />
+          </div>
+
+          <div class="linhaFormulario">
+            <label class="rotuloCampo" for="cidadeUnidade">Cidade <span class="campoObrigatorio">*</span></label>
+            <input
+              id="cidadeUnidade"
+              name="cidadeUnidade"
+              type="text"
+              class="campoTexto"
+              placeholder="Digite a cidade"
+              [(ngModel)]="novaUnidade.cidade"
+              (input)="aoDigitarTextoTitulo($event, 'cidade')"
+              required
+            />
+          </div>
+
+          <div class="linhaFormulario">
+            <label class="rotuloCampo" for="regiaoUnidade">Região</label>
+            <select
+              id="regiaoUnidade"
+              name="regiaoUnidade"
+              class="campoTexto"
+              [(ngModel)]="novaUnidade.regiao"
+            >
+              <option value="">Selecione</option>
+              <option *ngFor="let regiao of regioes" [value]="regiao">{{ regiao }}</option>
+            </select>
+          </div>
+
+          <div class="linhaFormulario">
+            <label class="rotuloCampo" for="distritoUnidade">Distrito</label>
+            <input
+              id="distritoUnidade"
+              name="distritoUnidade"
+              type="text"
+              class="campoTexto"
+              placeholder="Digite o distrito"
+              [(ngModel)]="novaUnidade.distrito"
+              (input)="aoDigitarTextoTitulo($event, 'distrito')"
+            />
+          </div>
+        </div>
+        <div class="linhaAcoesEndereco">
+          <button type="button" class="botaoAcao botaoPrimario" (click)="abrirLocalizacao()">
+            <span class="iconeAcao" aria-hidden="true">
+              <svg class="iconeSvg" viewBox="0 0 24 24">
+                <path d="M12 21s6-7 6-11a6 6 0 10-12 0c0 4 6 11 6 11z"></path>
+                <circle cx="12" cy="10" r="2"></circle>
+              </svg>
+            </span>
+            <span>Ver no Google Maps</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="cartaoTabela">
+    <h3 class="tituloSecao">Unidades ASA</h3>
+    <div *ngIf="mostrarFiltroBusca" class="alertaFiltro">
+      <span>Filtro de busca</span>
+    </div>
+    <div *ngIf="mostrarFiltroBusca" class="formularioUnidade">
+      <div class="gradeGrupo">
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="filtroBusca">Buscar por</label>
+          <select id="filtroBusca" name="filtroBusca" class="campoTexto" [(ngModel)]="filtroBusca">
+            <option *ngFor="let opcao of opcoesBusca" [value]="opcao.valor">{{ opcao.rotulo }}</option>
+          </select>
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="termoBusca">Termo</label>
+          <input
+            id="termoBusca"
+            name="termoBusca"
+            type="text"
+            class="campoTexto"
+            placeholder="Digite para buscar"
+            [(ngModel)]="termoBusca"
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="botaoAplicarBusca">Ações</label>
+          <div class="barraAcoes">
+            <button id="botaoAplicarBusca" type="button" class="botaoAcao botaoPrimario" (click)="aplicarFiltro(); aplicarBusca()">
+              Aplicar
+            </button>
+            <button type="button" class="botaoAcao" (click)="limparBusca()">
+              Limpar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="filtroAtivo" class="alertaFiltro">
+      Exibindo unidades com {{ filtroAtivo }}.
+    </div>
+    <div class="gradeCartoes" *ngIf="unidadesFiltradas.length > 0; else vazioUnidades">
+      <div
+        class="cartaoUnidade"
+        *ngFor="let unidade of unidadesFiltradas"
+        (click)="selecionarUnidade(unidade)"
+        [class.cartaoSelecionado]="unidadeSelecionada?.id === unidade.id"
+        [ngClass]="{
+          cartaoAtivo: obterStatusUnidade(unidade) === 'ATIVO',
+          cartaoDesatualizado: obterStatusUnidade(unidade) === 'DESATUALIZADO'
+        }"
+      >
+        <div class="cabecalhoCartao">
+          <span class="tituloCartao">{{ unidade.nomeUnidade }}</span>
+          <span class="statusUnidade" [ngClass]="{
+            statusAtivo: obterStatusUnidade(unidade) === 'ATIVO',
+            statusIncompleto: obterStatusUnidade(unidade) === 'INCOMPLETO',
+            statusBloqueado: obterStatusUnidade(unidade) === 'BLOQUEADO',
+            statusDesatualizado: obterStatusUnidade(unidade) === 'DESATUALIZADO'
+          }">
+            {{ obterStatusUnidade(unidade) }}
+          </span>
+        </div>
+        <div class="linhaCartao linhaPrincipal">
+          <span><strong>Cidade:</strong> {{ unidade.cidade || '-' }}</span>
+          <span class="separador">•</span>
+          <span><strong>Bairro:</strong> {{ unidade.bairro || '-' }}</span>
+          <span class="separador">•</span>
+          <span><strong>Região:</strong> {{ unidade.regiao || '-' }}</span>
+          <span class="separador">•</span>
+          <span><strong>Distrito:</strong> {{ unidade.distrito || '-' }}</span>
+        </div>
+        <div class="linhaCartao linhaSecundaria">
+          <span><strong>Diretor(a):</strong> {{ unidade.diretor || '-' }}</span>
+          <span class="separador">•</span>
+          <span><strong>Telefone:</strong> {{ unidade.telefone || '-' }}</span>
+          <span class="separador">•</span>
+          <span><strong>Endereço:</strong> {{ unidade.enderecoCompleto || '-' }}</span>
+          <span class="separador">•</span>
+          <span>
+            <strong>Ano Eleição:</strong>
+            <span
+              class="anoEleicao"
+              [class.anoEleicaoVerde]="unidade.anoEleicao === 2026"
+              [class.anoEleicaoVermelho]="unidade.anoEleicao === 2025"
+            >
+              {{ unidade.anoEleicao || '-' }}
+            </span>
+          </span>
+        </div>
+        <div class="acoesCartao">
+          <button
+            *ngIf="obterStatusUnidade(unidade) === 'INCOMPLETO' || obterStatusUnidade(unidade) === 'DESATUALIZADO'"
+            type="button"
+            class="botaoAcao"
+            (click)="abrirPendencias(unidade); $event.stopPropagation()"
+          >
+            Pendencias
+          </button>
+          <button type="button" class="botaoAcao botaoPrimario" (click)="editarUnidadeDireto(unidade); $event.stopPropagation()">Alterar dados</button>
+          <button type="button" class="botaoAcao botaoPerigo" (click)="confirmarExclusao(unidade); $event.stopPropagation()">Excluir</button>
+        </div>
+
+      </div>
+    </div>
+    <ng-template #vazioUnidades>
+      <div class="linhaVazia">Nenhuma unidade cadastrada.</div>
+    </ng-template>
+  </div>
+
+  <div *ngIf="exibirErro" class="popupErro" role="alert">
+    <div class="conteudoErro">
+      <p class="mensagemErro">{{ mensagemErro }}</p>
+      <button type="button" class="botaoAcao botaoPrimario" (click)="fecharErro()">Fechar</button>
+    </div>
+  </div>
+  <app-dialog
+    *ngIf="dialogoExclusaoAberto"
+    titulo="Exclusão de unidade"
+    mensagem="A exclusão é irreversível, tem certeza que deseja excluir essa unidade?"
+    confirmarTexto="Excluir"
+    cancelarTexto="Cancelar"
+    (confirmar)="confirmarExclusaoDialogo()"
+    (cancelar)="cancelarExclusao()"
+  ></app-dialog>
+  <app-dialog
+    *ngIf="dialogoPendenciasAberto"
+    titulo="Pendencias da unidade"
+    [mensagem]="mensagemPendencias"
+    confirmarTexto="Fechar"
+    cancelarTexto="Cancelar"
+    (confirmar)="fecharPendencias()"
+    (cancelar)="fecharPendencias()"
+  ></app-dialog>
+  <div class="rodapeImpressao">
+    Responsavel: ____________________________ | Sistema de Gestao ASA
+  </div>
+</section>
+
+

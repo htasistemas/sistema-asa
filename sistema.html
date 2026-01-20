@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestão ASA</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            gray: { 750: '#2d3748', 850: '#1a202c', 950: '#0d1117' },
+                            primary: { 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+    <!-- SheetJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Roboto', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+        .dark ::-webkit-scrollbar-thumb { background: #4a5568; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #718096; }
+        
+        /* Map Styles */
+        .map-container-style { height: calc(100vh - 100px); width: 100%; border-radius: 0.75rem; z-index: 0; }
+        .modal-map-container { height: 200px; width: 100%; border-radius: 0.5rem; margin-top: 10px; z-index: 1; }
+        
+        /* Dropdown Menu */
+        .group:hover .group-hover\:block { display: block; animation: fadeIn 0.2s ease-out; }
+        
+        /* Tooltip */
+        .tooltip-container { position: relative; }
+        .tooltip-text {
+            visibility: hidden; width: max-content; max-width: 250px; background-color: #7f1d1d; color: #fff;
+            text-align: center; border-radius: 6px; padding: 8px; position: absolute;
+            z-index: 50; bottom: 125%; left: 50%; transform: translateX(-50%);
+            opacity: 0; transition: opacity 0.3s; font-size: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
+
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white; color: black; }
+            #root { margin: 0; padding: 0; }
+            .dark { color-scheme: light; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-950 dark:text-gray-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- Error Boundary ---
+        class ErrorBoundary extends React.Component {
+            constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+            static getDerivedStateFromError(error) { return { hasError: true, error }; }
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="min-h-screen flex items-center justify-center bg-red-50 text-red-800 p-8">
+                            <div className="max-w-lg bg-white p-6 rounded shadow border border-red-200">
+                                <h1 className="text-2xl font-bold mb-4">Ops! Ocorreu um erro.</h1>
+                                <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto mb-4">{this.state.error && this.state.error.toString()}</pre>
+                                <button onClick={() => window.location.reload()} className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Recarregar Página</button>
+                            </div>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
+
+        // --- Helpers Globais ---
+        const loadState = (key, fallback) => {
+            try {
+                const item = localStorage.getItem(key);
+                return item ? JSON.parse(item) : fallback;
+            } catch (e) { return fallback; }
+        };
+
+        const formatTitleCase = (str) => {
+            if (!str) return '';
+            return str.toLowerCase().split(' ').map(word => {
+                if (word.toUpperCase() === 'ASA') return 'ASA';
+                if (/^(da|de|do|das|dos|e)$/.test(word)) return word;
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            }).join(' ');
+        };
+
+        const preLoadedUnits = [
+            { id: 1, name: 'ASA Alto Umuarama', city: 'Uberlândia', director: 'Carmem Lamounier', phone: '(34) 99166-3300', neighborhood: 'Alto Umuarama', address: 'Rua Paulo Frontin', number: '1321', zipcode: '', email: '', state: 'MG', region: 'Leste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9100, lng: -48.2350 },
+            { id: 2, name: 'ASA Bela Vista', city: 'Canápolis', director: 'Maria Aparecida da Silva Tavares - Nina', phone: '(34) 99722-4833', neighborhood: 'Bela Vista', address: 'Rua 8', number: '1098', zipcode: '38.380-000', email: 'nina.sita@hotmail.com', state: 'MG', region: '', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.7233, lng: -49.2047 },
+            { id: 3, name: 'ASA Boa Vista', city: 'Araxá', director: 'Monica Maria Silva Santiago', phone: '(34) 99932-3490', neighborhood: 'Boa Vista', address: 'Rua Augusto Alves', number: '306', zipcode: '', email: '', state: 'MG', region: '', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -19.5933, lng: -46.9406 },
+            { id: 4, name: 'ASA Buritis', city: 'Uberlândia', director: 'Maria Amelia Pereira da Silva', phone: '(34) 99287-1002', neighborhood: 'Buritis', address: 'Rua Petronilha Rodrigues de Queiroz', number: '110', zipcode: '', email: '', state: 'MG', region: 'Sul', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9500, lng: -48.2800 },
+            { id: 5, name: 'ASA Canaã', city: 'Uberlândia', director: 'Maria Aparecida Odilon Bezerra', phone: '(34) 99922-2246', neighborhood: 'Canaã', address: 'Av. Babel', number: '653', zipcode: '', email: '', state: 'MG', region: 'Oeste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9300, lng: -48.3000 },
+            { id: 24, name: 'ASA Morada Nova', city: 'Uberlândia', director: 'Lucielena Balbina de Jesus', phone: '(34) 99699-9707', neighborhood: 'Morada Nova', address: 'Rua Benedita da Silva Santos', number: '153', zipcode: '', email: '', state: 'MG', region: 'Oeste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.8800, lng: -48.3500 },
+            { id: 25, name: 'ASA Morumbi', city: 'Uberlândia', director: 'Lucas Cipriano Mendes', phone: '(34) 99835-9449', neighborhood: 'Morumbi', address: 'Rua Taperas', number: '339', zipcode: '', email: '', state: 'MG', region: 'Leste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9200, lng: -48.2200 },
+            { id: 38, name: 'ASA Nova Serrana', city: 'Nova Serrana', director: 'Ana Lucia Barbosa de Matos', phone: '(37) 99142-2552', neighborhood: 'Romeu Duarte', address: 'Rua Divino Ferreira', number: '736', zipcode: '35.519-000', email: '', state: 'MG', region: '', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -19.8700, lng: -44.9800 },
+            { id: 26, name: 'ASA Panorama', city: 'Uberlândia', director: '', phone: '', neighborhood: 'Panorama', address: 'Rua das Espatódias', number: '858', zipcode: '', email: '', state: 'MG', region: 'Oeste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9400, lng: -48.3100 },
+            { id: 28, name: 'ASA Pequis', city: 'Uberlândia', director: 'Yedros Modesto Rezende', phone: '(34) 99892-2018', neighborhood: 'Pequis', address: 'Av. Wilson Rodrigues da Silva', number: '630 LJ 6', zipcode: '', email: 'sosmanutencoesuberlandia@gmail.com', state: 'MG', region: 'Oeste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.8900, lng: -48.3600 },
+            { id: 29, name: 'ASA Roosevelt', city: 'Uberlândia', director: 'Maria Regina Cardoso', phone: '(34) 99239-9352', neighborhood: 'Roosevelt', address: 'Rua Virgilio Mineiro', number: '25', zipcode: '', email: '', state: 'MG', region: 'Norte', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9000, lng: -48.2900 },
+            { id: 30, name: 'ASA Santa Mônica', city: 'Uberlândia', director: 'Ana', phone: '(34) 9999-9999', neighborhood: 'Santa Mônica', address: 'Av. Segismundo Pereira', number: '1200', zipcode: '', email: '', state: 'MG', region: 'Leste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9150, lng: -48.2500 }
+        ];
+
+        // --- Icons (Lucide) ---
+        const Icons = {
+            LayoutGrid: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>,
+            FilePlus: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" x2="12" y1="18" y2="12"/><line x1="9" x2="15" y1="15" y2="15"/></svg>,
+            Users: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+            Package: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22v-9"/></svg>,
+            TrendingUp: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>,
+            Filter: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>,
+            X: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>,
+            RefreshCw: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>,
+            Building2: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>,
+            Pencil: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>,
+            Trash2: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>,
+            Plus: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
+            Info: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>,
+            MapPin: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>,
+            Map: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" x2="9" y1="3" y2="18"/><line x1="15" x2="15" y1="6" y2="21"/></svg>,
+            Search: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>,
+            Database: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
+            Download: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>,
+            Upload: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
+            Printer: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>,
+            FileText: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+            Sun: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>,
+            Moon: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 0 1 1-9-9Z"/></svg>,
+            Kanban: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 5v11"/><path d="M12 5v6"/><path d="M18 5v14"/><rect width="20" height="18" x="2" y="3" rx="2"/></svg>,
+            Clock: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+            Refresh: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>,
+            Cloud: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.5 19c0-1.7-1.3-3-3-3h-1.1c-.2-3.2-2.7-5.5-5.9-5.5C4.6 10.5 2.5 12.6 2.5 15.1c0 2 1.5 3.6 3.4 3.9h8.5c1.7 0 3.1-1.4 3.1-3.1z"/><path d="M12 10V10"/></svg>,
+            Link: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+            ExternalLink: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>,
+            Folder: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 2H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>,
+            Table: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></svg>,
+            Briefcase: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+            Lock: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>,
+            LogOut: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>,
+            AlertTriangle: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>,
+            CheckCircle2: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>,
+            Home: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+            Instagram: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>,
+            Shirt: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>,
+            Flag: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>,
+            Tent: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 20 10 4 1 20"/><path d="m12.8 14.8-2.9-6.8"/><path d="M22 21H2l2.4-16h15.2z"/></svg>,
+            Star: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+            Heart: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>,
+            Activity: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+            Award: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>,
+            Book: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+            Banknote: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>,
+            Phone: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+            Trophy: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>,
+            ChevronDown: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>,
+        };
+
+        // --- Gráficos SVG ---
+        const DonutChart = ({ data, colors }) => {
+            const total = data.reduce((acc, item) => acc + item.value, 0);
+            if(total === 0) return <div className="text-gray-400 dark:text-gray-500 text-sm italic py-8 w-full text-center">Sem dados para exibir</div>;
+            let cumulativePercent = 0;
+            const getCoordinatesForPercent = (percent) => {
+                const x = Math.cos(2 * Math.PI * percent);
+                const y = Math.sin(2 * Math.PI * percent);
+                return [x, y];
+            }
+            return (
+                <div className="flex items-center gap-8">
+                    <div className="relative w-40 h-40">
+                        <svg viewBox="-1 -1 2 2" className="transform -rotate-90 w-full h-full">
+                            {data.map((slice, i) => {
+                                const startPercent = cumulativePercent;
+                                const slicePercent = slice.value / total;
+                                cumulativePercent += slicePercent;
+                                const endPercent = cumulativePercent;
+                                const [startX, startY] = getCoordinatesForPercent(startPercent);
+                                const [endX, endY] = getCoordinatesForPercent(endPercent);
+                                const largeArcFlag = slicePercent > 0.5 ? 1 : 0;
+                                const pathData = `M 0 0 L ${startX} ${startY} A 1 1 0 ${largeArcFlag} 1 ${endX} ${endY} L 0 0`;
+                                return <path key={i} d={pathData} fill={colors[i % colors.length]} stroke="transparent" strokeWidth="0.02" />;
+                            })}
+                            <circle cx="0" cy="0" r="0.6" className="fill-white dark:fill-gray-800" />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center flex-col">
+                            <span className="text-2xl font-bold text-gray-700 dark:text-gray-200">{total}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase">Ações</span>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        {data.map((slice, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: colors[i % colors.length] }}></div>
+                                <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">{slice.label}</span>
+                                <span className="text-sm text-gray-400 dark:text-gray-500">({((slice.value/total)*100).toFixed(0)}%)</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const BarChart = ({ data, color }) => {
+            if (!data || data.length === 0) return <div className="text-gray-400 dark:text-gray-500 text-sm italic py-8 w-full text-center">Sem dados de evolução</div>;
+            const maxVal = Math.max(...data.map(d => d.value)) || 1;
+            return (
+                <div className="flex items-end h-40 gap-4 pt-6">
+                    {data.map((d, i) => (
+                        <div key={i} className="flex-1 flex flex-col items-center group">
+                            <div className="relative w-full flex items-end justify-center h-full bg-gray-50 dark:bg-gray-700 rounded-t-lg overflow-hidden">
+                                <div style={{ height: `${(d.value / maxVal) * 100}%` }} className={`w-full max-w-[40px] bg-gradient-to-t from-green-600 to-green-400 rounded-t transition-all duration-500 group-hover:opacity-80 relative`}>
+                                    <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-gray-600 dark:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {d.value}
+                                    </div>
+                                </div>
+                            </div>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 mt-2 font-medium truncate w-full text-center">{d.label}</span>
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
+        // --- Mapa (Leaflet) ---
+        // Modificado para aceitar containerId dinâmico e evitar conflitos de ID
+        const LeafletMap = ({ units, containerId = "map-container" }) => {
+            const mapRef = useRef(null);
+            const mapInstanceRef = useRef(null);
+            const markersRef = useRef([]);
+
+            useEffect(() => {
+                if (mapInstanceRef.current) {
+                    mapInstanceRef.current.remove();
+                    mapInstanceRef.current = null;
+                }
+
+                if (mapRef.current && !mapInstanceRef.current) {
+                    const map = L.map(mapRef.current).setView([-18.9186, -48.2772], 13);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors'
+                    }).addTo(map);
+                    mapInstanceRef.current = map;
+                }
+
+                if (mapInstanceRef.current && units.length > 0) {
+                    markersRef.current.forEach(marker => marker.remove());
+                    markersRef.current = [];
+                    
+                    const group = L.featureGroup();
+                    
+                    units.forEach(unit => {
+                        if (unit.lat && unit.lng) {
+                            const marker = L.marker([unit.lat, unit.lng])
+                                .addTo(mapInstanceRef.current)
+                                .bindPopup(`
+                                    <div class="font-sans">
+                                        <strong class="text-sm font-bold block mb-1">${unit.name}</strong>
+                                        <span class="text-xs text-gray-600 block">${unit.address}, ${unit.number || ''}</span>
+                                        <span class="text-xs text-blue-600 block mt-1">Diretor: ${unit.director}</span>
+                                    </div>
+                                `);
+                            markersRef.current.push(marker);
+                            group.addLayer(marker);
+                        }
+                    });
+
+                    if (group.getLayers().length > 0) {
+                        mapInstanceRef.current.fitBounds(group.getBounds().pad(0.1));
+                    }
+                }
+            }, [units, containerId]); 
+
+            return <div ref={mapRef} id={containerId} className={containerId === "map-container" ? "map-container-style" : "modal-map-container"}></div>;
+        };
+
+        // --- Tela de Login ---
+        const LoginScreen = ({ onLogin }) => {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (username === 'adm' && password === 'adm') {
+                    onLogin();
+                } else {
+                    setError('Credenciais inválidas');
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 bg-gradient-to-br from-green-500/20 to-blue-500/20">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-4xl flex overflow-hidden border border-gray-200 dark:border-gray-700 animate-fadeIn">
+                        <div className="hidden md:block w-1/2 bg-cover bg-center relative" style={{backgroundImage: "url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80')"}}>
+                            <div className="absolute inset-0 bg-green-900/40 flex flex-col justify-end p-8 text-white">
+                                <h3 className="text-2xl font-bold mb-2">Unidos para Servir</h3>
+                                <p className="text-sm opacity-90">Gestão solidária e eficiente.</p>
+                            </div>
+                        </div>
+                        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+                            <div className="flex justify-center mb-6"><img src="C:\asa\img\logo.jpg" alt="Logo ASA" className="h-24 w-auto object-contain" onError={(e) => {e.target.onerror = null; e.target.src="https://via.placeholder.com/150x80?text=ASA+Logo"}} /></div>
+                            <div className="text-center mb-8">
+                                <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Acesso Restrito</h2>
+                                <p className="text-gray-500 dark:text-gray-400 text-sm">Faça login para continuar</p>
+                            </div>
+                            <form onSubmit={handleSubmit} className="space-y-5">
+                                <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Usuário</label><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-white dark:bg-gray-700 dark:text-white transition-all" placeholder="Digite seu usuário" /></div>
+                                <div><label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Senha</label><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none bg-white dark:bg-gray-700 dark:text-white transition-all" placeholder="Digite sua senha" /></div>
+                                {error && <p className="text-red-500 text-sm text-center bg-red-50 dark:bg-red-900/20 p-2 rounded">{error}</p>}
+                                <button type="submit" className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition-all transform active:scale-95">Entrar no Sistema</button>
+                            </form>
+                            <p className="mt-6 text-center text-xs text-gray-400">© 2024 Sistema de Gestão ASA</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const StructureView = ({ units, selectedStructUnitId, setSelectedStructUnitId, newUnit, setNewUnit, handleSaveStruct }) => {
+            const selectedUnit = units.find(u => u.id === parseInt(selectedStructUnitId));
+            useEffect(() => { if (selectedUnit) setNewUnit(selectedUnit); }, [selectedStructUnitId]);
+
+            const toggleCheck = (field) => {
+                setNewUnit(prev => ({ ...prev, [field]: !prev[field] }));
+            };
+
+            return (
+                <div className="animate-fadeIn space-y-6 no-print">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                        <h2 className="text-xl font-bold dark:text-white mb-6 flex items-center gap-2"><Icons.Home className="text-green-600" size={24}/> Checklist de Estrutura e Identidade</h2>
+                        <div className="mb-6"><label className="block text-sm font-medium dark:text-gray-300 mb-2">Selecione a Unidade</label><select className="w-full md:w-1/2 border dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-white p-2.5 rounded-lg outline-none" value={selectedStructUnitId} onChange={(e) => setSelectedStructUnitId(e.target.value)}><option value="">Selecione...</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select></div>
+                        {selectedStructUnitId && (
+                            <div className="space-y-6 border-t dark:border-gray-700 pt-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <h3 className="font-semibold dark:text-gray-200">Identidade e Contato</h3>
+                                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" className="w-5 h-5 text-green-600 rounded" checked={!!newUnit.hasPhone} onChange={() => toggleCheck('hasPhone')} /><span className="text-sm dark:text-white flex items-center gap-2"><Icons.Phone size={16}/> Telefone/WhatsApp Próprio?</span></div>
+                                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" className="w-5 h-5 text-green-600 rounded" checked={!!newUnit.hasInstagram} onChange={() => toggleCheck('hasInstagram')} /><span className="text-sm dark:text-white flex items-center gap-2"><Icons.Instagram size={16}/> Instagram Próprio?</span></div>
+                                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" className="w-5 h-5 text-green-600 rounded" checked={!!newUnit.hasOwnEmail} onChange={() => toggleCheck('hasOwnEmail')} /><span className="text-sm dark:text-white">E-mail Próprio?</span></div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <h3 className="font-semibold dark:text-gray-200">Estrutura Física e Visual</h3>
+                                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" className="w-5 h-5 text-green-600 rounded" checked={!!newUnit.hasPrivateRoom} onChange={() => toggleCheck('hasPrivateRoom')} /><span className="text-sm dark:text-white">Sala Privativa?</span></div>
+                                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" className="w-5 h-5 text-green-600 rounded" checked={!!newUnit.hasBanners} onChange={() => toggleCheck('hasBanners')} /><span className="text-sm dark:text-white flex items-center gap-2"><Icons.Flag size={16}/> Banners?</span></div>
+                                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" className="w-5 h-5 text-green-600 rounded" checked={!!newUnit.hasTents} onChange={() => toggleCheck('hasTents')} /><span className="text-sm dark:text-white flex items-center gap-2"><Icons.Tent size={16}/> Tendas?</span></div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <h3 className="font-semibold dark:text-gray-200">Padronização</h3>
+                                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" className="w-5 h-5 text-green-600 rounded" checked={!!newUnit.hasDirectorUniform} onChange={() => toggleCheck('hasDirectorUniform')} /><span className="text-sm dark:text-white flex items-center gap-2"><Icons.Shirt size={16}/> Uniforme de Gala (Diretor)?</span></div>
+                                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" className="w-5 h-5 text-green-600 rounded" checked={!!newUnit.hasAssociateUniform} onChange={() => toggleCheck('hasAssociateUniform')} /><span className="text-sm dark:text-white flex items-center gap-2"><Icons.Shirt size={16}/> Camiseta ASA (Voluntários)?</span></div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <h3 className="font-semibold dark:text-gray-200">Gestão e Organização</h3>
+                                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" className="w-5 h-5 text-green-600 rounded" checked={!!newUnit.makesMonthlyReport} onChange={() => toggleCheck('makesMonthlyReport')} /><span className="text-sm dark:text-white flex items-center gap-2"><Icons.FilePlus size={16}/> Relatório Mensal?</span></div>
+                                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" className="w-5 h-5 text-green-600 rounded" checked={!!newUnit.hasMinuteBook} onChange={() => toggleCheck('hasMinuteBook')} /><span className="text-sm dark:text-white flex items-center gap-2"><Icons.Book size={16}/> Livro de Atas?</span></div>
+                                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" className="w-5 h-5 text-green-600 rounded" checked={!!newUnit.hasRegularMeetings} onChange={() => toggleCheck('hasRegularMeetings')} /><span className="text-sm dark:text-white flex items-center gap-2"><Icons.Users size={16}/> Reuniões Regulares?</span></div>
+                                        <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"><input type="checkbox" className="w-5 h-5 text-green-600 rounded" checked={!!newUnit.hasBankAccount} onChange={() => toggleCheck('hasBankAccount')} /><span className="text-sm dark:text-white flex items-center gap-2"><Icons.Banknote size={16}/> Conta Bancária?</span></div>
+                                    </div>
+                                </div>
+                                <div className="flex justify-end pt-4"><button onClick={handleSaveStruct} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold shadow-md transition-all">Salvar Checklist</button></div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const UnitLifeView = ({ units, lifeData, setLifeData }) => {
+            const [selectedUnitId, setSelectedUnitId] = useState('');
+            const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+            const months = Array.from({length: 12}, (_, i) => new Date(0, i).toLocaleString('pt-BR', {month: 'short'}).toUpperCase());
+            const selectedUnit = units.find(u => u.id === parseInt(selectedUnitId));
+            const data = lifeData[selectedUnitId] || { goals: {}, pendencies: [] };
+
+            const toggleGoal = (monthIdx, goalKey) => {
+                const key = `${selectedYear}-${monthIdx}`;
+                const newGoals = { ...data.goals };
+                if (!newGoals[key]) newGoals[key] = {};
+                newGoals[key][goalKey] = !newGoals[key][goalKey];
+                setLifeData(prev => ({ ...prev, [selectedUnitId]: { ...data, goals: newGoals } }));
+            };
+
+            const addPendency = (e) => {
+                e.preventDefault();
+                const newPendency = {
+                    id: Date.now(),
+                    type: e.target.type.value,
+                    desc: e.target.desc.value,
+                    deadline: e.target.deadline.value,
+                    status: 'Aberta'
+                };
+                setLifeData(prev => ({ ...prev, [selectedUnitId]: { ...data, pendencies: [...data.pendencies, newPendency] } }));
+                e.target.reset();
+            };
+
+            const togglePendencyStatus = (pId) => {
+                const newPendencies = data.pendencies.map(p => p.id === pId ? { ...p, status: p.status === 'Aberta' ? 'Resolvida' : 'Aberta' } : p);
+                setLifeData(prev => ({ ...prev, [selectedUnitId]: { ...data, pendencies: newPendencies } }));
+            };
+
+            const isOutdated = (d) => { if(!d) return true; const dt = new Date(d+'T12:00:00'); const six = new Date(); six.setMonth(six.getMonth()-6); return dt < six; };
+
+            const seals = months.map((m, i) => {
+                const key = `${selectedYear}-${i}`;
+                const monthGoals = data.goals[key] || {};
+                const goalsMet = (monthGoals.report && monthGoals.update && monthGoals.action && monthGoals.finance);
+                const hasOpenPendencies = data.pendencies.some(p => p.status === 'Aberta');
+                return { month: m, achieved: goalsMet && !hasOpenPendencies };
+            });
+
+            const totalSeals = seals.filter(s => s.achieved).length;
+            const progress = (totalSeals / 12) * 100;
+
+            if (!selectedUnitId) return (<div className="p-8 text-center bg-white dark:bg-gray-800 rounded-xl shadow-sm"><h2 className="text-xl font-bold dark:text-white mb-4">Acompanhamento de Vida</h2><select className="w-full md:w-1/2 border p-2.5 rounded-lg mx-auto block dark:bg-gray-700 dark:text-white" onChange={(e) => setSelectedUnitId(e.target.value)} value={selectedUnitId}><option value="">Selecione Unidade...</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select></div>);
+
+            return (
+                <div className="animate-fadeIn space-y-6 no-print">
+                    <div className="flex justify-between items-start bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border-l-4 border-green-500">
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{selectedUnit.name}</h2>
+                            <p className="text-gray-500 dark:text-gray-400">{selectedUnit.city} - {selectedUnit.director}</p>
+                        </div>
+                        <div className="text-right">
+                             <button onClick={() => setSelectedUnitId('')} className="text-sm text-blue-600 hover:underline mb-2">Trocar Unidade</button>
+                             <div className="flex items-center gap-2">
+                                <span className={`px-2 py-1 rounded text-xs font-bold ${isOutdated(selectedUnit.lastUpdated) ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                    {isOutdated(selectedUnit.lastUpdated) ? 'Com Pendências' : 'Ativa'}
+                                </span>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        {[
+                            { title: 'Documentação', icon: Icons.FileText, status: 'ok' },
+                            { title: 'Relatórios', icon: Icons.FilePlus, status: 'warn' },
+                            { title: 'Equipe', icon: Icons.Users, status: 'ok' },
+                            { title: 'Estrutura', icon: Icons.Home, status: selectedUnit.hasPrivateRoom ? 'ok' : 'crit' },
+                            { title: 'Prest. Contas', icon: Icons.Briefcase, status: 'ok' }
+                        ].map((card, i) => (
+                            <div key={i} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col items-center justify-center text-center">
+                                <div className={`p-3 rounded-full mb-2 ${card.status === 'ok' ? 'bg-green-100 text-green-600' : card.status === 'warn' ? 'bg-yellow-100 text-yellow-600' : 'bg-red-100 text-red-600'}`}>
+                                    <card.icon size={24}/>
+                                </div>
+                                <span className="font-medium text-sm dark:text-gray-200">{card.title}</span>
+                                <span className={`text-xs mt-1 font-bold ${card.status === 'ok' ? 'text-green-500' : card.status === 'warn' ? 'text-yellow-500' : 'text-red-500'}`}>
+                                    {card.status === 'ok' ? 'Em dia' : card.status === 'warn' ? 'Pendente' : 'Crítico'}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                         <div className="lg:col-span-2 space-y-6">
+                            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                                <div className="flex justify-between items-center mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-bold dark:text-white flex items-center gap-2"><Icons.Award className="text-yellow-500"/> Selo de Excelência</h3>
+                                        <select 
+                                            value={selectedYear} 
+                                            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                                            className="bg-gray-100 dark:bg-gray-700 border-none rounded px-2 py-1 text-sm font-bold text-gray-700 dark:text-gray-200 focus:ring-0 cursor-pointer"
+                                        >
+                                            <option value="2025">2025</option>
+                                            <option value="2026">2026</option>
+                                        </select>
+                                    </div>
+                                    <span className="text-sm font-bold text-green-600">{progress.toFixed(0)}% Concluído</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-6">
+                                    <div className="bg-green-600 h-2.5 rounded-full transition-all duration-500" style={{width: `${progress}%`}}></div>
+                                </div>
+                                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-3">
+                                    {seals.map((s, i) => (
+                                        <div key={i} className={`aspect-square rounded-lg flex flex-col items-center justify-center text-center border transition-all ${s.achieved ? 'bg-yellow-50 border-yellow-400 shadow-md' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
+                                            <span className="text-[10px] font-bold mb-1 block uppercase">{s.month}</span>
+                                            {s.achieved ? (
+                                                <div className="flex flex-col items-center animate-fadeIn">
+                                                     <Icons.Trophy size={20} className="text-yellow-600 mb-1" />
+                                                     <span className="text-[8px] font-bold text-yellow-700 leading-tight">Selo de<br/>Excelência</span>
+                                                </div>
+                                            ) : (
+                                                <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600"></div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                {totalSeals === 12 && <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-center text-yellow-800 font-bold animate-pulse">🎉 Unidade Excelência ASA - Ano Completo! 🎉</div>}
+                            </div>
+
+                            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                                <h3 className="font-bold dark:text-white mb-4 flex items-center gap-2"><Icons.CheckCircle2 className="text-green-600"/> Metas Mensais ({new Date().toLocaleString('pt-BR', { month: 'long' })})</h3>
+                                <div className="space-y-3">
+                                    {['report:Relatório', 'update:Cadastro', 'action:Ação Social', 'finance:Contas'].map(item => {
+                                        const [key, label] = item.split(':');
+                                        const monthKey = `${selectedYear}-${new Date().getMonth()}`;
+                                        const checked = data.goals[monthKey]?.[key] || false;
+                                        return (
+                                            <label key={key} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                                                <input type="checkbox" className="w-5 h-5 text-green-600" checked={checked} onChange={() => toggleGoal(new Date().getMonth(), key)}/>
+                                                <span className={`flex-1 text-sm ${checked ? 'text-green-700 line-through' : 'dark:text-gray-200'}`}>{label}</span>
+                                                {checked && <Icons.CheckCircle2 size={16} className="text-green-600"/>}
+                                            </label>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col">
+                            <h3 className="font-bold dark:text-white mb-4 flex items-center gap-2"><Icons.AlertTriangle className="text-red-500"/> Pendências e Providências</h3>
+                            
+                            <form onSubmit={addPendency} className="mb-4 space-y-2">
+                                <input name="type" placeholder="Tipo (Ex: Doc)" className="w-full text-xs border p-2 rounded dark:bg-gray-700 dark:text-white" required/>
+                                <input name="desc" placeholder="Descrição" className="w-full text-xs border p-2 rounded dark:bg-gray-700 dark:text-white" required/>
+                                <input name="deadline" type="date" className="w-full text-xs border p-2 rounded dark:bg-gray-700 dark:text-white" required/>
+                                <button className="w-full bg-red-100 text-red-700 text-xs font-bold py-2 rounded hover:bg-red-200">Adicionar Pendência</button>
+                            </form>
+
+                            <div className="flex-1 overflow-y-auto space-y-2 max-h-[300px]">
+                                {data.pendencies.length === 0 ? <p className="text-xs text-gray-400 text-center py-4">Nenhuma pendência.</p> : 
+                                data.pendencies.map(p => (
+                                    <div key={p.id} className={`p-3 rounded border text-xs ${p.status === 'Aberta' ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
+                                        <div className="flex justify-between font-bold mb-1">
+                                            <span className={p.status==='Aberta'?'text-red-700':'text-gray-600'}>{p.type}</span>
+                                            <span className="text-gray-500">{new Date(p.deadline).toLocaleDateString()}</span>
+                                        </div>
+                                        <p className="text-gray-700 mb-2">{p.desc}</p>
+                                        <button onClick={() => togglePendencyStatus(p.id)} className={`w-full py-1 rounded text-center ${p.status==='Aberta' ? 'bg-white border border-red-300 text-red-600' : 'bg-green-100 text-green-700'}`}>
+                                            {p.status}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Novo Componente: Gestão Interna (Patrimônio e Projetos) ---
+        const InternalManagementView = ({ units, managementData, setManagementData }) => {
+            const [selectedUnitId, setSelectedUnitId] = useState('');
+            const [activeTab, setActiveTab] = useState('assets'); 
+            const [newAsset, setNewAsset] = useState({ name: '', condition: 'Bom', value: '' });
+            const [newProject, setNewProject] = useState({ name: '', responsible: '', status: 'Ativo' });
+
+            const selectedUnit = units.find(u => u.id === parseInt(selectedUnitId));
+            const data = managementData[selectedUnitId] || { assets: [], projects: [] };
+
+            const handleAddAsset = (e) => {
+                e.preventDefault();
+                const asset = { id: Date.now(), ...newAsset };
+                const newData = { ...data, assets: [...data.assets, asset] };
+                setManagementData(prev => ({ ...prev, [selectedUnitId]: newData }));
+                setNewAsset({ name: '', condition: 'Bom', value: '' });
+            };
+
+            const handleDeleteAsset = (id) => {
+                const newData = { ...data, assets: data.assets.filter(a => a.id !== id) };
+                setManagementData(prev => ({ ...prev, [selectedUnitId]: newData }));
+            };
+
+            const handleAddProject = (e) => {
+                e.preventDefault();
+                const project = { id: Date.now(), ...newProject };
+                const newData = { ...data, projects: [...data.projects, project] };
+                setManagementData(prev => ({ ...prev, [selectedUnitId]: newData }));
+                setNewProject({ name: '', responsible: '', status: 'Ativo' });
+            };
+
+            const handleDeleteProject = (id) => {
+                const newData = { ...data, projects: data.projects.filter(p => p.id !== id) };
+                setManagementData(prev => ({ ...prev, [selectedUnitId]: newData }));
+            };
+
+            if (!selectedUnitId) return (
+                <div className="p-8 text-center bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                    <h2 className="text-xl font-bold dark:text-white mb-4">Gestão Interna da Unidade</h2>
+                    <select className="w-full md:w-1/2 border p-2.5 rounded-lg mx-auto block dark:bg-gray-700 dark:text-white" onChange={(e) => setSelectedUnitId(e.target.value)} value={selectedUnitId}>
+                        <option value="">Selecione Unidade...</option>
+                        {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                    </select>
+                </div>
+            );
+
+            return (
+                <div className="animate-fadeIn space-y-6 no-print">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border-l-4 border-blue-500 flex justify-between items-center">
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{selectedUnit.name}</h2>
+                            <p className="text-gray-500 dark:text-gray-400">Gestão de Patrimônio e Projetos Fixos</p>
+                        </div>
+                        <button onClick={() => setSelectedUnitId('')} className="text-sm text-blue-600 hover:underline">Trocar Unidade</button>
+                    </div>
+
+                    <div className="flex gap-4 border-b dark:border-gray-700">
+                        <button onClick={() => setActiveTab('assets')} className={`px-4 py-2 font-medium ${activeTab === 'assets' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-500'}`}>Inventário de Patrimônio</button>
+                        <button onClick={() => setActiveTab('projects')} className={`px-4 py-2 font-medium ${activeTab === 'projects' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-500'}`}>Projetos Fixos</button>
+                    </div>
+
+                    {activeTab === 'assets' && (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+                                <h3 className="font-bold dark:text-white mb-4">Adicionar Bem</h3>
+                                <form onSubmit={handleAddAsset} className="space-y-3">
+                                    <input required placeholder="Nome do Item (ex: Freezer)" className="w-full border p-2 rounded dark:bg-gray-700 dark:text-white" value={newAsset.name} onChange={e => setNewAsset({...newAsset, name: e.target.value})} />
+                                    <select className="w-full border p-2 rounded dark:bg-gray-700 dark:text-white" value={newAsset.condition} onChange={e => setNewAsset({...newAsset, condition: e.target.value})}>
+                                        <option>Novo</option>
+                                        <option>Bom</option>
+                                        <option>Regular</option>
+                                        <option>Precisa Reparo</option>
+                                    </select>
+                                    <input type="number" placeholder="Valor Estimado (R$)" className="w-full border p-2 rounded dark:bg-gray-700 dark:text-white" value={newAsset.value} onChange={e => setNewAsset({...newAsset, value: e.target.value})} />
+                                    <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Adicionar ao Inventário</button>
+                                </form>
+                            </div>
+                            <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+                                <h3 className="font-bold dark:text-white mb-4">Lista de Bens</h3>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left dark:text-gray-300">
+                                        <thead className="bg-gray-50 dark:bg-gray-700 uppercase text-xs"><tr><th className="px-4 py-2">Item</th><th className="px-4 py-2">Estado</th><th className="px-4 py-2">Valor</th><th className="px-4 py-2">Ação</th></tr></thead>
+                                        <tbody>
+                                            {data.assets.length === 0 ? <tr><td colSpan="4" className="p-4 text-center text-gray-500">Nenhum item cadastrado.</td></tr> : data.assets.map(a => (
+                                                <tr key={a.id} className="border-b dark:border-gray-700">
+                                                    <td className="px-4 py-2 font-medium">{a.name}</td>
+                                                    <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded text-xs ${a.condition === 'Novo' ? 'bg-green-100 text-green-800' : a.condition === 'Precisa Reparo' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>{a.condition}</span></td>
+                                                    <td className="px-4 py-2">R$ {parseFloat(a.value || 0).toFixed(2)}</td>
+                                                    <td className="px-4 py-2"><button onClick={() => handleDeleteAsset(a.id)} className="text-red-500 hover:text-red-700"><Icons.Trash2 size={16}/></button></td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'projects' && (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+                                <h3 className="font-bold dark:text-white mb-4">Novo Projeto</h3>
+                                <form onSubmit={handleAddProject} className="space-y-3">
+                                    <input required placeholder="Nome do Projeto (ex: Padaria)" className="w-full border p-2 rounded dark:bg-gray-700 dark:text-white" value={newProject.name} onChange={e => setNewProject({...newProject, name: e.target.value})} />
+                                    <input placeholder="Responsável" className="w-full border p-2 rounded dark:bg-gray-700 dark:text-white" value={newProject.responsible} onChange={e => setNewProject({...newProject, responsible: e.target.value})} />
+                                    <select className="w-full border p-2 rounded dark:bg-gray-700 dark:text-white" value={newProject.status} onChange={e => setNewProject({...newProject, status: e.target.value})}>
+                                        <option>Ativo</option>
+                                        <option>Planejamento</option>
+                                        <option>Parado</option>
+                                    </select>
+                                    <button className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700">Cadastrar Projeto</button>
+                                </form>
+                            </div>
+                            <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+                                <h3 className="font-bold dark:text-white mb-4">Projetos da Unidade</h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {data.projects.length === 0 ? <p className="text-gray-500 col-span-2 text-center">Nenhum projeto cadastrado.</p> : data.projects.map(p => (
+                                        <div key={p.id} className="border dark:border-gray-700 p-4 rounded-lg flex justify-between items-start bg-gray-50 dark:bg-gray-700/50">
+                                            <div>
+                                                <h4 className="font-bold dark:text-white">{p.name}</h4>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400">Resp: {p.responsible || 'N/A'}</p>
+                                                <span className={`text-xs px-2 py-0.5 rounded mt-2 inline-block ${p.status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{p.status}</span>
+                                            </div>
+                                            <button onClick={() => handleDeleteProject(p.id)} className="text-red-400 hover:text-red-600"><Icons.Trash2 size={16}/></button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- APP PRINCIPAL ---
+        function App() {
+            return (
+                <ErrorBoundary>
+                    <AppContent />
+                </ErrorBoundary>
+            );
+        }
+
+        function AppContent() {
+            const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('asa_auth') === 'true');
+            const [darkMode, setDarkMode] = useState(() => localStorage.getItem('asa_theme') === 'dark');
+            useEffect(() => { if (darkMode) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark'); }, [darkMode]);
+
+            // States (Persistent)
+            const preLoadedUnits = [
+                { id: 1, name: 'ASA Alto Umuarama', city: 'Uberlândia', director: 'Carmem Lamounier', phone: '(34) 99166-3300', neighborhood: 'Alto Umuarama', address: 'Rua Paulo Frontin', number: '1321', zipcode: '', email: '', state: 'MG', region: 'Leste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9100, lng: -48.2350 },
+                { id: 2, name: 'ASA Bela Vista', city: 'Canápolis', director: 'Maria Aparecida da Silva Tavares - Nina', phone: '(34) 99722-4833', neighborhood: 'Bela Vista', address: 'Rua 8', number: '1098', zipcode: '38.380-000', email: 'nina.sita@hotmail.com', state: 'MG', region: '', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.7233, lng: -49.2047 },
+                { id: 3, name: 'ASA Boa Vista', city: 'Araxá', director: 'Monica Maria Silva Santiago', phone: '(34) 99932-3490', neighborhood: 'Boa Vista', address: 'Rua Augusto Alves', number: '306', zipcode: '', email: '', state: 'MG', region: '', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -19.5933, lng: -46.9406 },
+                { id: 4, name: 'ASA Buritis', city: 'Uberlândia', director: 'Maria Amelia Pereira da Silva', phone: '(34) 99287-1002', neighborhood: 'Buritis', address: 'Rua Petronilha Rodrigues de Queiroz', number: '110', zipcode: '', email: '', state: 'MG', region: 'Sul', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9500, lng: -48.2800 },
+                { id: 5, name: 'ASA Canaã', city: 'Uberlândia', director: 'Maria Aparecida Odilon Bezerra', phone: '(34) 99922-2246', neighborhood: 'Canaã', address: 'Av. Babel', number: '653', zipcode: '', email: '', state: 'MG', region: 'Oeste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9300, lng: -48.3000 },
+                { id: 24, name: 'ASA Morada Nova', city: 'Uberlândia', director: 'Lucielena Balbina de Jesus', phone: '(34) 99699-9707', neighborhood: 'Morada Nova', address: 'Rua Benedita da Silva Santos', number: '153', zipcode: '', email: '', state: 'MG', region: 'Oeste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.8800, lng: -48.3500 },
+                { id: 25, name: 'ASA Morumbi', city: 'Uberlândia', director: 'Lucas Cipriano Mendes', phone: '(34) 99835-9449', neighborhood: 'Morumbi', address: 'Rua Taperas', number: '339', zipcode: '', email: '', state: 'MG', region: 'Leste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9200, lng: -48.2200 },
+                { id: 38, name: 'ASA Nova Serrana', city: 'Nova Serrana', director: 'Ana Lucia Barbosa de Matos', phone: '(37) 99142-2552', neighborhood: 'Romeu Duarte', address: 'Rua Divino Ferreira', number: '736', zipcode: '35.519-000', email: '', state: 'MG', region: '', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -19.8700, lng: -44.9800 },
+                { id: 26, name: 'ASA Panorama', city: 'Uberlândia', director: '', phone: '', neighborhood: 'Panorama', address: 'Rua das Espatódias', number: '858', zipcode: '', email: '', state: 'MG', region: 'Oeste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9400, lng: -48.3100 },
+                { id: 28, name: 'ASA Pequis', city: 'Uberlândia', director: 'Yedros Modesto Rezende', phone: '(34) 99892-2018', neighborhood: 'Pequis', address: 'Av. Wilson Rodrigues da Silva', number: '630 LJ 6', zipcode: '', email: 'sosmanutencoesuberlandia@gmail.com', state: 'MG', region: 'Oeste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.8900, lng: -48.3600 },
+                { id: 29, name: 'ASA Roosevelt', city: 'Uberlândia', director: 'Maria Regina Cardoso', phone: '(34) 99239-9352', neighborhood: 'Roosevelt', address: 'Rua Virgilio Mineiro', number: '25', zipcode: '', email: '', state: 'MG', region: 'Norte', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9000, lng: -48.2900 },
+                { id: 30, name: 'ASA Santa Mônica', city: 'Uberlândia', director: 'Ana', phone: '(34) 9999-9999', neighborhood: 'Santa Mônica', address: 'Av. Segismundo Pereira', number: '1200', zipcode: '', email: '', state: 'MG', region: 'Leste', electionYear: 2024, lastUpdated: new Date().toISOString().split('T')[0], lat: -18.9150, lng: -48.2500 }
+            ];
+
+            const [units, setUnits] = useState(() => loadState('asa_units_v11_final_v2', preLoadedUnits));
+            const [reports, setReports] = useState(() => loadState('asa_reports_v11_checklist', []));
+            const [campaigns, setCampaigns] = useState(() => loadState('asa_campaigns_v11_checklist', []));
+            const [assignments, setAssignments] = useState(() => loadState('asa_assignments_v11_checklist', []));
+            const [files, setFiles] = useState(() => loadState('asa_files_v11_checklist', []));
+            const [unitLifeData, setUnitLifeData] = useState(() => loadState('asa_life_v11', {})); 
+            // Novo state para gestão interna (patrimônio e projetos)
+            const [managementData, setManagementData] = useState(() => loadState('asa_mgmt_v11', {}));
+
+            useEffect(() => localStorage.setItem('asa_units_v11_final_v2', JSON.stringify(units)), [units]);
+            useEffect(() => localStorage.setItem('asa_reports_v11_checklist', JSON.stringify(reports)), [reports]);
+            useEffect(() => localStorage.setItem('asa_campaigns_v11_checklist', JSON.stringify(campaigns)), [campaigns]);
+            useEffect(() => localStorage.setItem('asa_assignments_v11_checklist', JSON.stringify(assignments)), [assignments]);
+            useEffect(() => localStorage.setItem('asa_files_v11_checklist', JSON.stringify(files)), [files]);
+            useEffect(() => localStorage.setItem('asa_life_v11', JSON.stringify(unitLifeData)), [unitLifeData]);
+            useEffect(() => localStorage.setItem('asa_mgmt_v11', JSON.stringify(managementData)), [managementData]);
+            
+            const [currentView, setCurrentView] = useState('dashboard');
+            
+            // UI State
+            const [showUnitForm, setShowUnitForm] = useState(false);
+            const [showReportForm, setShowReportForm] = useState(false);
+            const [showCampaignForm, setShowCampaignForm] = useState(false);
+            const [showAssignModal, setShowAssignModal] = useState(false);
+            const [showDataModal, setShowDataModal] = useState(false);
+            const [showFileModal, setShowFileModal] = useState(false);
+            const [isGeocoding, setIsGeocoding] = useState(false);
+            const [filterUnit, setFilterUnit] = useState('Todas');
+            const [unitSearch, setUnitSearch] = useState('');
+            const [selectedStructUnitId, setSelectedStructUnitId] = useState('');
+            
+            // Forms State
+            const defaultUnit = { id: null, name: '', director: '', phone: '', email: '', zipcode: '', address: '', number: '', neighborhood: '', city: 'Uberlândia', state: 'MG', region: '', lat: null, lng: null, electionYear: new Date().getFullYear(), lastUpdated: new Date().toISOString().split('T')[0], hasInstagram: false, instagramLink: '', hasOwnEmail: false, ownEmail: '', hasDirectorUniform: false, hasAssociateUniform: false, hasPrivateRoom: false, hasBanners: false, hasTents: false, hasPhone: false, makesMonthlyReport: false, hasMinuteBook: false, hasRegularMeetings: false, hasBankAccount: false };
+            const [newUnit, setNewUnit] = useState(defaultUnit);
+            const [newReport, setNewReport] = useState({ unitId: '', type: 'Cesta Básica', beneficiaries: '', items: '', date: new Date().toISOString().split('T')[0], description: '', value: '' });
+            const [newCampaign, setNewCampaign] = useState({ id: null, name: '', locationsString: '', startDate: '', endDate: '', baseAddress: '' });
+            const [newFile, setNewFile] = useState({ id: null, name: '', category: 'Documentos', url: '' });
+            const [selectedCampaignId, setSelectedCampaignId] = useState('');
+            const [assignDetails, setAssignDetails] = useState({ location: '', startTime: '08:00', endTime: '12:00', assignedCampaignId: '' });
+            const [pendingDrop, setPendingDrop] = useState(null);
+            const [draggedUnitId, setDraggedUnitId] = useState(null);
+            const [draggedAssignmentId, setDraggedAssignmentId] = useState(null);
+
+            // Helpers and Handlers
+            const isOutdated = (d) => { if(!d) return true; const dt = new Date(d+'T12:00:00'); const six = new Date(); six.setMonth(six.getMonth()-6); return dt < six; };
+            const getPendingFields = (u) => { const m=[]; if(!u.director)m.push('Diretor'); if(!u.phone)m.push('Tel'); if(!u.address)m.push('Endereço'); return m; };
+            const getDatesInRange = (s,e) => { if(!s||!e)return []; const d=[]; let c=new Date(s+'T12:00:00'); const end=new Date(e+'T12:00:00'); while(c<=end){d.push(c.toISOString().split('T')[0]); c.setDate(c.getDate()+1);} return d; };
+
+            const handleLogin = () => { setIsAuthenticated(true); sessionStorage.setItem('asa_auth','true'); };
+            const handleLogout = () => { setIsAuthenticated(false); sessionStorage.removeItem('asa_auth'); };
+            
+            const handleSaveUnit = (e) => { 
+                e.preventDefault(); 
+                // Validação de Duplicidade
+                const exists = units.some(u => u.name.toLowerCase().trim() === newUnit.name.toLowerCase().trim() && u.id !== newUnit.id);
+                if(exists) return alert("Já existe uma unidade com este nome!");
+
+                const uSave = {...newUnit, lastUpdated: new Date().toISOString().split('T')[0]}; 
+                if(newUnit.id) setUnits(units.map(u=>u.id===newUnit.id?uSave:u)); 
+                else setUnits([...units, {...uSave, id:Date.now()}]); 
+                setShowUnitForm(false); 
+            };
+            const handleEditUnit = (u) => { setNewUnit(u); setShowUnitForm(true); };
+            const handleDeleteUnit = (id) => { if(confirm("Excluir?")) setUnits(units.filter(u=>u.id!==id)); };
+            const resetNewUnit = () => setNewUnit(defaultUnit);
+            const handleSaveStruct = () => { const idx = units.findIndex(u => u.id === parseInt(selectedStructUnitId)); if (idx > -1) { const upd = { ...units[idx], ...newUnit, lastUpdated: new Date().toISOString().split('T')[0] }; const ns = [...units]; ns[idx] = upd; setUnits(ns); alert("Salvo!"); } };
+            const handleSaveReport = (e) => { e.preventDefault(); if(!newReport.unitId)return alert("Selecione"); setReports([...reports, {...newReport, id:Date.now(), unitId:parseInt(newReport.unitId)}]); setShowReportForm(false); };
+            const handleSaveCampaign = (e) => { e.preventDefault(); const c={...newCampaign, id:newCampaign.id||Date.now(), locations:newCampaign.locationsString.split(',')}; if(newCampaign.id) setCampaigns(campaigns.map(x=>x.id===c.id?c:x)); else {setCampaigns([...campaigns,c]); setSelectedCampaignId(c.id);} setShowCampaignForm(false); };
+            const handleDeleteCampaign = () => { if(confirm("Excluir?")) { setCampaigns(campaigns.filter(c=>c.id!==parseInt(selectedCampaignId))); setAssignments(assignments.filter(a=>a.campaignId!==parseInt(selectedCampaignId))); setSelectedCampaignId(''); } };
+            const confirmAssignment = () => { if(pendingDrop) { setAssignments([...assignments, {id:Date.now(), campaignId:parseInt(assignDetails.assignedCampaignId||selectedCampaignId), unitId:pendingDrop.unitId, date:pendingDrop.date, ...assignDetails}]); setShowAssignModal(false); } };
+            const handleSaveFile = (e) => { e.preventDefault(); setFiles([...files, {...newFile, id:Date.now(), date:new Date().toISOString().split('T')[0]}]); setShowFileModal(false); };
+            const handleDeleteFile = (id) => setFiles(files.filter(f=>f.id!==id));
+            const handleBackup = () => { const b=new Blob([JSON.stringify({units,reports,campaigns,assignments,files,unitLifeData, managementData})],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='backup.json'; a.click(); };
+            const handleRestore = (e) => { const r=new FileReader(); r.onload=ev=>{const d=JSON.parse(ev.target.result); if(d.units && confirm("Restaurar?")) {setUnits(d.units); setReports(d.reports); setCampaigns(d.campaigns); setAssignments(d.assignments); setFiles(d.files||[]); setUnitLifeData(d.unitLifeData||{}); setManagementData(d.managementData||{}); setShowDataModal(false);}}; if(e.target.files[0])r.readAsText(e.target.files[0]); };
+            const handleFileUpload = (e) => {
+                const f = e.target.files[0]; if(!f) return;
+                const r = new FileReader();
+                r.onload = (evt) => {
+                    try {
+                        const wb = XLSX.read(evt.target.result, {type:'array'});
+                        const ws = wb.Sheets[wb.SheetNames[0]];
+                        const json = XLSX.utils.sheet_to_json(ws);
+                        const added = [];
+                        json.forEach((row, i) => {
+                             const getVal = (k) => { const key = Object.keys(row).find(x => x.toUpperCase().includes(k)); return key ? row[key] : ''; };
+                             const name = formatTitleCase(String(getVal('ASA')||getVal('NOME')));
+                             if(!name) return;
+                             if(units.some(u=>u.name.toLowerCase()===name.toLowerCase()) || added.some(u=>u.name.toLowerCase()===name.toLowerCase())) return;
+                             added.push({
+                                 id: Date.now()+i, name, city: formatTitleCase(String(getVal('CIDADE')||'Uberlândia')),
+                                 director: formatTitleCase(String(getVal('DIRETOR')||'')), phone: getVal('TELEFONE')||'',
+                                 neighborhood: formatTitleCase(String(getVal('BAIRRO')||'')), address: formatTitleCase(String(getVal('ENDEREÇO')||'')),
+                                 zipcode: getVal('CEP')||'', email: getVal('EMAIL')||'', number:'', state:'MG', region:'',
+                                 electionYear: new Date().getFullYear(), lastUpdated: new Date().toISOString().split('T')[0]
+                             });
+                        });
+                        if(added.length > 0 && confirm(`Importar ${added.length} unidades?`)) setUnits([...units, ...added]);
+                        else if(added.length === 0) alert("Nenhum dado novo encontrado.");
+                    } catch(e) { alert("Erro ao ler arquivo."); }
+                };
+                r.readAsArrayBuffer(f); e.target.value='';
+            };
+            const handleDragStartUnit = (e,id) => { setDraggedUnitId(id); e.dataTransfer.effectAllowed='copy'; };
+            const handleDragStartCard = (e, id) => { setDraggedAssignmentId(id); setDraggedUnitId(null); e.dataTransfer.effectAllowed = 'move'; };
+            const handleDragOver = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; };
+            const handleDrop = (e,d) => { e.preventDefault(); if(draggedUnitId) { setPendingDrop({date:d, unitId:draggedUnitId}); setShowAssignModal(true); setAssignDetails(p=>({...p, assignedCampaignId:selectedCampaignId!=='all'?selectedCampaignId:''})); } setDraggedUnitId(null); };
+            const checkConflict = (d,l,s,e) => assignments.some(a=>a.date===d && a.location===l && (s<a.endTime && e>a.startTime));
+            
+            const handleCapitalize = (e, f) => setNewUnit({...newUnit, [f]: formatTitleCase(e.target.value)});
+            const handlePhoneMask = (e) => { let v=e.target.value.replace(/\D/g,'').slice(0,11); if(v.length>6)v=`(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`; else if(v.length>2)v=`(${v.slice(0,2)}) ${v.slice(2)}`; setNewUnit({...newUnit, phone:v}); };
+            const handleCepMask = (e) => { let v=e.target.value.replace(/\D/g,'').slice(0,8); if(v.length>5)v=`${v.slice(0,5)}-${v.slice(5)}`; setNewUnit({...newUnit, zipcode:v}); };
+            const handleCepBlur = async (e) => { const c=e.target.value.replace(/\D/g,''); if(c.length===8){ try{ const r=await fetch(`https://viacep.com.br/ws/${c}/json/`); const d=await r.json(); if(!d.erro) setNewUnit(p=>({...p, address:formatTitleCase(d.logradouro), neighborhood:formatTitleCase(d.bairro), city:formatTitleCase(d.localidade), state:d.uf})); }catch(e){} } };
+            
+            // GPS Search Logic
+            const handleGeocode = async () => {
+                if (!newUnit.address) return alert("Endereço vazio.");
+                setIsGeocoding(true);
+                try {
+                    // Include Number in search query for better accuracy
+                    const q = `${newUnit.address}, ${newUnit.number}, ${newUnit.neighborhood}, ${newUnit.city}, ${newUnit.state}, Brazil`;
+                    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`);
+                    const d = await r.json();
+                    if (d.length > 0) {
+                        setNewUnit(prev => ({ ...prev, lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) }));
+                        alert("Localizado com sucesso!");
+                    } else alert("Não encontrado no mapa.");
+                } catch (e) { alert("Erro de conexão."); } finally { setIsGeocoding(false); }
+            };
+
+            const renderDashboard = () => {
+                const totalUnits = units.length;
+                const outdatedUnits = units.filter(u => isOutdated(u.lastUpdated)).length;
+                const pendingUnits = units.filter(u => getPendingFields(u).length > 0).length;
+                const totalBeneficiaries = reports.reduce((acc, r) => acc + Number(r.beneficiaries), 0);
+                const totalItems = reports.reduce((acc, r) => acc + Number(r.items), 0);
+                const totalActions = reports.length;
+                const totalInvested = reports.reduce((acc, r) => acc + (parseFloat(r.value) || 0), 0);
+                
+                // Calculate total assets value across all units
+                const totalAssetsValue = Object.values(managementData).reduce((acc, unitData) => {
+                    const unitAssets = unitData.assets || [];
+                    return acc + unitAssets.reduce((sum, asset) => sum + (parseFloat(asset.value) || 0), 0);
+                }, 0);
+                
+                // Count active projects
+                const activeProjects = Object.values(managementData).reduce((acc, unitData) => {
+                    const unitProjects = unitData.projects || [];
+                    return acc + unitProjects.filter(p => p.status === 'Ativo').length;
+                }, 0);
+
+                const byTypeObj = {};
+                reports.forEach(d => byTypeObj[d.type] = (byTypeObj[d.type] || 0) + 1);
+                const byType = Object.entries(byTypeObj).map(([k, v]) => ({ label: k, value: v }));
+                
+                const byMonthObj = {};
+                reports.forEach(d => {
+                    const month = new Date(d.date + 'T12:00:00').toLocaleString('pt-BR', { month: 'short' });
+                    byMonthObj[month] = (byMonthObj[month] || 0) + Number(d.beneficiaries);
+                });
+                const byMonth = Object.entries(byMonthObj).map(([k, v]) => ({ label: k, value: v }));
+
+                return (
+                    <div className="animate-fadeIn space-y-8 no-print">
+                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border-l-4 border-green-500"><h3 className="text-2xl font-bold dark:text-white">{totalUnits}</h3><p className="text-xs text-gray-500 uppercase">Unidades</p></div>
+                            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border-l-4 border-red-500"><div className="flex justify-between"><h3 className="text-2xl font-bold text-red-600">{outdatedUnits}</h3><Icons.Clock className="text-red-400" size={20}/></div><p className="text-xs text-gray-500 uppercase">Desatualizadas</p></div>
+                             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border-l-4 border-yellow-500"><div className="flex justify-between"><h3 className="text-2xl font-bold text-yellow-600">{pendingUnits}</h3><Icons.AlertTriangle className="text-yellow-400" size={20}/></div><p className="text-xs text-gray-500 uppercase">Com Pendências</p></div>
+                             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border-l-4 border-emerald-500"><h3 className="text-2xl font-bold dark:text-white">{totalBeneficiaries}</h3><p className="text-xs text-gray-500 uppercase">Pessoas</p></div>
+                             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border-l-4 border-teal-500"><h3 className="text-2xl font-bold dark:text-white">R$ {totalInvested.toFixed(2)}</h3><p className="text-xs text-gray-500 uppercase">Investido</p></div>
+                             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border-l-4 border-lime-500"><h3 className="text-2xl font-bold dark:text-white">{totalActions}</h3><p className="text-xs text-gray-500 uppercase">Ações</p></div>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"><h3 className="text-lg font-bold mb-6 flex items-center gap-2 dark:text-white text-green-800"><Icons.TrendingUp size={18}/> Evolução de Atendimentos</h3><BarChart data={byMonth} color="bg-gradient-to-t from-green-600 to-green-400" /></div>
+                            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"><h3 className="text-lg font-bold mb-6 flex items-center gap-2 dark:text-white text-green-800"><Icons.Package size={18}/> Tipos de Ação</h3><div className="flex justify-center"><DonutChart data={byType} colors={['#22c55e', '#10b981', '#34d399', '#6ee7b7', '#059669']} /></div></div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderUnitsView = () => {
+                const filteredUnits = units.filter(u => u.name.toLowerCase().includes(unitSearch.toLowerCase()));
+                return (
+                    <div className="animate-fadeIn space-y-6 no-print">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-2xl font-bold dark:text-white text-gray-800">Gerenciar Unidades</h2>
+                            <div className="flex gap-2 items-center">
+                                <div className="relative"><input type="text" placeholder="Buscar..." className="pl-8 pr-4 py-2 border rounded-lg text-sm outline-none dark:bg-gray-700 dark:text-white" value={unitSearch} onChange={e=>setUnitSearch(e.target.value)} /><Icons.Search className="absolute left-2 top-2.5 text-gray-400" size={16} /></div>
+                                <label className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm cursor-pointer"><Icons.Upload size={16}/> Excel <input type="file" accept=".csv, .xlsx, .xls" onChange={handleFileUpload} className="hidden" /></label>
+                                <button onClick={() => setCurrentView('unit_report')} className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"><Icons.FileText size={16}/> Relatório</button>
+                                <button onClick={() => { resetNewUnit(); setShowUnitForm(true); }} className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm"><Icons.Plus size={16}/> Nova</button>
+                            </div>
+                        </div>
+                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm text-left text-gray-600 dark:text-gray-300">
+                                    <thead className="bg-gray-50 dark:bg-gray-750 text-xs text-gray-700 dark:text-gray-200 uppercase"><tr><th className="px-6 py-3">Nome</th><th className="px-6 py-3">Cidade/Bairro</th><th className="px-6 py-3">Diretor</th><th className="px-6 py-3">Mandato</th><th className="px-6 py-3">Contato</th><th className="px-6 py-3">Pendências</th><th className="px-6 py-3 text-right">Ações</th></tr></thead>
+                                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                        {filteredUnits.length === 0 ? <tr><td colSpan="8" className="px-6 py-8 text-center">Nenhum registro.</td></tr> : filteredUnits.map(u => {
+                                            const pending = getPendingFields(u);
+                                            const mandateClass = u.electionYear == 2025 ? "text-red-600 dark:text-red-400 font-bold" : u.electionYear == 2026 ? "text-green-600 dark:text-green-400 font-bold" : "";
+                                            return (
+                                                <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                    <td className="px-6 py-4 font-medium dark:text-white">{u.name}<div className="text-[10px] text-gray-400 mt-1">Atualizado: {u.lastUpdated}</div></td>
+                                                    <td className="px-6 py-4 text-xs">{u.city} - {u.neighborhood}</td>
+                                                    <td className="px-6 py-4">{u.director}</td>
+                                                    <td className={`px-6 py-4 text-xs ${mandateClass}`}>{u.electionYear}</td>
+                                                    <td className="px-6 py-4 text-xs">{u.phone}</td>
+                                                    <td className="px-6 py-4">{pending.length > 0 ? <div className="tooltip-container text-red-500"><Icons.AlertTriangle size={16} /><span className="tooltip-text">Falta: {pending.join(', ')}</span></div> : <span className="text-green-500 text-xs font-bold">OK</span>}</td>
+                                                    <td className="px-6 py-4 text-right"><button onClick={() => handleEditUnit(u)} className="text-blue-500 mr-2"><Icons.Pencil size={18}/></button><button onClick={() => handleDeleteUnit(u.id)} className="text-red-500"><Icons.Trash2 size={18}/></button></td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const renderDistribution = () => {
+                const c = campaigns.find(x => x.id === parseInt(selectedCampaignId));
+                const dates = c ? getDatesInRange(c.startDate, c.endDate) : [];
+                return (
+                    <div className="animate-fadeIn h-full flex flex-col space-y-4 no-print">
+                        <div className="flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                             <div><h2 className="text-xl font-bold dark:text-white flex items-center gap-2"><Icons.Kanban className="text-green-600" size={24}/> Distribuição</h2></div>
+                             <div className="flex gap-2">
+                                <select className="border rounded-lg px-3 py-2 outline-none dark:bg-gray-700 dark:text-white" value={selectedCampaignId} onChange={e => setSelectedCampaignId(e.target.value)}><option value="">Selecione Campanha...</option><option value="all">Todas</option>{campaigns.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
+                                <button onClick={() => { if(c) { setNewCampaign({...c, locationsString: c.locations.join(', ')}); setShowCampaignForm(true); } }} disabled={!c} className="bg-gray-200 dark:bg-gray-700 px-3 rounded-lg disabled:opacity-50"><Icons.Pencil size={16}/></button>
+                                <button onClick={handleDeleteCampaign} disabled={!selectedCampaignId || selectedCampaignId === 'all'} className="bg-red-500 text-white px-3 rounded-lg disabled:opacity-50"><Icons.Trash2 size={16}/></button>
+                                <button onClick={() => { setNewCampaign({ id: null, name: '', locationsString: '', startDate: '', endDate: '', baseAddress: '' }); setShowCampaignForm(true); }} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Icons.Plus size={16}/> Nova</button>
+                             </div>
+                        </div>
+                        {selectedCampaignId ? (
+                            <div className="flex-1 flex gap-4 overflow-hidden h-[600px]">
+                                <div className="w-64 bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 flex flex-col shadow-sm">
+                                    <div className="p-4 border-b dark:border-gray-700 font-bold dark:text-white">ASAs</div>
+                                    <div className="p-2 flex-1 overflow-y-auto space-y-2">
+                                        {units.map(u => (<div key={u.id} draggable onDragStart={e => handleDragStartUnit(e, u.id)} className="p-3 bg-white dark:bg-gray-700 rounded-lg border dark:border-gray-600 cursor-move hover:shadow-md"><div className="font-semibold text-sm dark:text-white">{u.name}</div></div>))}
+                                    </div>
+                                </div>
+                                <div className="flex-1 overflow-x-auto flex gap-4 pb-4">
+                                    {dates.map(date => (
+                                        <div key={date} onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, date)} className="min-w-[280px] bg-gray-100 dark:bg-gray-900 rounded-xl p-3 flex flex-col border border-gray-200 dark:border-gray-800">
+                                            <div className="font-bold text-center mb-3 bg-white dark:bg-gray-800 py-2 rounded-lg shadow-sm dark:text-gray-200">{new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}</div>
+                                            <div className="flex-1 space-y-2 overflow-y-auto">
+                                                {assignments.filter(a => (selectedCampaignId === 'all' || a.campaignId === parseInt(selectedCampaignId)) && a.date === date).map(assign => {
+                                                    const unit = units.find(u => u.id === assign.unitId);
+                                                    return (
+                                                        <div key={assign.id} draggable onDragStart={e => handleDragStartCard(e, assign.id)} className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border-l-4 border-green-500 cursor-grab relative group">
+                                                            <button onClick={() => { if(confirm("Remover?")) removeAssignment(assign.id); }} className="absolute top-1 right-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100"><Icons.X size={14}/></button>
+                                                            {selectedCampaignId === 'all' && <div className="text-[10px] uppercase font-bold text-green-600 mb-1">{campaigns.find(c => c.id === assign.campaignId)?.name || '???'}</div>}
+                                                            <div className="font-bold text-sm dark:text-white">{unit?.name || 'Removida'}</div>
+                                                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1"><Icons.MapPin size={10}/> {assign.location}</div>
+                                                            <div className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1 font-semibold"><Icons.Clock size={10}/> {assign.startTime} - {assign.endTime}</div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : <div className="flex-1 flex items-center justify-center text-gray-400 flex-col"><Icons.Kanban size={64} className="mb-4 opacity-20"/><p>Selecione uma campanha</p></div>}
+                    </div>
+                );
+            };
+
+             const renderFilesView = () => (
+                <div className="animate-fadeIn space-y-6 no-print">
+                    <div className="flex justify-between items-center bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 to-white dark:from-gray-800 dark:to-gray-900">
+                        <div>
+                            <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2 text-green-800"><Icons.Folder size={24} className="text-green-600"/> Arquivos Importantes</h2>
+                        </div>
+                        <div className="flex gap-2">
+                            <a href="https://drive.google.com" target="_blank" className="bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm border border-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 shadow-sm transition-colors"><Icons.ExternalLink size={16}/> Abrir Google Drive</a>
+                            <button onClick={() => setShowFileModal(true)} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm shadow-sm hover:bg-green-700 transition-all"><Icons.Plus size={16}/> Novo Arquivo</button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {files.map(file => (
+                            <div key={file.id} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all relative group">
+                                <button onClick={() => handleDeleteFile(file.id)} className="absolute top-3 right-3 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Icons.X size={16}/></button>
+                                <div className="flex items-start gap-4">
+                                    <div className={`p-3 rounded-lg bg-blue-100 text-blue-600`}><Icons.FileText size={24}/></div>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-bold text-gray-800 dark:text-white truncate" title={file.name}>{file.name}</h3>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{file.category}</p>
+                                        <a href={file.url} target="_blank" className="text-sm text-green-600 dark:text-green-400 hover:underline mt-3 inline-flex items-center gap-1 font-medium">Abrir <Icons.ExternalLink size={12}/></a>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+            
+            const renderMapView = () => (
+                <div className="animate-fadeIn space-y-6 h-full no-print">
+                    <div className="flex justify-between items-center"><h2 className="text-2xl font-bold text-gray-800 dark:text-white">Mapa das Unidades</h2></div>
+                    <div className="bg-white dark:bg-gray-800 p-2 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"><LeafletMap units={units} /></div>
+                </div>
+            );
+
+            const renderUnitReport = () => (
+                <div className="bg-white dark:bg-gray-800 p-8 animate-fadeIn max-w-5xl mx-auto mt-6 shadow-lg print:shadow-none print:mt-0 print:w-full">
+                    <div className="flex justify-between items-center mb-8 no-print border-b dark:border-gray-700 pb-4">
+                        <h2 className="text-2xl font-bold dark:text-white text-green-800">Relatório de Unidades</h2>
+                        <div className="flex gap-2">
+                            <button onClick={() => window.print()} className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded flex items-center gap-2"><Icons.Printer size={18} /> Imprimir</button>
+                            <button onClick={() => setCurrentView('units')} className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded">Voltar</button>
+                        </div>
+                    </div>
+                    <div className="mb-6 border-b dark:border-gray-700 pb-4">
+                        <h1 className="text-3xl font-bold text-gray-800 dark:text-white uppercase tracking-wide">Relação de Unidades ASA</h1>
+                        <p className="text-sm text-gray-400">Emitido em: {new Date().toLocaleDateString()}</p>
+                    </div>
+                    <table className="w-full text-left border-collapse">
+                        <thead><tr className="border-b-2 border-gray-800 dark:border-gray-500"><th className="py-2 text-sm uppercase font-bold dark:text-gray-200">Unidade</th><th className="py-2 text-sm uppercase font-bold dark:text-gray-200">Cidade/Bairro</th><th className="py-2 text-sm uppercase font-bold dark:text-gray-200">Diretor</th></tr></thead>
+                        <tbody>
+                            {units.map((u, i) => (
+                                <tr key={u.id} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 print:hover:bg-white break-inside-avoid">
+                                    <td className="py-3 font-bold text-gray-800 dark:text-gray-100">{u.name}</td>
+                                    <td className="py-3 text-gray-600 dark:text-gray-300">{u.city} - {u.neighborhood}</td>
+                                    <td className="py-3 text-gray-600 dark:text-gray-300">{u.director}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+
+            // --- FUNCTION APP RENDER ---
+            
+            // Function App to wrap components
+            if (!isAuthenticated) return <LoginScreen onLogin={handleLogin} />;
+
+            return (
+                <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col transition-colors duration-300">
+                    <header className="bg-white dark:bg-gray-800 border-b border-green-600 dark:border-green-900 sticky top-0 z-30 no-print shadow-sm">
+                        <div className="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+                            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentView('dashboard')}>
+                                <img src="C:\asa\img\logo.jpg" alt="ASA" className="h-10 w-auto rounded object-contain" onError={(e)=>{e.target.onerror=null;e.target.src="https://via.placeholder.com/40?text=ASA"}}/>
+                                <div><h1 className="text-xl font-bold dark:text-white text-green-800">Monitoramento ASA</h1></div>
+                            </div>
+                            <nav className="hidden md:flex gap-6 items-center">
+                                {/* Dashboard */}
+                                <button onClick={() => setCurrentView('dashboard')} className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${currentView === 'dashboard' ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-gray-700' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>Dashboard</button>
+                                
+                                {/* Gestão de Unidades Dropdown */}
+                                <div className="relative group">
+                                    <button className="flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                        Gestão de Unidades <Icons.ChevronDown size={14}/>
+                                    </button>
+                                    <div className="absolute left-0 mt-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 hidden group-hover:block z-50">
+                                        <a onClick={() => setCurrentView('units')} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer first:rounded-t-lg">Lista de Unidades</a>
+                                        <a onClick={() => setCurrentView('unit_life')} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer">Vida da Unidade</a>
+                                        <a onClick={() => setCurrentView('structure')} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer">Estrutura & ID</a>
+                                        <a onClick={() => setCurrentView('mgmt')} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer last:rounded-b-lg">Gestão Interna</a>
+                                    </div>
+                                </div>
+
+                                {/* Operacional Dropdown */}
+                                <div className="relative group">
+                                    <button className="flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                        Operacional <Icons.ChevronDown size={14}/>
+                                    </button>
+                                    <div className="absolute left-0 mt-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 hidden group-hover:block z-50">
+                                        <a onClick={() => setCurrentView('distribution')} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer first:rounded-t-lg">Distribuição</a>
+                                        <a onClick={() => setCurrentView('files')} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer">Arquivos</a>
+                                        <a onClick={() => setCurrentView('map')} className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer last:rounded-b-lg">Mapa Geral</a>
+                                    </div>
+                                </div>
+                            </nav>
+                            <div className="flex gap-2">
+                                <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors">{darkMode ? <Icons.Sun size={20}/> : <Icons.Moon size={20}/>}</button>
+                                <button onClick={() => setShowDataModal(true)} className="text-gray-600 dark:text-gray-300 hover:text-green-600 px-3 py-2 rounded-lg transition-colors"><Icons.Database size={18}/></button>
+                                <button onClick={handleLogout} className="text-gray-400 hover:text-red-500 p-2 transition-colors"><Icons.LogOut size={18}/></button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="flex-1 w-full mx-auto px-4 py-8 max-w-7xl print:max-w-full print:p-0">
+                        {currentView === 'dashboard' && renderDashboard()}
+                        {currentView === 'unit_life' && <UnitLifeView units={units} lifeData={unitLifeData} setLifeData={setUnitLifeData} />}
+                        {currentView === 'distribution' && renderDistribution()}
+                        {currentView === 'units' && renderUnitsView()}
+                        {currentView === 'structure' && <StructureView units={units} selectedStructUnitId={selectedStructUnitId} setSelectedStructUnitId={setSelectedStructUnitId} newUnit={newUnit} setNewUnit={setNewUnit} handleSaveStruct={handleSaveStruct} />}
+                        {currentView === 'mgmt' && <InternalManagementView units={units} managementData={managementData} setManagementData={setManagementData} />}
+                        {currentView === 'files' && renderFilesView()}
+                        {currentView === 'map' && renderMapView()}
+                        {currentView === 'unit_report' && renderUnitReport()}
+                    </main>
+
+                    {/* Modals included implicitly or simplified for this view */}
+                    {showUnitForm && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                            <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl p-6 shadow-2xl">
+                                <h3 className="font-bold mb-4 dark:text-white">Unidade</h3>
+                                <form onSubmit={handleSaveUnit} className="space-y-4">
+                                    <input required className="w-full border p-2 rounded" placeholder="Nome" value={newUnit.name} onChange={e=>setNewUnit({...newUnit, name:e.target.value})} />
+                                    <input className="w-full border p-2 rounded" placeholder="Diretor" value={newUnit.director} onChange={e=>setNewUnit({...newUnit, director:e.target.value})} />
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <input type="text" className="border p-2 rounded" placeholder="Tel" value={newUnit.phone} onChange={handlePhoneMask}/>
+                                        <input type="email" className="border p-2 rounded" placeholder="Email" value={newUnit.email} onChange={e => setNewUnit({...newUnit, email: e.target.value})}/>
+                                    </div>
+                                    <input type="text" className="w-full border p-2 rounded" placeholder="CEP" value={newUnit.zipcode} onChange={handleCepMask} onBlur={handleCepBlur} />
+                                    <div className="grid grid-cols-4 gap-4">
+                                        <input type="text" className="col-span-2 w-full border p-2 rounded" placeholder="Rua" value={newUnit.address} onChange={(e) => handleCapitalize(e, 'address')} />
+                                        <input type="text" className="w-full border p-2 rounded" placeholder="Nº" value={newUnit.number} onChange={(e) => setNewUnit({...newUnit, number: e.target.value})} />
+                                        <input type="text" className="w-full border p-2 rounded" placeholder="Bairro" value={newUnit.neighborhood} onChange={(e) => handleCapitalize(e, 'neighborhood')} />
+                                    </div>
+                                    <input type="text" className="w-full border p-2 rounded" placeholder="Cidade" value={newUnit.city} onChange={(e) => handleCapitalize(e, 'city')} />
+                                    <div className="bg-gray-50 p-3 rounded">
+                                        <label className="text-xs block mb-1">Ano Eleição</label>
+                                        <input type="number" className="w-full border p-2 rounded" value={newUnit.electionYear} onChange={(e) => setNewUnit({...newUnit, electionYear: e.target.value})} />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button type="button" onClick={handleGeocode} className="bg-blue-100 text-blue-700 px-3 py-2 rounded text-xs flex items-center gap-1 hover:bg-blue-200"><Icons.MapPin size={14}/> Buscar GPS</button>
+                                        {(newUnit.lat && newUnit.lng) && <span className="text-xs text-green-600 flex items-center">Localizado!</span>}
+                                    </div>
+                                    {(newUnit.lat && newUnit.lng) && (
+                                        <div className="modal-map-container border rounded overflow-hidden">
+                                            <LeafletMap units={[newUnit]} containerId="modal-map-container" />
+                                        </div>
+                                    )}
+                                    <button className="bg-green-600 text-white px-4 py-2 rounded w-full">Salvar</button>
+                                    <button type="button" onClick={()=>setShowUnitForm(false)} className="text-gray-500 w-full text-center mt-2">Cancelar</button>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                    {showCampaignForm && (<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl shadow-2xl p-6"><h3 className="text-xl font-bold mb-4 dark:text-white">Nova Campanha</h3><form onSubmit={handleSaveCampaign} className="space-y-4"><input type="text" className="w-full border p-2 rounded" placeholder="Nome" value={newCampaign.name} onChange={e=>setNewCampaign({...newCampaign, name:e.target.value})}/><input type="text" className="w-full border p-2 rounded" placeholder="Endereço Base" value={newCampaign.baseAddress} onChange={e=>setNewCampaign({...newCampaign, baseAddress:e.target.value})}/><div className="grid grid-cols-2 gap-4"><input type="date" className="border p-2 rounded" value={newCampaign.startDate} onChange={e=>setNewCampaign({...newCampaign, startDate:e.target.value})}/><input type="date" className="border p-2 rounded" value={newCampaign.endDate} onChange={e=>setNewCampaign({...newCampaign, endDate:e.target.value})}/></div><input type="text" className="w-full border p-2 rounded" placeholder="Locais (sep. vírgula)" value={newCampaign.locationsString} onChange={e=>setNewCampaign({...newCampaign, locationsString:e.target.value})}/><div className="flex justify-end gap-2"><button type="button" onClick={()=>setShowCampaignForm(false)} className="px-4 py-2 text-gray-500">Cancelar</button><button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">Salvar</button></div></form></div></div>)}
+                    {showAssignModal && pendingDrop && (<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-xl shadow-2xl p-6"><h3 className="text-lg font-bold mb-4 dark:text-white">Agendar</h3><div className="space-y-4">{selectedCampaignId==='all' && <div><label className="text-sm block mb-1">Campanha</label><select className="w-full border p-2 rounded" value={assignDetails.assignedCampaignId} onChange={e=>{const c=campaigns.find(x=>x.id===parseInt(e.target.value)); setAssignDetails({...assignDetails, assignedCampaignId:e.target.value, location:c?.locations[0]||''});}}><option value="">Selecione...</option>{campaigns.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></div>}<div><label className="text-sm block mb-1">Local</label><select className="w-full border p-2 rounded" value={assignDetails.location} onChange={e=>setAssignDetails({...assignDetails, location:e.target.value})}>{(selectedCampaignId==='all'?campaigns.find(c=>c.id===parseInt(assignDetails.assignedCampaignId)):campaigns.find(c=>c.id===parseInt(selectedCampaignId)))?.locations.map(l=><option key={l} value={l}>{l}</option>)}</select></div><div className="grid grid-cols-2 gap-2"><div><label className="text-sm block mb-1">Início</label><input type="time" className="w-full border p-2 rounded" value={assignDetails.startTime} onChange={e=>setAssignDetails({...assignDetails, startTime:e.target.value})}/></div><div><label className="text-sm block mb-1">Fim</label><input type="time" className="w-full border p-2 rounded" value={assignDetails.endTime} onChange={e=>setAssignDetails({...assignDetails, endTime:e.target.value})}/></div></div><div className="flex justify-end gap-2"><button onClick={()=>{setShowAssignModal(false);setPendingDrop(null)}} className="px-4 py-2 text-gray-500">Cancelar</button><button onClick={confirmAssignment} className="bg-green-600 text-white px-4 py-2 rounded">Confirmar</button></div></div></div></div>)}
+                    {showReportForm && (<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-xl shadow-2xl p-6"><h3 className="text-xl font-bold mb-4 dark:text-white">Lançar Ação/Atendimento</h3><form onSubmit={handleSaveReport} className="space-y-4"><div><label className="block text-sm font-medium mb-1 dark:text-gray-300">Unidade</label><select required className="w-full border p-2 rounded" value={newReport.unitId} onChange={(e) => setNewReport({...newReport, unitId: e.target.value})}><option value="">Selecione...</option>{units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select></div><input required type="date" className="w-full border p-2 rounded" value={newReport.date} onChange={(e) => setNewReport({...newReport, date: e.target.value})} /><input required type="text" className="w-full border p-2 rounded" placeholder="Descrição da Ação" value={newReport.description} onChange={(e) => setNewReport({...newReport, description: e.target.value})} /><div className="grid grid-cols-2 gap-4"><input required type="number" className="w-full border p-2 rounded" placeholder="Beneficiários" value={newReport.beneficiaries} onChange={(e) => setNewReport({...newReport, beneficiaries: e.target.value})} /><input type="number" className="w-full border p-2 rounded" placeholder="Itens" value={newReport.items} onChange={(e) => setNewReport({...newReport, items: e.target.value})} /></div><input type="number" step="0.01" className="w-full border p-2 rounded" placeholder="Valor Investido (R$)" value={newReport.value} onChange={(e) => setNewReport({...newReport, value: e.target.value})} /><div className="flex justify-end gap-2 mt-4"><button type="button" onClick={() => setShowReportForm(false)} className="px-4 py-2 text-gray-500">Cancelar</button><button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-lg">Salvar</button></div></form></div></div>)}
+                    {showFileModal && (<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-xl shadow-2xl p-6"><h3 className="text-xl font-bold mb-4 dark:text-white">Novo Arquivo</h3><form onSubmit={handleSaveFile} className="space-y-4"><input type="text" className="w-full border p-2 rounded" placeholder="Nome" value={newFile.name} onChange={e=>setNewFile({...newFile, name:e.target.value})}/><select className="w-full border p-2 rounded" value={newFile.category} onChange={e=>setNewFile({...newFile, category:e.target.value})}><option>Documentos</option><option>Planilhas</option><option>Outros</option></select><input type="url" className="w-full border p-2 rounded" placeholder="Link Google Drive" value={newFile.url} onChange={e=>setNewFile({...newFile, url:e.target.value})}/><div className="flex justify-end gap-2"><button type="button" onClick={()=>setShowFileModal(false)} className="px-4 py-2 text-gray-500">Cancelar</button><button type="submit" className="bg-green-600 text-white px-4 py-2 rounded">Salvar</button></div></form></div></div>)}
+                    {showDataModal && (<div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"><div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-xl shadow-2xl p-6"><h3 className="text-xl font-bold mb-4 flex items-center gap-2 dark:text-white"><Icons.Database size={20}/> Dados</h3><div className="space-y-4"><button onClick={handleBackup} className="w-full bg-green-50 text-green-700 py-3 rounded flex items-center justify-center gap-2"><Icons.Download size={20}/> Backup</button><label className="w-full bg-gray-100 text-gray-700 py-3 rounded flex items-center justify-center gap-2 cursor-pointer"><Icons.Upload size={20}/> Restaurar <input type="file" accept=".json" onChange={handleRestore} className="hidden"/></label><button onClick={()=>setShowDataModal(false)} className="w-full text-gray-500 py-2">Fechar</button></div></div></div>)}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

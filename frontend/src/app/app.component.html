@@ -1,0 +1,37 @@
+<div *ngIf="!isAuthenticated || estaNaTelaLogin">
+  <app-login-page></app-login-page>
+</div>
+<div *ngIf="isAuthenticated && !estaNaTelaLogin" class="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col transition-colors duration-300">
+  <header class="bg-white dark:bg-gray-800 border-b border-green-600 dark:border-green-900 sticky top-0 z-30 no-print shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex justify-between items-center">
+      <div class="flex items-center gap-3 cursor-pointer" routerLink="/dashboard">
+        <img src="assets/logo.jpg" alt="ASA" class="h-10 w-auto rounded object-contain" />
+        <div><h1 class="text-xl font-bold dark:text-white text-green-800">Monitoramento ASA</h1></div>
+      </div>
+      <nav class="hidden md:flex gap-6 items-center">
+        <a routerLink="/dashboard" routerLinkActive="text-green-600" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Dashboard</a>
+        <div class="relative menuDropdown">
+          <button (click)="alternarMenuUnidades()" class="flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Cadastro</button>
+          <div *ngIf="menuUnidadesAberto" class="absolute left-0 mt-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 z-50">
+            <a routerLink="/units" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer first:rounded-t-lg">Unidades ASA</a>
+          </div>
+        </div>
+        <div class="relative menuDropdown">
+          <button (click)="alternarMenuOperacional()" class="flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Operacional</button>
+          <div *ngIf="menuOperacionalAberto" class="absolute left-0 mt-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 z-50">
+            <a routerLink="/files" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer first:rounded-t-lg">Arquivos</a>
+            <a routerLink="/map" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer">Mapa Geral</a>
+            <a routerLink="/backup" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer last:rounded-b-lg">Backup e Restauração</a>
+          </div>
+        </div>
+      </nav>
+      <div class="flex gap-2">
+        <button (click)="toggleTheme()" class="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors">Tema</button>
+        <button (click)="logout()" class="text-gray-400 hover:text-red-500 p-2 transition-colors">Sair</button>
+      </div>
+    </div>
+  </header>
+  <main class="flex-1 w-full mx-auto px-4 py-8 max-w-7xl print:max-w-full print:p-0">
+    <router-outlet></router-outlet>
+  </main>
+</div>

@@ -1,0 +1,57 @@
+<main class="paginaLogin">
+  <div class="cardLogin">
+    <section class="colunaFormulario" aria-label="Acesso restrito">
+      <div class="conteudoFormulario">
+        <img class="logoAsa" src="assets/logo.jpg" alt="Logo da ASA" />
+        <h2 class="tituloFormulario">Acesso Restrito</h2>
+        <p class="subtituloFormulario">Faca login para continuar</p>
+
+        <form class="formularioLogin" (ngSubmit)="handleLogin()">
+          <div class="grupoCampo">
+            <label class="rotuloCampo" for="usuario">Usuario</label>
+            <input
+              class="campoTexto"
+              id="usuario"
+              name="usuario"
+              type="text"
+              placeholder="Digite seu usuario"
+              required
+              [(ngModel)]="username"
+            />
+          </div>
+
+          <div class="grupoCampo">
+            <label class="rotuloCampo" for="senha">Senha</label>
+            <input
+              class="campoTexto"
+              id="senha"
+              name="senha"
+              type="password"
+              placeholder="Digite sua senha"
+              required
+              [(ngModel)]="password"
+            />
+          </div>
+
+          <div *ngIf="error" class="mensagemErro">{{ error }}</div>
+
+          <button class="botaoPrimario" type="submit" [disabled]="!username || !password || carregando">
+            Entrar no Sistema
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <section class="colunaImagem" aria-label="Mensagem institucional">
+      <div class="sobreposicaoImagem"></div>
+      <div class="textoImagem">
+        <h1 class="tituloImagem">Unidos para Servir</h1>
+        <p class="subtituloImagem">Gestao solidaria e eficiente.</p>
+      </div>
+    </section>
+  </div>
+
+  <footer class="rodape">
+    <span>© 2024 Sistema de Gestao ASA</span>
+  </footer>
+</main>

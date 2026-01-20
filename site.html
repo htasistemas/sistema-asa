@@ -1,0 +1,1073 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AÇÃO SOLIDÁRIA ADVENTISTA | MISSÃO MINEIRA OESTE</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;600&family=Lora:ital,wght@1,400&display=swap" rel="stylesheet">
+    
+    <!-- Configuração de Cores Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Open Sans', 'sans-serif'],
+                        heading: ['Montserrat', 'sans-serif'],
+                        serif: ['Lora', 'serif'],
+                    },
+                    colors: {
+                        asa: {
+                            light: '#4ade80',
+                            DEFAULT: '#16a34a',
+                            dark: '#14532d',
+                            brand: '#2D5C35',
+                            orange: '#E37424',
+                        },
+                        adra: {
+                            orange: '#EA5B0C',
+                            green: '#007A33'
+                        }
+                    },
+                    backgroundImage: {
+                        'hero-pattern': "linear-gradient(to right bottom, rgba(22, 163, 74, 0.9), rgba(20, 83, 45, 0.8)), url('https://images.unsplash.com/photo-1593113598332-cd288d649433?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')",
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- ESTILOS GERAIS --- */
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+        .text-gradient { background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-image: linear-gradient(to right, #16a34a, #0d9488); }
+        .tab-content { display: none; animation: fadeIn 0.5s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- MENUS --- */
+        .nav-link { padding: 0.5rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; color: #4b5563; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 0.025em; text-decoration: none; display: inline-block; }
+        .nav-link:hover, .nav-link.active { background-color: #f0fdf4; color: #16a34a; }
+        .nav-link-help { color: #ef4444; }
+        .nav-link-help:hover { background-color: #fef2f2; color: #dc2626; }
+
+        /* --- AGENDA 2026 (CARDS VIBRANTES) --- */
+        .agenda-card {
+            background: white;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .agenda-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-color: transparent;
+        }
+        .agenda-header {
+            padding: 1.5rem;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        .agenda-header::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+        }
+        .agenda-month {
+            font-size: 1.25rem; /* Maior destaque */
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 900;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: block;
+        }
+        .agenda-day-header {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            font-weight: 500;
+            margin-top: 0.25rem;
+        }
+        
+        .agenda-body {
+            padding: 0;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+        }
+        
+        /* Estilo Zebrado */
+        .agenda-event-item {
+            padding: 1.25rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            transition: background-color 0.2s;
+        }
+        .agenda-event-item:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .agenda-event-item:hover {
+            background-color: #f0fdf4;
+            border-left: 4px solid #16a34a;
+            padding-left: calc(1.25rem - 4px);
+        }
+        .agenda-event-item:last-child {
+            border-bottom: none;
+        }
+        
+        .agenda-date-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background-color: white;
+            border-radius: 12px;
+            margin-right: 1rem;
+            flex-shrink: 0;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .adb-day { font-size: 1.2rem; font-weight: 800; line-height: 1; color: #374151; }
+        .adb-label { font-size: 0.6rem; text-transform: uppercase; color: #9ca3af; font-weight: 700; margin-top: 2px;}
+        .agenda-info { flex-grow: 1; }
+        .agenda-event-title { font-size: 0.95rem; font-weight: 700; color: #1f2937; line-height: 1.2; margin-bottom: 2px; }
+        .agenda-event-desc { font-size: 0.75rem; color: #6b7280; font-weight: 500; }
+        .agenda-action-btn { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; padding: 6px 14px; border-radius: 999px; border: 1px solid; background: transparent; transition: all 0.2s; cursor: pointer; margin-left: 8px; white-space: nowrap; }
+
+        .agenda-single-body { padding: 2.5rem 2rem; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; }
+        .as-date { font-size: 3rem; font-weight: 900; color: #374151; line-height: 1; margin-bottom: 0.5rem; letter-spacing: -1px; }
+        .as-title { font-size: 1.2rem; font-weight: 800; color: #111827; margin-bottom: 0.5rem; }
+        .as-desc { font-size: 0.9rem; color: #6b7280; margin-bottom: 2rem; }
+        .as-btn { width: 100%; padding: 0.8rem; border-radius: 1rem; font-weight: 700; text-transform: uppercase; font-size: 0.85rem; border: 2px solid; background: transparent; transition: all 0.3s; }
+
+        /* Cores Temáticas Agenda */
+        .theme-green .agenda-header { background: linear-gradient(135deg, #16a34a, #14532d); }
+        .theme-green .agenda-action-btn { color: #16a34a; border-color: #16a34a; }
+        .theme-green .agenda-action-btn:hover, .theme-green .as-btn:hover { background: #16a34a; color: white; }
+        .theme-green .as-btn { color: #16a34a; border-color: #16a34a; }
+
+        .theme-teal .agenda-header { background: linear-gradient(135deg, #0d9488, #0f766e); }
+        .theme-teal .agenda-action-btn { color: #0d9488; border-color: #0d9488; }
+        .theme-teal .agenda-action-btn:hover { background: #0d9488; color: white; }
+
+        .theme-orange .agenda-header { background: linear-gradient(135deg, #ea580c, #c2410c); }
+        .theme-orange .agenda-action-btn { color: #ea580c; border-color: #ea580c; }
+        .theme-orange .agenda-action-btn:hover { background: #ea580c; color: white; }
+
+        .theme-red .agenda-header { background: linear-gradient(135deg, #dc2626, #991b1b); }
+        .theme-red .agenda-action-btn { color: #dc2626; border-color: #dc2626; }
+        .theme-red .agenda-action-btn:hover { background: #dc2626; color: white; }
+
+        .theme-purple .agenda-header { background: linear-gradient(135deg, #7c3aed, #5b21b6); }
+        .theme-purple .as-btn { color: #7c3aed; border-color: #7c3aed; }
+        .theme-purple .as-btn:hover { background: #7c3aed; color: white; }
+        
+        .theme-indigo .agenda-header { background: linear-gradient(135deg, #4f46e5, #3730a3); }
+        .theme-indigo .agenda-action-btn { color: #4f46e5; border-color: #4f46e5; }
+        .theme-indigo .agenda-action-btn:hover { background: #4f46e5; color: white; }
+        
+        .theme-blue .agenda-header { background: linear-gradient(135deg, #2563eb, #1e3a8a); }
+        .theme-blue .agenda-action-btn { color: #2563eb; border-color: #2563eb; }
+        .theme-blue .agenda-action-btn:hover { background: #2563eb; color: white; }
+
+        .theme-amber .agenda-header { background: linear-gradient(135deg, #f59e0b, #b45309); }
+        .theme-amber .agenda-action-btn { color: #f59e0b; border-color: #f59e0b; }
+        .theme-amber .agenda-action-btn:hover { background: #f59e0b; color: white; }
+
+        .theme-lime .agenda-header { background: linear-gradient(135deg, #84cc16, #3f6212); }
+        .theme-lime .agenda-action-btn { color: #84cc16; border-color: #84cc16; }
+        .theme-lime .agenda-action-btn:hover { background: #84cc16; color: white; }
+
+        .theme-rose .agenda-header { background: linear-gradient(135deg, #f43f5e, #9f1239); }
+        .theme-rose .agenda-action-btn { color: #f43f5e; border-color: #f43f5e; }
+        .theme-rose .agenda-action-btn:hover { background: #f43f5e; color: white; }
+
+        .theme-cyan .agenda-header { background: linear-gradient(135deg, #06b6d4, #0e7490); }
+        .theme-cyan .agenda-action-btn { color: #06b6d4; border-color: #06b6d4; }
+        .theme-cyan .agenda-action-btn:hover { background: #06b6d4; color: white; }
+
+        .theme-slate .agenda-header { background: linear-gradient(135deg, #64748b, #334155); }
+        .theme-slate .agenda-action-btn { color: #64748b; border-color: #64748b; }
+        .theme-slate .agenda-action-btn:hover { background: #64748b; color: white; }
+
+        /* Parceiros & Outros */
+        .partner-card-detailed {
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #f3f4f6;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+        }
+        @media (min-width: 768px) {
+            .partner-card-detailed { flex-direction: row; }
+            .partner-logo-section { width: 50%; }
+            .partner-info-section { width: 50%; }
+        }
+        .partner-logo-section {
+            background-color: #f9fafb;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem;
+            position: relative;
+        }
+        .partner-logo-bg {
+            position: absolute;
+            inset: 0;
+            opacity: 0.05;
+            background-image: radial-gradient(#16a34a 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .partner-logo-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            width: 250px;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+        .partner-card-detailed:hover .partner-logo-container {
+            transform: scale(1.05);
+        }
+        .partner-info-section {
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .partner-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            align-self: flex-start;
+        }
+        .partner-link {
+            display: inline-flex;
+            align-items: center;
+            font-weight: 700;
+            margin-top: 1rem;
+            transition: all 0.2s;
+        }
+        .partner-link:hover i {
+            transform: translateX(4px);
+        }
+
+        /* Modais, Timeline, etc. */
+        #modal-overlay, #project-modal-overlay, #volunteer-modal-overlay, #church-modal-overlay { backdrop-filter: blur(8px); }
+        .timeline-vertical { border-left: 2px solid #e5e7eb; margin-left: 16px; padding-left: 24px; position: relative; }
+        .timeline-dot { width: 16px; height: 16px; background-color: #16a34a; border-radius: 50%; position: absolute; left: -9px; top: 6px; border: 2px solid white; }
+        #volunteer-form-container { transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out; }
+
+        /* --- AJUSTES RESPONSIVOS --- */
+        @media (max-width: 1024px) {
+            .nav-link { font-size: 0.75rem; padding: 0.4rem 0.65rem; }
+            .partner-info-section, .partner-logo-section { padding: 2rem; }
+        }
+        @media (max-width: 768px) {
+            body { font-size: 15px; }
+            .container { padding-left: 1rem; padding-right: 1rem; }
+            #navbar { backdrop-filter: none; }
+            #mobile-menu { max-height: 75vh; overflow-y: auto; }
+            .logoAsa, .partner-logo-container img { max-width: 100%; height: auto; }
+            .agenda-card { border-radius: 1rem; }
+            .agenda-header { padding: 1.25rem; }
+            .agenda-event-item { padding: 1rem; }
+            .agenda-date-badge { width: 44px; height: 44px; }
+            .agenda-event-title { font-size: 0.9rem; }
+            .agenda-event-desc { font-size: 0.75rem; }
+            .as-btn { font-size: 0.8rem; }
+            .hero-actions, .hero-actions a, .hero-actions button { width: 100%; }
+        }
+        @media (max-width: 640px) {
+            .cardLogin, .agenda-card, .partner-card-detailed { border-radius: 1rem; }
+            .partner-card-detailed { margin-bottom: 1.5rem; }
+            .partner-logo-container { width: 200px; height: 120px; }
+            .partner-info-section { padding: 1.5rem; }
+            .agenda-single-body { padding: 2rem 1.25rem; }
+            .nav-link { font-size: 0.7rem; }
+            .min-w-\\[250px\\] { min-width: 0; width: 100%; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans flex flex-col min-h-screen">
+
+    <!-- Navegação -->
+    <nav class="bg-white/95 backdrop-blur-md shadow-sm fixed w-full z-50 transition-all duration-300" id="navbar">
+        <div class="container mx-auto px-4 h-16 flex justify-between items-center">
+            <!-- Logo -->
+            <a href="#home" class="flex items-center space-x-3 group">
+                <img src="C:\asa\img\logo.jpg" alt="Logo ASA" class="h-16 w-auto object-contain transition-transform group-hover:scale-105">
+                <div class="flex flex-col justify-center">
+                    <span class="text-sm md:text-base font-black text-asa-brand uppercase tracking-tight leading-tight">AÇÃO SOLIDÁRIA ADVENTISTA</span>
+                    <span class="text-[10px] md:text-xs font-semibold text-gray-500 uppercase tracking-wider">MISSÃO MINEIRA OESTE</span>
+                </div>
+            </a>
+
+            <!-- Menu Desktop -->
+            <div class="hidden lg:flex items-center gap-1">
+                <a href="#home" class="nav-link">Início</a>
+                <a href="#como-ajudar" class="nav-link nav-link-help"><i class="fas fa-heart mr-1.5 text-xs"></i>Como Ajudar</a>
+                <a href="#atuacao" class="nav-link">Atuação</a>
+                <a href="#historias" class="nav-link">Nossa Origem</a>
+                <a href="#central" class="nav-link">Agenda</a>
+                <a href="#parceiros" class="nav-link">Parceiros</a>
+                <button onclick="openChurchModal()" class="nav-link bg-transparent border-none cursor-pointer font-semibold">Asas</button>
+                <a href="#contato" class="nav-link">Contato</a>
+                <a href="http://localhost:4200/login" target="_blank" class="ml-2 bg-green-600 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow hover:shadow-md hover:bg-green-700 transition flex items-center transform hover:scale-105 no-underline">
+                    <i class="fas fa-lock mr-1.5"></i> Coordenação
+                </a>
+            </div>
+
+            <!-- Botão Mobile -->
+            <button id="mobile-menu-btn" class="lg:hidden text-gray-600 hover:text-green-600 text-xl focus:outline-none transition"><i class="fas fa-bars"></i></button>
+        </div>
+
+        <!-- Menu Mobile -->
+        <div id="mobile-menu" class="hidden lg:hidden bg-white border-t border-gray-100 shadow-lg">
+            <div class="flex flex-col p-4 gap-2">
+                <a href="#home" class="nav-link w-full text-center">Início</a>
+                <a href="#como-ajudar" class="nav-link nav-link-help w-full text-center">Como Ajudar</a>
+                <a href="#atuacao" class="nav-link w-full text-center">Atuação</a>
+                <a href="#historias" class="nav-link w-full text-center">Nossa Origem</a>
+                <a href="#central" class="nav-link w-full text-center">Agenda</a>
+                <a href="#parceiros" class="nav-link w-full text-center">Parceiros</a>
+                <button onclick="openChurchModal()" class="nav-link w-full text-center bg-transparent border-none font-bold">Asas</button>
+                <a href="#contato" class="nav-link w-full text-center">Contato</a>
+                <a href="http://localhost:4200/login" target="_blank" class="bg-green-50 text-green-700 nav-link w-full text-center border border-green-100 mt-2">Área da Coordenação</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="relative min-h-screen flex items-center justify-center bg-hero-pattern bg-cover bg-center bg-fixed text-white pt-24 pb-40 overflow-hidden">
+        <div class="container mx-auto px-4 text-center relative z-30">
+            <div class="w-full flex justify-center md:justify-end md:absolute md:top-0 md:right-4 z-50 mb-6 md:mb-0">
+                <a href="#como-ajudar" class="bg-red-600 text-white px-6 py-2 md:px-8 md:py-3 rounded-full font-bold text-sm md:text-base shadow-2xl hover:bg-red-700 transition transform hover:-translate-y-1 ring-4 ring-red-600/30 flex items-center animate-pulse no-underline">
+                    <i class="fas fa-heart mr-2"></i> Quero Ajudar
+                </a>
+            </div>
+            <span class="inline-block py-1 px-3 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-sm font-semibold mb-4 animate-bounce"><i class="fas fa-star text-yellow-300 mr-1"></i> Missão Mineira Oeste</span>
+            <h1 class="text-4xl md:text-6xl font-heading font-bold mb-6 leading-tight drop-shadow-lg">Solidariedade que <br/><span class="text-green-300">Transforma Vidas</span></h1>
+            <p class="text-lg md:text-xl mb-12 max-w-2xl mx-auto text-gray-100 font-light">Unindo forças para servir a comunidade, atender necessidades e compartilhar esperança. Junte-se ao exército do bem da ASA.</p>
+            <div class="flex flex-col items-center gap-6">
+                <div class="flex flex-col md:flex-row justify-center gap-5 w-full">
+                    <a href="#central" class="bg-white text-green-800 px-8 py-3 rounded-full font-bold text-lg shadow-lg hover:bg-gray-100 transition transform hover:-translate-y-1 min-w-[250px] text-center no-underline">Ver Projetos e Agenda</a>
+                    <button onclick="openVolunteerModal()" class="bg-gradient-to-r from-green-600 to-emerald-600 border border-green-500 text-white px-8 py-3 rounded-full font-bold text-lg hover:from-green-700 hover:to-emerald-700 transition shadow-lg transform hover:-translate-y-1 min-w-[250px] cursor-pointer">Seja um Voluntário</button>
+                </div>
+            </div>
+        </div>
+        <div class="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10"><svg class="relative block w-full h-[120px] md:h-[180px]" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 150 28" preserveAspectRatio="none"><defs><path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" /></defs><g class="parallax"><use xlink:href="#gentle-wave" x="48" y="0" fill="rgba(249,250,251,0.7)" /><use xlink:href="#gentle-wave" x="48" y="3" fill="rgba(249,250,251,0.5)" /><use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(249,250,251,0.3)" /><use xlink:href="#gentle-wave" x="48" y="7" fill="#f9fafb" /></g></svg></div>
+    </section>
+
+    <!-- Estatísticas -->
+    <div class="bg-white relative -mt-20 z-40 container mx-auto px-4 rounded-2xl shadow-xl border border-gray-100 py-4 mb-8 transform -translate-y-10 lg:-translate-y-20">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-y-6 gap-x-4 text-center lg:divide-x divide-gray-100">
+            <div><span class="block text-2xl md:text-3xl font-bold text-asa-brand counter" data-target="4000">4.000</span><span class="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-1 block">Famílias Atendidas</span></div>
+            <div><span class="block text-2xl md:text-3xl font-bold text-asa-brand counter" data-target="42">42</span><span class="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-1 block">Ton. Alimentos</span></div>
+            <div><span class="block text-2xl md:text-3xl font-bold text-asa-brand counter" data-target="2200">2.200</span><span class="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-1 block">Cestas Básicas</span></div>
+            <div><span class="block text-2xl md:text-3xl font-bold text-asa-brand counter" data-target="600">600</span><span class="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-1 block">Formação Profissional</span></div>
+            <div><span class="block text-2xl md:text-3xl font-bold text-asa-brand counter" data-target="42">42</span><span class="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-1 block">Unidades de Ação</span></div>
+            <div><span class="block text-2xl md:text-3xl font-bold text-asa-brand counter" data-target="1500">1.500</span><span class="text-xs text-gray-500 uppercase tracking-wider font-semibold mt-1 block">Voluntários</span></div>
+        </div>
+    </div>
+
+    <!-- Como Ajudar -->
+    <section id="como-ajudar" class="pb-20 pt-4 bg-gray-50 scroll-mt-28">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase mb-4 inline-block tracking-wider"><i class="fas fa-check-circle mr-1"></i> Seguro & Transparente</span>
+                <h2 class="text-3xl md:text-4xl font-heading font-bold text-gray-800">Como você pode ajudar?</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- PIX -->
+                <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-green-500 text-center hover:-translate-y-2 transition duration-300">
+                    <div class="w-16 h-16 mx-auto bg-green-50 text-green-600 rounded-full flex items-center justify-center text-2xl mb-4"><i class="fas fa-qrcode"></i></div>
+                    <h3 class="font-bold text-xl text-gray-800 mb-2">Doação via PIX</h3>
+                    <div class="bg-gray-100 p-3 rounded-lg text-xs font-mono text-gray-600 break-all mb-4 select-all">pix.asa.mmo@adventistas.org</div>
+                    <button class="text-green-600 font-bold text-sm hover:underline" onclick="copyPix()">Copiar Chave PIX</button>
+                </div>
+                <!-- Alimentos -->
+                <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-blue-500 text-center hover:-translate-y-2 transition duration-300">
+                    <div class="w-16 h-16 mx-auto bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mb-4"><i class="fas fa-box-open"></i></div>
+                    <h3 class="font-bold text-xl text-gray-800 mb-2">Doação de Itens</h3>
+                    <button onclick="openChurchModal()" class="text-blue-600 font-bold text-sm hover:underline bg-transparent border-none cursor-pointer">Ver pontos de coleta</button>
+                </div>
+                <!-- Voluntariado -->
+                <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-yellow-500 text-center hover:-translate-y-2 transition duration-300">
+                    <div class="w-16 h-16 mx-auto bg-yellow-50 text-yellow-600 rounded-full flex items-center justify-center text-2xl mb-4"><i class="fas fa-hands-helping"></i></div>
+                    <h3 class="font-bold text-xl text-gray-800 mb-2">Seja Voluntário</h3>
+                    <button onclick="openVolunteerModal()" class="inline-block bg-yellow-500 text-white px-6 py-2 rounded-full font-bold text-sm hover:bg-yellow-600 transition cursor-pointer">Saiba Mais</button>
+                </div>
+                <!-- Apadrinhamento -->
+                <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-purple-500 text-center hover:-translate-y-2 transition duration-300">
+                    <div class="w-16 h-16 mx-auto bg-purple-50 text-purple-600 rounded-full flex items-center justify-center text-2xl mb-4"><i class="fas fa-user-friends"></i></div>
+                    <h3 class="font-bold text-xl text-gray-800 mb-2">Apadrinhe</h3>
+                    <button onclick="openModal('Apadrinhamento Mensal')" class="inline-block bg-purple-600 text-white px-6 py-2 rounded-full font-bold text-sm hover:bg-purple-700 transition cursor-pointer">Quero Apadrinhar</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Áreas de Atuação -->
+    <section id="atuacao" class="pb-20 pt-8 bg-white scroll-mt-28">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12"><h2 class="text-3xl font-heading font-bold text-gray-800">5 Áreas de Atuação</h2></div>
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                <div class="group relative bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition border-b-4 border-green-500 overflow-hidden"><div class="relative z-10 flex flex-col items-center"><div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl"><i class="fas fa-utensils"></i></div><h4 class="font-bold text-center text-gray-800">Segurança Alimentar</h4></div></div>
+                <div class="group relative bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition border-b-4 border-blue-500 overflow-hidden"><div class="relative z-10 flex flex-col items-center"><div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl"><i class="fas fa-tshirt"></i></div><h4 class="font-bold text-center text-gray-800">Vestuário</h4></div></div>
+                <div class="group relative bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition border-b-4 border-red-500 overflow-hidden"><div class="relative z-10 flex flex-col items-center"><div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl"><i class="fas fa-heartbeat"></i></div><h4 class="font-bold text-center text-gray-800">Saúde</h4></div></div>
+                <div class="group relative bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition border-b-4 border-purple-500 overflow-hidden"><div class="relative z-10 flex flex-col items-center"><div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl"><i class="fas fa-briefcase"></i></div><h4 class="font-bold text-center text-gray-800">Geração de Renda</h4></div></div>
+                <div class="group relative bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition border-b-4 border-yellow-500 overflow-hidden"><div class="relative z-10 flex flex-col items-center"><div class="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl"><i class="fas fa-book-open"></i></div><h4 class="font-bold text-center text-gray-800">Alfabetização</h4></div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Nossa Origem (RESTAURADA E DETALHADA) -->
+    <section id="historias" class="pb-20 pt-8 bg-gray-50 scroll-mt-28">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <span class="text-asa-brand font-bold uppercase tracking-widest text-xs mb-3">Nossa Origem</span>
+                <h2 class="text-3xl md:text-4xl font-heading font-bold text-gray-800">Uma História de Serviço e Amor</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+                
+                <!-- Coluna da Esquerda: Timeline Detalhada -->
+                <div class="space-y-8 pl-4 border-l-4 border-gray-200">
+                    
+                    <!-- 1874: Dorcas -->
+                    <div class="relative">
+                        <div class="absolute -left-7 top-0 w-5 h-5 bg-green-600 rounded-full border-4 border-white shadow"></div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">1874: A Sociedade de Dorcas</h3>
+                        <p class="text-gray-600 leading-relaxed mb-4">
+                            Em outubro de 1874, na cidade de Battle Creek (Michigan, EUA), um grupo de mulheres fundou a primeira <strong>Sociedade de Dorcas</strong>. Inspiradas pela discípula bíblica Tabita (Atos 9), que costurava túnicas para viúvas, elas decidiram agir. O objetivo era simples e poderoso: <strong>suprir alimentos e roupas para famílias necessitadas da comunidade</strong>.
+                        </p>
+                        <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500 italic text-sm text-green-800">
+                            "Esta é a obra que Deus ordenou... a mão ajudadora do evangelho." — Ellen G. White
+                        </div>
+                    </div>
+
+                    <!-- 1956: ADRA e Expansão -->
+                    <div class="relative">
+                        <div class="absolute -left-7 top-0 w-5 h-5 bg-orange-500 rounded-full border-4 border-white shadow"></div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">1956: O Nascimento da ADRA</h3>
+                        <p class="text-gray-600 leading-relaxed">
+                            O trabalho assistencial cresceu e, em 1956, foi organizada a SAWS (Serviço de Assistência Social Adventista), que mais tarde se tornaria a <strong>ADRA (Agência Adventista de Desenvolvimento e Recursos Assistenciais)</strong>. Enquanto a ADRA atua como agência humanitária global em grandes desastres e projetos de desenvolvimento, a <strong>ASA (Ação Solidária Adventista)</strong> permanece como o braço da igreja local, focado no atendimento comunitário direto.
+                        </p>
+                    </div>
+
+                    <!-- Hoje: ASA Moderna -->
+                    <div class="relative">
+                        <div class="absolute -left-7 top-0 w-5 h-5 bg-blue-600 rounded-full border-4 border-white shadow"></div>
+                        <h3 class="text-2xl font-bold text-gray-800 mb-2">Hoje: Muito Mais que Cestas</h3>
+                        <p class="text-gray-600 leading-relaxed">
+                            Atualmente, a ASA vai além do assistencialismo. Nosso foco mudou de apenas "dar o peixe" para "ensinar a pescar". Através de cursos de <strong>Geração de Renda</strong>, feiras de saúde e apoio psicológico, buscamos restaurar a dignidade integral das famílias.
+                        </p>
+                    </div>
+
+                </div>
+
+                <!-- Coluna da Direita: Card Diferencial -->
+                <div class="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 sticky top-24">
+                    <h4 class="text-xl font-bold text-gray-800 mb-6 text-center">Entenda a Diferença</h4>
+                    
+                    <div class="space-y-6">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-xl shrink-0"><i class="fas fa-church"></i></div>
+                            <div>
+                                <h5 class="font-bold text-green-700">ASA (Igreja Local)</h5>
+                                <p class="text-sm text-gray-600">Atua dentro de cada bairro, através dos membros da igreja. Foca no atendimento contínuo, cadastro de famílias e projetos comunitários locais.</p>
+                            </div>
+                        </div>
+
+                        <div class="w-full h-px bg-gray-200"></div>
+
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xl shrink-0"><i class="fas fa-globe-americas"></i></div>
+                            <div>
+                                <h5 class="font-bold text-orange-700">ADRA (Agência Global)</h5>
+                                <p class="text-sm text-gray-600">ONG internacional que gerencia projetos de grande escala, resposta a catástrofes e parcerias governamentais.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 bg-gray-50 p-4 rounded-xl text-center">
+                        <p class="text-sm font-semibold text-gray-700">Ambas trabalham juntas para cumprir a missão de servir!</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Nossos Projetos -->
+    <section id="projetos" class="pb-20 pt-8 bg-white scroll-mt-28">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16"><span class="text-green-600 font-bold tracking-widest uppercase text-sm">Transformando Vidas</span><h2 class="text-3xl md:text-4xl font-heading font-bold mt-2 text-gray-800">Nossos Projetos</h2></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="project-card group cursor-pointer" onclick="openProjectModal('Mutirão de Natal', 'A maior campanha solidária da América Latina.', 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')">
+                    <div class="project-image-container"><img src="https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Mutirão" class="project-image"><div class="absolute top-4 right-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">DEZEMBRO</div></div>
+                    <div class="project-content"><span class="project-tag bg-red-100 text-red-600">Combate à Fome</span><h3 class="text-xl font-bold text-gray-800 mb-2 group-hover:text-green-600 transition">Mutirão de Natal</h3><span class="project-link text-green-600">Saiba mais <i class="fas fa-arrow-right ml-2 text-xs"></i></span></div>
+                </div>
+                <div class="project-card group cursor-pointer" onclick="openProjectModal('Vida por Vidas', 'Projeto jovem de doação de sangue.', 'https://images.unsplash.com/photo-1584362917165-526a968579e8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')">
+                    <div class="project-image-container"><img src="https://images.unsplash.com/photo-1584362917165-526a968579e8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Vida por Vidas" class="project-image"><div class="absolute top-4 right-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">ANUAL</div></div>
+                    <div class="project-content"><span class="project-tag bg-red-100 text-red-600">Saúde</span><h3 class="text-xl font-bold text-gray-800 mb-2 group-hover:text-green-600 transition">Vida por Vidas</h3><span class="project-link text-green-600">Saiba mais <i class="fas fa-arrow-right ml-2 text-xs"></i></span></div>
+                </div>
+                <div class="project-card group cursor-pointer" onclick="openProjectModal('Geração de Renda', 'Cursos profissionalizantes.', 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')">
+                    <div class="project-image-container"><img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Geração de Renda" class="project-image"><div class="absolute top-4 right-4 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">CONTÍNUO</div></div>
+                    <div class="project-content"><span class="project-tag bg-purple-100 text-purple-600">Desenvolvimento</span><h3 class="text-xl font-bold text-gray-800 mb-2 group-hover:text-green-600 transition">Geração de Renda</h3><span class="project-link text-green-600">Saiba mais <i class="fas fa-arrow-right ml-2 text-xs"></i></span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AGENDA 2026 (RENOVADA E INTERATIVA) -->
+<section id="central" class="pb-20 pt-8 bg-white relative scroll-mt-28"> 
+    <div class="container mx-auto px-4 relative z-10">
+        <div class="text-center mb-10"><h2 class="text-3xl md:text-4xl font-heading font-bold text-gray-800">Agenda 2026</h2><p class="text-gray-500 mt-2">Fique por dentro de nossos principais eventos.</p></div>
+        <div class="bg-white rounded-3xl p-6 md:p-10 border border-gray-100 shadow-xl h-auto pb-10">
+            <div id="agenda2026" class="tab-content active">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    
+                    <!-- Jan: Verde (Lista) -->
+                    <div class="agenda-card theme-green">
+                        <div class="agenda-header">
+                            <i class="fas fa-calendar agenda-icon"></i>
+                            <span class="agenda-month">Janeiro</span>
+                            <div class="agenda-day"></div>
+                        </div>
+                        <div class="agenda-body">
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">03</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Sábado Missionário</h4><p class="agenda-event-desc">Ação Local</p></div>
+                                <button onclick="openModal('Sábado Missionário - Jan')" class="agenda-action-btn border-green-700 text-green-700 hover:bg-green-700">Participar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fev: Teal (Lista) -->
+                    <div class="agenda-card theme-teal">
+                        <div class="agenda-header">
+                            <i class="fas fa-hands-praying agenda-icon"></i>
+                            <span class="agenda-month">Fevereiro</span>
+                            <div class="agenda-day"></div>
+                        </div>
+                        <div class="agenda-body">
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">07</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Sábado Missionário</h4><p class="agenda-event-desc">Ação Local</p></div>
+                                <button onclick="openModal('Sábado Missionário - Fev')" class="agenda-action-btn border-teal-600 text-teal-600 hover:bg-teal-600">Participar</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">19</span><span class="adb-label">DIA</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">10 Dias de Oração</h4><p class="agenda-event-desc">Consagração Anual (19-28)</p></div>
+                                <button onclick="openModal('10 Dias de Oração - 2026')" class="agenda-action-btn border-teal-600 text-teal-600 hover:bg-teal-600">Pré-inscrição</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mar: Laranja (Lista) -->
+                    <div class="agenda-card theme-orange">
+                        <div class="agenda-header">
+                            <i class="fas fa-seedling agenda-icon"></i>
+                            <span class="agenda-month">Março</span>
+                            <div class="agenda-day"></div>
+                        </div>
+                        <div class="agenda-body">
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">07</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Sábado Missionário</h4><p class="agenda-event-desc">Ação Local</p></div>
+                                <button onclick="openModal('Sábado Missionário - Mar')" class="agenda-action-btn border-orange-600 text-orange-600 hover:bg-orange-600">Participar</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">07</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Treinamento ASA</h4><p class="agenda-event-desc">Líderes</p></div>
+                                <button onclick="openModal('Treinamento ASA - Mar')" class="agenda-action-btn border-orange-600 text-orange-600 hover:bg-orange-600">Ir</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">28</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Confraternização</h4></div>
+                                <button onclick="openModal('Confraternização - Mar')" class="agenda-action-btn border-orange-600 text-orange-600 hover:bg-orange-600">Ir</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Abr: Vermelho (Lista) -->
+                    <div class="agenda-card theme-red">
+                        <div class="agenda-header">
+                            <i class="fas fa-egg agenda-icon"></i>
+                            <span class="agenda-month">Abril</span>
+                            <div class="agenda-day"></div>
+                        </div>
+                        <div class="agenda-body">
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">04</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Sábado Missionário</h4><p class="agenda-event-desc">Ação Local</p></div>
+                                <button onclick="openModal('Sábado Missionário - Abr')" class="agenda-action-btn border-red-600 text-red-600 hover:bg-red-600">Participar</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">05</span><span class="adb-label">DOM</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Mutirão Páscoa</h4><p class="agenda-event-desc">Solidariedade</p></div>
+                                <button onclick="openModal('Páscoa')" class="agenda-action-btn border-red-600 text-red-600 hover:bg-red-600">Doar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mai: Roxo (Lista) -->
+                    <div class="agenda-card theme-purple">
+                        <div class="agenda-header">
+                            <i class="fas fa-chalkboard-teacher agenda-icon"></i>
+                            <span class="agenda-month">Maio</span>
+                            <div class="agenda-day"></div>
+                        </div>
+                        <div class="agenda-body">
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">02</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Sábado Missionário</h4><p class="agenda-event-desc">Ação Local</p></div>
+                                <button onclick="openModal('Sábado Missionário - Mai')" class="agenda-action-btn border-purple-600 text-purple-600 hover:bg-purple-600">Participar</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">30</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Capacitação ASA</h4></div>
+                                <button onclick="openModal('Capacitação ASA - Mai')" class="agenda-action-btn border-purple-600 text-purple-600 hover:bg-purple-600">Ir</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">31</span><span class="adb-label">DOM</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Confraternização</h4></div>
+                                <button onclick="openModal('Confraternização - Mai')" class="agenda-action-btn border-purple-600 text-purple-600 hover:bg-purple-600">Ir</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Jun: Indigo (Lista) -->
+                    <div class="agenda-card theme-indigo">
+                        <div class="agenda-header">
+                            <i class="fas fa-heart agenda-icon"></i>
+                            <span class="agenda-month">Junho</span>
+                            <div class="agenda-day"></div>
+                        </div>
+                        <div class="agenda-body">
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">06</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Sábado Missionário</h4><p class="agenda-event-desc">Ação Local</p></div>
+                                <button onclick="openModal('Sábado Missionário - Jun')" class="agenda-action-btn border-indigo-600 text-indigo-600 hover:bg-indigo-600">Participar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Jul: Azul (Lista) -->
+                    <div class="agenda-card theme-blue">
+                        <div class="agenda-header">
+                            <i class="fas fa-tint agenda-icon"></i>
+                            <span class="agenda-month">Julho</span>
+                            <div class="agenda-day"></div>
+                        </div>
+                        <div class="agenda-body">
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">04</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Sábado Missionário</h4><p class="agenda-event-desc">Ação Local</p></div>
+                                <button onclick="openModal('Sábado Missionário - Jul')" class="agenda-action-btn border-blue-600 text-blue-600 hover:bg-blue-600">Participar</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">18</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Vida por Vidas</h4><p class="agenda-event-desc">Doação Sangue</p></div>
+                                <button onclick="openModal('Vida por Vidas')" class="agenda-action-btn border-blue-600 text-blue-600 hover:bg-blue-600">Doar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ago: Âmbar (Lista) -->
+                    <div class="agenda-card theme-amber">
+                        <div class="agenda-header">
+                            <i class="fas fa-bullhorn agenda-icon"></i>
+                            <span class="agenda-month">Agosto</span>
+                            <div class="agenda-day"></div>
+                        </div>
+                        <div class="agenda-body">
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">01</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Sábado Missionário</h4><p class="agenda-event-desc">Ação Local</p></div>
+                                <button onclick="openModal('Sábado Missionário - Ago')" class="agenda-action-btn border-amber-600 text-amber-600 hover:bg-amber-600">Participar</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">22</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Quebrando o Silêncio</h4><p class="agenda-event-desc">Passeata Contra Violência</p></div>
+                                <button onclick="openModal('Quebrando o Silêncio')" class="agenda-action-btn border-amber-600 text-amber-600 hover:bg-amber-600">Participar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Set: Lima (Lista) -->
+                    <div class="agenda-card theme-lime">
+                        <div class="agenda-header">
+                            <i class="fas fa-people-group agenda-icon"></i>
+                            <span class="agenda-month">Setembro</span>
+                            <div class="agenda-day"></div>
+                        </div>
+                        <div class="agenda-body">
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">05</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Sábado Missionário</h4><p class="agenda-event-desc">Ação Local</p></div>
+                                <button onclick="openModal('Sábado Missionário - Set')" class="agenda-action-btn border-lime-600 text-lime-600 hover:bg-lime-600">Participar</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">05</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Treinamento ASA</h4><p class="agenda-event-desc">Líderes</p></div>
+                                <button onclick="openModal('Treinamento ASA - Set')" class="agenda-action-btn border-lime-600 text-lime-600 hover:bg-lime-600">Ir</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">26</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Confraternização</h4></div>
+                                <button onclick="openModal('Confraternização - Set')" class="agenda-action-btn border-lime-600 text-lime-600 hover:bg-lime-600">Ir</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Out: Rosa (Lista) -->
+                    <div class="agenda-card theme-rose">
+                        <div class="agenda-header">
+                            <i class="fas fa-child agenda-icon"></i>
+                            <span class="agenda-month">Outubro</span>
+                            <div class="agenda-day"></div>
+                        </div>
+                        <div class="agenda-body">
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">03</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Sábado Missionário</h4><p class="agenda-event-desc">Ação Local</p></div>
+                                <button onclick="openModal('Sábado Missionário - Out')" class="agenda-action-btn border-rose-600 text-rose-600 hover:bg-rose-600">Participar</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">11</span><span class="adb-label">DOM</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Festa das Crianças</h4></div>
+                                <button onclick="openModal('Festa das Crianças')" class="agenda-action-btn border-rose-600 text-rose-600 hover:bg-rose-600">Ir</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nov: Ciano (Lista) -->
+                    <div class="agenda-card theme-cyan">
+                        <div class="agenda-header">
+                            <i class="fas fa-clipboard-check agenda-icon"></i>
+                            <span class="agenda-month">Novembro</span>
+                            <div class="agenda-day"></div>
+                        </div>
+                        <div class="agenda-body">
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">07</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Sábado Missionário</h4><p class="agenda-event-desc">Ação Local</p></div>
+                                <button onclick="openModal('Sábado Missionário - Nov')" class="agenda-action-btn border-cyan-600 text-cyan-600 hover:bg-cyan-600">Participar</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">28</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">ELO</h4><p class="agenda-event-desc">Avaliação</p></div>
+                                <button onclick="openModal('ELO - Nov')" class="agenda-action-btn border-cyan-600 text-cyan-600 hover:bg-cyan-600">Ir</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dez: Cinza (Lista) -->
+                    <div class="agenda-card theme-slate">
+                        <div class="agenda-header">
+                            <i class="fas fa-gift agenda-icon"></i>
+                            <span class="agenda-month">Dezembro</span>
+                            <div class="agenda-day"></div>
+                        </div>
+                        <div class="agenda-body">
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">05</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Sábado Missionário</h4><p class="agenda-event-desc">Ação Local</p></div>
+                                <button onclick="openModal('Sábado Missionário - Dez')" class="agenda-action-btn border-slate-600 text-slate-600 hover:bg-slate-600">Participar</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">12</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Mutirão Natal</h4><p class="agenda-event-desc">Sabiazinho 15h</p></div>
+                                <button onclick="openModal('Mutirão Natal')" class="agenda-action-btn border-slate-600 text-slate-600 hover:bg-slate-600">Doar</button>
+                            </div>
+                            <div class="agenda-event-item">
+                                <div class="agenda-date-badge"><span class="adb-day">19</span><span class="adb-label">SAB</span></div>
+                                <div class="agenda-info"><h4 class="agenda-event-title">Confraternização</h4></div>
+                                <button onclick="openModal('Confraternização - Dez')" class="agenda-action-btn border-slate-600 text-slate-600 hover:bg-slate-600">Ir</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- Parceiros (RENOVADO: CARD GIGANTE PARA CADA UM) -->
+    <section id="parceiros" class="py-20 bg-gray-50 scroll-mt-28">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-heading font-bold mt-2 text-gray-800">Nossos Parceiros</h2>
+            </div>
+            
+            <div class="space-y-12">
+                <!-- ADRA -->
+                <div class="partner-card-detailed group">
+                    <div class="partner-logo-section">
+                        <div class="partner-logo-bg"></div>
+                        <div class="partner-logo-container">
+                             <a href="https://adra.org.br/" target="_blank"><img src="https://static.wixstatic.com/media/2956c5_44bf991606b14fdd84cfcedcc8a19d83~mv2.png/v1/fill/w_310,h_205,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Image-empty-state_edited_edited.png" alt="Logo ADRA" class="h-full w-full object-contain"></a>
+                        </div>
+                    </div>
+                    <div class="partner-info-section">
+                        <span class="partner-badge bg-orange-100 text-orange-700">Parceiro Humanitário</span>
+                        <h3 class="text-3xl font-bold text-gray-800 mb-4">ADRA - Núcleo Uberlândia</h3>
+                        <p class="text-gray-600 mb-6 leading-relaxed">Agência humanitária global da Igreja Adventista. O núcleo de Uberlândia atua em emergências e desenvolvimento comunitário, sendo nosso braço direito em grandes ações.</p>
+                        <a href="https://adra.org.br/" target="_blank" class="partner-link text-orange-600">Visitar Site <i class="fas fa-external-link-alt ml-2 text-sm"></i></a>
+                    </div>
+                </div>
+
+                <!-- Grupo Bahamas -->
+                <div class="partner-card-detailed group">
+                    <div class="partner-logo-section">
+                        <div class="partner-logo-bg"></div>
+                        <div class="partner-logo-container">
+                            <a href="https://grupobahamas.com.br/" target="_blank"><img src="https://logodownload.org/wp-content/uploads/2020/11/bahamas-supermercados-logo.png" alt="Grupo Bahamas" class="h-full w-full object-contain"></a>
+                        </div>
+                    </div>
+                    <div class="partner-info-section">
+                        <span class="partner-badge bg-red-100 text-red-700">Parceiro Master</span>
+                        <h3 class="text-3xl font-bold text-gray-800 mb-4">Grupo Bahamas</h3>
+                        <p class="text-gray-600 mb-6 leading-relaxed">Rede de supermercados que apoia constantemente nossas campanhas de arrecadação de alimentos, permitindo pontos de coleta em suas lojas.</p>
+                        <a href="https://grupobahamas.com.br/" target="_blank" class="partner-link text-red-600">Visitar Site <i class="fas fa-external-link-alt ml-2 text-sm"></i></a>
+                    </div>
+                </div>
+
+                <!-- Supermercados Maná -->
+                <div class="partner-card-detailed group">
+                    <div class="partner-logo-section">
+                        <div class="partner-logo-bg"></div>
+                        <div class="partner-logo-container">
+                            <a href="https://www.google.com/search?q=Supermercados+Maná+Uberlândia" target="_blank"><img src="https://placehold.co/200x100/white/0d9488?text=Maná" alt="Supermercados Maná" class="h-full w-full object-contain"></a>
+                        </div>
+                    </div>
+                    <div class="partner-info-section">
+                        <span class="partner-badge bg-teal-100 text-teal-700">Apoio Local</span>
+                        <h3 class="text-3xl font-bold text-gray-800 mb-4">Supermercados Maná</h3>
+                        <p class="text-gray-600 mb-6 leading-relaxed">Parceiro essencial na logística e doação de cestas básicas para famílias em situação de vulnerabilidade na região.</p>
+                        <a href="https://www.google.com/search?q=Supermercados+Maná+Uberlândia" target="_blank" class="partner-link text-teal-600">Saiba Mais <i class="fas fa-external-link-alt ml-2 text-sm"></i></a>
+                    </div>
+                </div>
+
+                <!-- Super Maxi -->
+                <div class="partner-card-detailed group">
+                    <div class="partner-logo-section">
+                        <div class="partner-logo-bg"></div>
+                        <div class="partner-logo-container">
+                            <a href="https://www.supermaxi.com.br/" target="_blank"><img src="https://redesupermaxi.com.br/wp-content/uploads/2020/06/logo.png" alt="Super Maxi" class="h-full w-full object-contain"></a>
+                        </div>
+                    </div>
+                    <div class="partner-info-section">
+                        <span class="partner-badge bg-yellow-100 text-yellow-700">Parceiro Solidário</span>
+                        <h3 class="text-3xl font-bold text-gray-800 mb-4">Super Maxi</h3>
+                        <p class="text-gray-600 mb-6 leading-relaxed">Rede de supermercados comprometida com o social, participando ativamente de nossos mutirões anuais.</p>
+                        <a href="https://www.supermaxi.com.br/" target="_blank" class="partner-link text-yellow-600">Visitar Site <i class="fas fa-external-link-alt ml-2 text-sm"></i></a>
+                    </div>
+                </div>
+
+                <!-- Mesa Brasil -->
+                <div class="partner-card-detailed group">
+                    <div class="partner-logo-section">
+                        <div class="partner-logo-bg"></div>
+                        <div class="partner-logo-container">
+                             <a href="https://mesabrasil.sesc.com.br/" target="_blank"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Mesa_Brasil_Sesc_logo.svg/1200px-Mesa_Brasil_Sesc_logo.svg.png" alt="Mesa Brasil" class="h-full w-full object-contain"></a>
+                        </div>
+                    </div>
+                    <div class="partner-info-section">
+                        <span class="partner-badge bg-blue-100 text-blue-700">Rede de Combate à Fome</span>
+                        <h3 class="text-3xl font-bold text-gray-800 mb-4">Mesa Brasil SESC</h3>
+                        <p class="text-gray-600 mb-6 leading-relaxed">Rede nacional de bancos de alimentos que combate a fome e o desperdício, parceira estratégica da ASA na distribuição de alimentos.</p>
+                        <a href="https://mesabrasil.sesc.com.br/" target="_blank" class="partner-link text-blue-600">Visitar Site <i class="fas fa-external-link-alt ml-2 text-sm"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contato -->
+    <section id="contato" class="pb-20 pt-8 bg-white scroll-mt-28">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div>
+                    <h2 class="text-3xl font-heading font-bold text-gray-800 mb-6">Fale com a Coordenação</h2>
+                    <p class="text-gray-600 mb-8">Dúvidas sobre doações, parcerias ou agenda? Envie sua mensagem ou chame no WhatsApp.</p>
+                    <form class="space-y-4" onsubmit="submitContact(event)">
+                        <input type="text" id="contact-name" placeholder="Nome" class="w-full border p-3 rounded-lg" required>
+                        <input type="email" id="contact-email" placeholder="Email" class="w-full border p-3 rounded-lg" required>
+                        <textarea id="contact-msg" placeholder="Mensagem" rows="4" class="w-full border p-3 rounded-lg" required></textarea>
+                        <button class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700">Enviar</button>
+                    </form>
+                </div>
+                <div class="flex flex-col justify-center">
+                    <div class="bg-gray-50 p-8 rounded-2xl border border-gray-100">
+                        <h4 class="font-bold text-xl text-gray-800 mb-6">Contatos</h4>
+                        <ul class="space-y-4 text-gray-600">
+                            <li class="flex items-center"><i class="fas fa-envelope mr-3 text-green-600"></i> asa.mmo@adventistas.org</li>
+                            <li class="flex items-center"><i class="fas fa-envelope mr-3 text-green-600"></i> asadiretoresmmo@gmail.com</li>
+                            <li class="flex items-center"><i class="fas fa-phone mr-3 text-green-600"></i> (34) 99269-3522</li>
+                            <li class="flex items-center"><i class="fas fa-globe mr-3 text-green-600"></i> www.asammo.com.br</li>
+                            <li class="flex items-center"><a href="https://www.instagram.com/asa.diretores.mmo/" target="_blank" class="hover:text-pink-600 transition flex items-center"><i class="fab fa-instagram mr-3 text-pink-600 text-xl"></i> @asa.diretores.mmo</a></li>
+                        </ul>
+                        <div class="mt-8 pt-8 border-t border-gray-200">
+                            <a href="https://wa.me/5534992693522" target="_blank" class="block bg-green-500 text-white text-center py-3 rounded-full font-bold hover:bg-green-600">
+                                <i class="fab fa-whatsapp mr-2"></i> WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-gray-900 text-white pt-16 pb-8 mt-auto">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                <div>
+                    <img src="C:\asa\img\logo.jpg" alt="ASA Logo" class="h-12 mb-4 opacity-80 bg-white rounded p-1">
+                    <p class="text-gray-400 text-sm">A Ação Solidária Adventista (ASA) consiste nas múltiplas iniciativas solidárias e serviços de assistência social que a igreja realiza.</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-4 text-green-500">Navegação</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#home" class="hover:text-white transition">Início</a></li>
+                        <li><a href="#atuacao" class="hover:text-white transition">Atuação</a></li>
+                        <li><a href="#central" class="hover:text-white transition">Agenda</a></li>
+                        <li><a href="#parceiros" class="hover:text-white transition">Parceiros</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-4 text-green-500">Contato</h4>
+                    <ul class="space-y-3 text-sm text-gray-400">
+                        <li class="flex items-center"><i class="fas fa-map-marker-alt w-6"></i> Rua Manoel Camargo da Cruz, 81</li>
+                        <li class="flex items-center"><i class="fas fa-envelope w-6"></i> asadiretoresmmo@gmail.com</li>
+                        <li class="flex items-center"><i class="fas fa-phone w-6"></i> (34) 99269-3522</li>
+                        <li class="flex items-center"><i class="fas fa-globe w-6"></i> <a href="https://www.asammo.com.br" target="_blank" rel="noopener noreferrer" class="hover:text-white transition">asammo.com.br</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-4 text-green-500">Siga-nos</h4>
+                    <div class="flex space-x-4">
+                        <a href="https://www.instagram.com/asa.diretores.mmo/" target="_blank" class="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-pink-600 transition"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center border-t border-gray-800 pt-8">
+                <p class="text-gray-500 text-xs">&copy; 2025 Ação Solidária Adventista - Missão Mineira Oeste. Todos os direitos reservados.</p>
+                <p class="text-gray-600 text-xs mt-1">Desenvolvido com <i class="fas fa-heart text-red-900"></i> por Adriano Martins Torres</p>
+            </div>
+        </div>
+    </footer>
+    
+    <a href="https://wa.me/5534992693522" target="_blank" class="fixed bottom-24 right-8 bg-green-500 text-white w-14 h-14 rounded-full shadow-2xl hover:bg-green-600 transition flex items-center justify-center z-50 animate-bounce hover:animate-none"><i class="fab fa-whatsapp text-3xl"></i></a>
+    <button id="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="fixed bottom-8 right-8 bg-gray-800 text-white p-3 rounded-full shadow-lg hover:bg-gray-700 transition opacity-0 pointer-events-none z-40 transform translate-y-10"><i class="fas fa-arrow-up"></i></button>
+
+    <!-- Modais -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[60] p-4"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden p-6"><h3 class="font-bold mb-4 text-lg">Interesse</h3><form id="inscricaoForm" onsubmit="submitInscricao(event)"><input class="w-full border p-2 mb-3 rounded" placeholder="Nome" id="nome"><input class="w-full border p-2 mb-3 rounded" placeholder="Email" id="email"><input class="w-full border p-2 mb-3 rounded" placeholder="Telefone" id="telefone"><button class="bg-green-600 text-white w-full py-2 rounded font-bold">Confirmar</button></form><button onclick="closeModal()" class="mt-3 text-sm text-gray-500 w-full text-center">Fechar</button></div></div>
+    
+    <div id="volunteer-modal-overlay" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[70] p-4 backdrop-blur-sm overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl my-8 relative flex flex-col max-h-[90vh] animate-fadeIn">
+            <div class="relative h-48 bg-green-600 rounded-t-3xl overflow-hidden flex-shrink-0">
+                <img src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" class="absolute inset-0 w-full h-full object-cover opacity-50 mix-blend-multiply" alt="Voluntários">
+                <div class="absolute inset-0 bg-gradient-to-t from-green-900 to-transparent flex flex-col justify-end p-8 md:p-12"><h2 class="text-3xl md:text-5xl font-heading font-black text-white mb-2 leading-tight">Transforme Vidas<br>com suas Mãos</h2><p class="text-green-100 text-lg md:text-xl font-medium mt-2">Junte-se ao exército do bem.</p></div>
+                <button onclick="closeVolunteerModal()" class="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white rounded-full w-10 h-10 flex items-center justify-center transition backdrop-blur-md z-10"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="p-8 overflow-y-auto custom-scrollbar bg-white">
+                <div id="volunteer-info">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                        <div class="bg-green-50 p-6 rounded-2xl"><h3 class="font-bold text-green-800 text-lg mb-3"><i class="fas fa-star mr-2"></i> Por que ser voluntário?</h3><ul class="space-y-2 text-sm text-gray-700"><li><i class="fas fa-check text-green-500 mr-2"></i> Impacto real na comunidade.</li><li><i class="fas fa-check text-green-500 mr-2"></i> Desenvolvimento pessoal e espiritual.</li></ul></div>
+                        <div class="bg-orange-50 p-6 rounded-2xl"><h3 class="font-bold text-orange-800 text-lg mb-3"><i class="fas fa-users mr-2"></i> Quem pode participar?</h3><p class="text-sm text-gray-700">Qualquer pessoa disposta a ajudar!</p></div>
+                    </div>
+                    <div class="text-center"><button onclick="showVolunteerForm()" class="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-10 py-4 rounded-full font-bold text-xl shadow-xl hover:scale-105 transition transform animate-pulse">Quero me Cadastrar Agora!</button></div>
+                </div>
+                <div id="volunteer-form-container" class="hidden mt-6">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">Ficha de Inscrição</h3>
+                    <form onsubmit="submitVolunteerForm(event)" class="space-y-4 max-w-2xl mx-auto">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nome</label><input type="text" id="vol-nome" class="w-full border p-3 rounded-lg" required></div><div><label class="block text-xs font-bold text-gray-700 uppercase mb-1">Telefone</label><input type="tel" id="vol-tel" class="w-full border p-3 rounded-lg" required></div></div>
+                        <div><label class="block text-xs font-bold text-gray-700 uppercase mb-1">Email</label><input type="email" id="vol-email" class="w-full border p-3 rounded-lg" required></div>
+                        <button type="submit" class="w-full bg-green-600 text-white font-bold py-4 rounded-xl hover:bg-green-700 transition shadow-lg mt-4">Enviar Cadastro</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="project-modal-overlay" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[70] p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-100"><div class="relative"><img id="project-modal-img" src="" class="w-full h-48 object-cover"><button onclick="closeProjectModal()" class="absolute top-4 right-4 bg-black/50 text-white hover:bg-black/70 rounded-full w-8 h-8 flex items-center justify-center"><i class="fas fa-times"></i></button></div><div class="p-8"><h3 id="project-modal-title" class="text-2xl font-bold text-gray-800 mb-4"></h3><p id="project-modal-desc" class="text-gray-600 leading-relaxed mb-6"></p><button onclick="closeProjectModal()" class="w-full border border-gray-300 text-gray-600 font-bold py-2 rounded-lg hover:bg-gray-100 transition">Fechar</button></div></div></div>
+    <div id="church-modal-overlay" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-[70] p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all scale-100 p-8"><div class="text-center mb-6"><h3 class="text-2xl font-bold text-gray-800">Encontre uma ASA</h3></div><div class="space-y-4"><div><label class="block text-sm font-bold text-gray-700 mb-2">Cidade</label><input type="text" id="city-search" placeholder="Ex: Uberlândia" class="w-full border border-gray-300 rounded-lg px-4 py-3"></div><button onclick="searchChurches()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition">Buscar no Mapa</button><a href="https://www.google.com/maps/search/Igrejas+Adventistas+Miss%C3%A3o+Mineira+Oeste" target="_blank" class="block w-full bg-gray-100 text-gray-700 text-center font-bold py-3 rounded-lg hover:bg-gray-200 transition">Ver Mapa Geral</a></div><button onclick="closeChurchModal()" class="mt-6 w-full text-center text-gray-400 hover:text-gray-600 text-sm">Fechar</button></div></div>
+
+    <script>
+        const btn=document.getElementById('mobile-menu-btn'),menu=document.getElementById('mobile-menu');if(btn&&menu)btn.addEventListener('click',()=>menu.classList.toggle('hidden'));
+        const navbar=document.getElementById('navbar'),backToTopBtn=document.getElementById('back-to-top');
+        window.addEventListener('scroll',()=>{if(window.scrollY>50)navbar?.classList.add('py-2');else navbar?.classList.add('py-2');if(backToTopBtn){if(window.scrollY>300)backToTopBtn.classList.remove('opacity-0','pointer-events-none','translate-y-10');else backToTopBtn.classList.add('opacity-0','pointer-events-none','translate-y-10');}});
+        
+        const counters=document.querySelectorAll('.counter');let hasAnimated=!1;
+        const animateCounters=()=>{counters.forEach(e=>{e.innerText='0';const t=+e.getAttribute('data-target'),n=Math.ceil(t/50),o=()=>{const a=+e.innerText.replace('.','');a<t?(e.innerText=Math.ceil(a+n).toLocaleString('pt-BR'),setTimeout(o,30)):e.innerText=t.toLocaleString('pt-BR')};o()})};
+        const observer=new IntersectionObserver(e=>{e[0].isIntersecting&&!hasAnimated&&(animateCounters(),hasAnimated=!0)});
+        const counterSection=document.querySelector('.counter');if(counterSection)observer.observe(counterSection.parentElement);
+        
+        function openTab(e){var t,n=document.getElementsByClassName("tab-content");for(t=0;t<n.length;t++)n[t].classList.remove("active");const o=document.getElementById(e);o?o.classList.add("active"):document.getElementById("agenda2026")?.classList.add("active")}
+        
+        const modal=document.getElementById('modal-overlay'),eventNameSpan=document.getElementById('modal-event-name');let currentEvent="";
+        function openModal(e){currentEvent=e,eventNameSpan&&(eventNameSpan.textContent=e),modal?.classList.remove('hidden'),modal?.classList.add('flex')}
+        function closeModal(){modal?.classList.add('hidden'),modal?.classList.remove('flex')}
+        function submitInscricao(e){e.preventDefault();const t=document.getElementById('nome').value,n=document.getElementById('email').value,o=document.getElementById('telefone').value,a=encodeURIComponent(`Interesse: ${currentEvent}`),c=encodeURIComponent(`Olá, gostaria de saber mais.\n\nInteresse: ${currentEvent}\nNome: ${t}\nEmail: ${n}\nTelefone: ${o}`);window.location.href=`mailto:asadiretoresmmo@gmail.com?subject=${a}&body=${c}`,closeModal(),document.getElementById('inscricaoForm').reset()}
+
+        function openVolunteerModal(){document.getElementById('volunteer-modal-overlay').classList.remove('hidden'),document.getElementById('volunteer-modal-overlay').classList.add('flex'),document.body.style.overflow='hidden'}
+        function closeVolunteerModal(){document.getElementById('volunteer-modal-overlay').classList.add('hidden'),document.getElementById('volunteer-modal-overlay').classList.remove('flex'),document.body.style.overflow='auto'; document.getElementById('volunteer-info').classList.remove('hidden'); document.getElementById('volunteer-form-container').classList.add('hidden');}
+        function showVolunteerForm(){ document.getElementById('volunteer-info').classList.add('hidden'); document.getElementById('volunteer-form-container').classList.remove('hidden'); }
+        function hideVolunteerForm(){ document.getElementById('volunteer-info').classList.remove('hidden'); document.getElementById('volunteer-form-container').classList.add('hidden'); }
+        function submitVolunteerForm(e){e.preventDefault();const n=document.getElementById('vol-nome').value,em=document.getElementById('vol-email').value,t=document.getElementById('vol-tel').value,s=encodeURIComponent("Novo Voluntário ASA"),b=encodeURIComponent(`Nome: ${n}\nEmail: ${em}\nTel: ${t}`);window.location.href=`mailto:asadiretoresmmo@gmail.com?subject=${s}&body=${b}`;closeVolunteerModal();}
+
+        const projectModal=document.getElementById('project-modal-overlay'),projectTitle=document.getElementById('project-modal-title'),projectDesc=document.getElementById('project-modal-desc'),projectImg=document.getElementById('project-modal-img');
+        function openProjectModal(e,t,n){projectTitle&&(projectTitle.textContent=e),projectDesc&&(projectDesc.textContent=t),projectImg&&(projectImg.src=n),projectModal?.classList.remove('hidden'),projectModal?.classList.add('flex')}
+        function closeProjectModal(){projectModal?.classList.add('hidden'),projectModal?.classList.remove('flex')}
+        const churchModal=document.getElementById('church-modal-overlay');
+        function openChurchModal(){churchModal?.classList.remove('hidden'),churchModal?.classList.add('flex')}
+        function closeChurchModal(){churchModal?.classList.add('hidden'),churchModal?.classList.remove('flex')}
+        function searchChurches(){const e=document.getElementById('city-search').value;e?window.open(`https://www.google.com/maps/search/Igrejas+Adventistas+em+${e}`,'_blank'):alert("Por favor, digite o nome de uma cidade.")}
+        function copyPix(){const e="pix.asa.mmo@adventistas.org";navigator.clipboard.writeText(e).then(()=>{alert("Chave PIX copiada: "+e)})}
+        function submitContact(e) {e.preventDefault();const n=document.getElementById('contact-name').value,em=document.getElementById('contact-email').value,m=document.getElementById('contact-msg').value,s=encodeURIComponent(`Contato Site: ${n}`),b=encodeURIComponent(`Nome: ${n}\nEmail: ${em}\n\n${m}`);window.location.href=`mailto:asadiretoresmmo@gmail.com?subject=${s}&body=${b}`;e.target.reset();}
+    </script>
+</body>
+</html>
+
+

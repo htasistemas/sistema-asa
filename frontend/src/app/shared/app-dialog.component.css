@@ -1,0 +1,65 @@
+.dialogoOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 60;
+}
+
+.dialogoCartao {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dialogoCabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dialogoTitulo {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1f2a1f;
+}
+
+.dialogoMensagem {
+  margin: 0;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dialogoAcoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.botaoDialogo {
+  border: 1px solid #d8ddd8;
+  background: #ffffff;
+  color: #2e3a2e;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.botaoDialogoPerigo {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff;
+}

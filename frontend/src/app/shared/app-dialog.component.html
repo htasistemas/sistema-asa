@@ -1,0 +1,14 @@
+<div class="dialogoOverlay" role="dialog" aria-modal="true">
+  <div class="dialogoCartao">
+    <div class="dialogoCabecalho">
+      <h3 class="dialogoTitulo">{{ titulo }}</h3>
+    </div>
+    <div class="dialogoCorpo">
+      <p class="dialogoMensagem">{{ mensagem }}</p>
+    </div>
+    <div class="dialogoAcoes">
+      <button type="button" class="botaoDialogo" (click)="aoCancelar()">{{ cancelarTexto }}</button>
+      <button type="button" class="botaoDialogo botaoDialogoPerigo" (click)="aoConfirmar()">{{ confirmarTexto }}</button>
+    </div>
+  </div>
+</div>

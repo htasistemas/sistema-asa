@@ -1,0 +1,129 @@
+ .paginaBackup {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.topoPagina {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.linhaTopo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.identificadorModulo {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7b857b;
+}
+
+.tituloPagina {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.comentarioDidatico {
+  font-size: 12px;
+  color: #5f6b5f;
+  text-align: right;
+  max-width: 260px;
+}
+
+.gradeBackup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.cartaoBackup {
+  background-color: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e1e5e1;
+  padding: 20px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tituloSecao {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.descricaoSecao {
+  margin: 0;
+  color: #5f6b5f;
+  font-size: 14px;
+}
+
+.campoArquivo {
+  border: 1px solid #d8ddd8;
+  border-radius: 10px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.botaoAcao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #d8ddd8;
+  background-color: #ffffff;
+  color: #2e3a2e;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.botaoPrimario {
+  background-color: #2f7a45;
+  color: #ffffff;
+  border-color: #2f7a45;
+}
+
+.botaoPerigo {
+  background-color: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+.mensagemResultado {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.mensagemSucesso {
+  background-color: #e7f6ed;
+  color: #166534;
+}
+
+.mensagemErro {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+@media (max-width: 900px) {
+  .linhaTopo {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .comentarioDidatico {
+    text-align: left;
+    max-width: none;
+  }
+}

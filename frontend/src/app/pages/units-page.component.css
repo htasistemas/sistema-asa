@@ -1,0 +1,406 @@
+/* Estrutura base da tela */
+.paginaCadastroUnidade {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: #1f2a1f;
+}
+
+.topoPagina {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.linhaTopo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.identificadorModulo {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7b857b;
+}
+
+.tituloPagina {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.subtituloPagina {
+  margin: 0;
+  color: #5f6b5f;
+  text-align: right;
+}
+
+/* Barra de acoes */
+.barraAcoes {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.botaoAcao {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d8ddd8;
+  background-color: #ffffff;
+  color: #2e3a2e;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.botaoAcao:hover {
+  border-color: #2f7a45;
+}
+
+.botaoPrimario {
+  background-color: #2f7a45;
+  color: #ffffff;
+  border-color: #2f7a45;
+}
+
+.botaoPerigo {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.iconeAcao {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  border-radius: 6px;
+  background-color: rgba(47, 122, 69, 0.1);
+}
+
+.botaoAcao:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Cartoes */
+.cartaoFormulario,
+.cartaoTabela {
+  background-color: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e1e5e1;
+  padding: 20px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+}
+
+.tituloSecao {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.cabecalhoFormulario {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.botaoFecharFormulario {
+  border: 1px solid #d8ddd8;
+  background-color: #ffffff;
+  color: #2e3a2e;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.botaoFecharFormulario:hover {
+  border-color: #2f7a45;
+}
+
+.alertaFiltro {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #f0e1b6;
+  background-color: #fff6d9;
+  color: #8a5b10;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Formulario */
+.formularioUnidade {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.grupoFormulario {
+  border: 1px solid #e4e8e4;
+  border-radius: 12px;
+  padding: 16px;
+  background-color: #f9faf9;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cabecalhoGrupo {
+  font-weight: 700;
+  font-size: 14px;
+  color: #2e3a2e;
+}
+
+.gradeGrupo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.linhaFormulario {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campoAnoEleicao {
+  max-width: 180px;
+}
+
+.campoDiretor {
+  min-width: 320px;
+}
+
+.linhaAcoesEndereco {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.rotuloCampo {
+  font-size: 13px;
+  color: #3a463a;
+}
+
+.campoObrigatorio {
+  color: #b91c1c;
+}
+
+.campoTexto {
+  border: 1px solid #d8ddd8;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.campoTextoEndereco {
+  min-height: 40px;
+  resize: vertical;
+}
+
+.campoTexto:focus {
+  outline: none;
+  border-color: #2f7a45;
+  box-shadow: 0 0 0 3px rgba(47, 122, 69, 0.15);
+}
+
+.campoTextoInvalido {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+
+/* Cards */
+.gradeCartoes {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.cartaoUnidade {
+  border-radius: 14px;
+  border: 1px solid #e1e5e1;
+  padding: 14px 16px;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.cartaoSelecionado {
+  border-color: #2f7a45;
+  box-shadow: 0 0 0 2px rgba(47, 122, 69, 0.15);
+}
+
+.cartaoAtivo {
+  background: #eef7f0;
+}
+
+.cartaoDesatualizado {
+  background: #fdecec;
+}
+
+.cabecalhoCartao {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.tituloCartao {
+  font-weight: 800;
+  font-size: 18px;
+  color: #1f2a1f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.linhaCartao {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 14px;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.linhaCartao span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.anoEleicao {
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.anoEleicaoVerde {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.anoEleicaoVermelho {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.separador {
+  color: #9ca3af;
+}
+
+.acoesCartao {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.acoesCartao .botaoAcao {
+  padding: 6px 10px;
+  font-size: 12px;
+  box-shadow: none;
+}
+
+.statusUnidade {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.statusAtivo {
+  background-color: #e7f6ed;
+  color: #166534;
+}
+
+.statusIncompleto {
+  background-color: #fff4db;
+  color: #92400e;
+}
+
+.statusBloqueado {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.statusDesatualizado {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.linhaVazia {
+  text-align: center;
+  color: #7b857b;
+  padding: 16px;
+}
+
+/* Popup de erro */
+.popupErro {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.35);
+  padding: 20px;
+}
+
+.conteudoErro {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mensagemErro {
+  margin: 0;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .linhaTopo {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .subtituloPagina {
+    text-align: left;
+  }
+
+  .barraAcoes {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

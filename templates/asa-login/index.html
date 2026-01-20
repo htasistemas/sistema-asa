@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login - Sistema de Gestao ASA</title>
+    <link rel="stylesheet" href="login.css" />
+  </head>
+  <body>
+    <main class="paginaLogin">
+      <!-- Coluna esquerda com imagem e mensagem institucional -->
+      <section class="colunaImagem" aria-label="Mensagem institucional">
+        <div class="sobreposicaoImagem"></div>
+        <div class="textoImagem">
+          <h1 class="tituloImagem">Unidos para Servir</h1>
+          <p class="subtituloImagem">Gestao solidaria e eficiente.</p>
+        </div>
+      </section>
+
+      <!-- Coluna direita com formulario de acesso -->
+      <section class="colunaFormulario" aria-label="Acesso restrito">
+        <div class="conteudoFormulario">
+          <img
+            class="logoAsa"
+            src="../../img/logo.jpg"
+            alt="Logo da ASA"
+          />
+          <h2 class="tituloFormulario">Acesso Restrito</h2>
+          <p class="subtituloFormulario">Faca login para continuar</p>
+
+          <form class="formularioLogin" autocomplete="off">
+            <div class="grupoCampo">
+              <label class="rotuloCampo" for="usuario">Usuario</label>
+              <input
+                class="campoTexto"
+                id="usuario"
+                name="usuario"
+                type="text"
+                placeholder="Digite seu usuario"
+                required
+              />
+            </div>
+
+            <div class="grupoCampo">
+              <label class="rotuloCampo" for="senha">Senha</label>
+              <input
+                class="campoTexto"
+                id="senha"
+                name="senha"
+                type="password"
+                placeholder="Digite sua senha"
+                required
+              />
+            </div>
+
+            <button class="botaoPrimario" type="submit" disabled>
+              Entrar no Sistema
+            </button>
+          </form>
+        </div>
+
+        <footer class="rodape">
+          <span>© 2024 Sistema de Gestao ASA</span>
+        </footer>
+      </section>
+    </main>
+  </body>
+</html>

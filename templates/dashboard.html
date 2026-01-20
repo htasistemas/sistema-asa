@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - ASA</title>
+    <!-- Imports (Tailwind, React, Babel) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = { darkMode: 'class', theme: { extend: { colors: { gray: { 750: '#2d3748', 850: '#1a202c', 950: '#0d1117' }, primary: { 500: '#22c55e', 600: '#16a34a' } } } } }
+        }
+    </script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS Local -->
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/menu.css">
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-950 dark:text-gray-100">
+    <div id="root"></div>
+
+    <!-- Script Core -->
+    <script type="text/babel" src="../scripts/core.js"></script>
+
+    <!-- Script da Página -->
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        function DashboardPage() {
+            const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('asa_auth') === 'true');
+            
+            // Carregar dados usando o helper do core.js
+            const [units] = useState(() => loadState('asa_units_v10_final', preLoadedUnits));
+            const [reports] = useState(() => loadState('asa_reports_v9_checklist', []));
+            const [managementData] = useState(() => loadState('asa_mgmt_v11', {}));
+
+            if (!isAuthenticated) return <LoginScreen onLogin={() => { sessionStorage.setItem('asa_auth', 'true'); setIsAuthenticated(true); }} />;
+
+            // KPIs Logic
+            const kpis = useMemo(() => {
+                const totalUnits = units.length;
+                const isOutdated = (d) => { if(!d) return true; const dt = new Date(d+'T12:00:00'); const six = new Date(); six.setMonth(six.getMonth()-6); return dt < six; };
+                const outdatedUnits = units.filter(u => isOutdated(u.lastUpdated)).length;
+                const pendingUnits = units.filter(u => (!u.director || !u.phone || !u.address)).length; // Simplified check
+                const totalBeneficiaries = reports.reduce((acc, r) => acc + Number(r.beneficiaries), 0);
+                const totalItems = reports.reduce((acc, r) => acc + Number(r.items), 0);
+                const totalActions = reports.length;
+                const totalInvested = reports.reduce((acc, r) => acc + (parseFloat(r.value) || 0), 0);
+                
+                const totalAssetsValue = Object.values(managementData).reduce((acc, unitData) => {
+                    const unitAssets = unitData.assets || [];
+                    return acc + unitAssets.reduce((sum, asset) => sum + (parseFloat(asset.value) || 0), 0);
+                }, 0);
+                
+                const activeProjects = Object.values(managementData).reduce((acc, unitData) => {
+                    const unitProjects = unitData.projects || [];
+                    return acc + unitProjects.filter(p => p.status === 'Ativo').length;
+                }, 0);
+
+                return { totalUnits, outdatedUnits, pendingUnits, totalBeneficiaries, totalItems, totalActions, totalInvested, totalAssetsValue, activeProjects };
+            }, [units, reports, managementData]);
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    <Header activePage="dashboard" />
+                    <main className="flex-1 w-full mx-auto px-4 py-8 max-w-7xl animate-fadeIn">
+                         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+                            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border-l-4 border-green-500"><h3 className="text-2xl font-bold dark:text-white">{kpis.totalUnits}</h3><p className="text-xs text-gray-500 uppercase">Unidades</p></div>
+                            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border-l-4 border-red-500"><h3 className="text-2xl font-bold text-red-600">{kpis.outdatedUnits}</h3><p className="text-xs text-gray-500 uppercase">Desatualizadas</p></div>
+                            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border-l-4 border-yellow-500"><h3 className="text-2xl font-bold text-yellow-600">{kpis.pendingUnits}</h3><p className="text-xs text-gray-500 uppercase">Com Pendências</p></div>
+                            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border-l-4 border-teal-500"><h3 className="text-2xl font-bold dark:text-white">R$ {kpis.totalInvested.toFixed(2)}</h3><p className="text-xs text-gray-500 uppercase">Investido em Ações</p></div>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm"><h3 className="text-lg font-bold mb-4 dark:text-white">Patrimônio ASA</h3><p className="text-3xl font-bold text-blue-600">R$ {kpis.totalAssetsValue.toFixed(2)}</p><p className="text-sm text-gray-500">Valor total de bens inventariados</p></div>
+                            <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm"><h3 className="text-lg font-bold mb-4 dark:text-white">Projetos Sociais</h3><p className="text-3xl font-bold text-purple-600">{kpis.activeProjects}</p><p className="text-sm text-gray-500">Projetos ativos nas unidades</p></div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<DashboardPage />);
+    </script>
+</body>
+</html>

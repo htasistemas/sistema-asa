@@ -1,0 +1,190 @@
+body { font-family: 'Roboto', sans-serif; transition: background-color 0.3s, color 0.3s; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+.dark ::-webkit-scrollbar-thumb { background: #4a5568; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #718096; }
+.map-container-style { height: calc(100vh - 100px); width: 100%; border-radius: 0.75rem; z-index: 0; }
+.modal-map-container { height: 200px; width: 100%; border-radius: 0.5rem; margin-top: 10px; z-index: 1; }
+.group:hover .group-hover\:block { display: block; animation: fadeIn 0.2s ease-out; }
+.tooltip-container { position: relative; }
+.tooltip-text {
+  visibility: hidden; width: max-content; max-width: 250px; background-color: #7f1d1d; color: #fff;
+  text-align: center; border-radius: 6px; padding: 8px; position: absolute;
+  z-index: 50; bottom: 125%; left: 50%; transform: translateX(-50%);
+  opacity: 0; transition: opacity 0.3s; font-size: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
+@media print {
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  body { background: white; color: black; }
+  .dark { color-scheme: light; }
+}
+/* Barra de acoes padrao do sistema */
+.barraAcoes {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cabecalhoImpressao {
+  display: none;
+}
+
+.logoImpressao {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  margin-right: 10px;
+}
+
+.tituloImpressao {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.metaImpressao {
+  font-size: 12px;
+  color: #4a574a;
+}
+
+.rodapeImpressao {
+  display: none;
+  font-size: 11px;
+  color: #4a574a;
+}
+
+.iconeSvg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
+.barraAcoesDireita {
+  justify-content: flex-end;
+}
+
+.botaoAcao {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d8ddd8;
+  background-color: #ffffff;
+  color: #2e3a2e;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.botaoAcao:hover {
+  border-color: #2f7a45;
+}
+
+.botaoPrimario {
+  background-color: #2f7a45;
+  color: #ffffff;
+  border-color: #2f7a45;
+}
+
+.botaoPerigo {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.iconeAcao {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  border-radius: 6px;
+  background-color: rgba(47, 122, 69, 0.1);
+}
+
+.botaoAcao:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.linhaSelecionada {
+  background-color: #f1f8f4;
+}
+
+.popupErro {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.35);
+  padding: 20px;
+  z-index: 50;
+}
+
+.conteudoErro {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mensagemErro {
+  margin: 0;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .barraAcoes {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .barraAcoesDireita {
+    align-items: stretch;
+  }
+}
+
+@media print {
+  .cabecalhoImpressao {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid #d8ddd8;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+  .rodapeImpressao {
+    display: block !important;
+    position: fixed;
+    bottom: 12px;
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+  .barraAcoes {
+    display: none !important;
+  }
+  header,
+  nav,
+  button {
+    display: none !important;
+  }
+}
