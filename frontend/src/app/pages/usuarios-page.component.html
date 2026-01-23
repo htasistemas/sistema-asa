@@ -1,0 +1,151 @@
+<app-tela-padrao
+  [menuPai]="menuPai"
+  [titulo]="titulo"
+  [subtitulo]="subtitulo"
+  [comentarioDidatico]="comentarioDidatico"
+>
+  <div barra-acoes>
+    <app-barra-acoes-crud
+      [desabilitarBuscar]="carregando"
+      [desabilitarNovo]="carregando"
+      [desabilitarSalvar]="carregando"
+      [desabilitarCancelar]="carregando"
+      [desabilitarExcluir]="!usuarioSelecionado || carregando"
+      [desabilitarImprimir]="carregando"
+      [desabilitarFechar]="false"
+      (buscar)="aoBuscar()"
+      (novo)="aoNovo()"
+      (salvar)="aoSalvar()"
+      (cancelar)="aoCancelar()"
+      (excluir)="aoExcluir()"
+      (imprimir)="aoImprimir()"
+      (fechar)="aoFechar()"
+    ></app-barra-acoes-crud>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Dados do usuario</h3>
+    <form class="formularioPadrao">
+      <div class="gradeGrupo">
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="emailUsuario">E-mail <span class="campoObrigatorio">*</span></label>
+          <input
+            id="emailUsuario"
+            name="emailUsuario"
+            type="email"
+            class="campoTexto"
+            placeholder="usuario@asa.local"
+            [(ngModel)]="usuarioEmEdicao.email"
+            required
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="perfilUsuario">Perfil <span class="campoObrigatorio">*</span></label>
+          <select
+            id="perfilUsuario"
+            name="perfilUsuario"
+            class="campoTexto"
+            [(ngModel)]="usuarioEmEdicao.role"
+            required
+          >
+            <option *ngFor="let perfil of perfis" [value]="perfil">{{ perfil }}</option>
+          </select>
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="statusUsuario">Status</label>
+          <select
+            id="statusUsuario"
+            name="statusUsuario"
+            class="campoTexto"
+            [(ngModel)]="usuarioEmEdicao.active"
+          >
+            <option [ngValue]="true">Ativo</option>
+            <option [ngValue]="false">Inativo</option>
+          </select>
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="aprovadoUsuario">Aprovado</label>
+          <select
+            id="aprovadoUsuario"
+            name="aprovadoUsuario"
+            class="campoTexto"
+            [(ngModel)]="usuarioEmEdicao.aprovado"
+          >
+            <option [ngValue]="true">Sim</option>
+            <option [ngValue]="false">Nao</option>
+          </select>
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="senhaUsuario">Senha <span class="campoObrigatorio" *ngIf="!usuarioEmEdicao.id">*</span></label>
+          <input
+            id="senhaUsuario"
+            name="senhaUsuario"
+            type="password"
+            class="campoTexto"
+            placeholder="Defina uma senha"
+            [(ngModel)]="usuarioEmEdicao.senha"
+          />
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="cartaoTabela">
+    <div class="cabecalhoFormulario cabecalhoTabela">
+      <h3 class="tituloSecao">Usuarios cadastrados</h3>
+      <div class="linhaBusca">
+        <input
+          id="buscaUsuario"
+          name="buscaUsuario"
+          type="text"
+          class="campoTexto"
+          placeholder="Buscar por e-mail ou perfil"
+          [(ngModel)]="termoBusca"
+          (input)="aplicarFiltro()"
+        />
+      </div>
+    </div>
+    <div class="tabelaUsuarios" *ngIf="usuariosFiltrados.length > 0; else semUsuarios">
+      <table>
+        <thead>
+          <tr>
+            <th>E-mail</th>
+            <th>Perfil</th>
+            <th>Status</th>
+            <th>Aprovado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let usuario of usuariosFiltrados"
+            (click)="selecionarUsuario(usuario)"
+            [class.linhaSelecionada]="usuarioSelecionado?.id === usuario.id"
+          >
+            <td>{{ usuario.email }}</td>
+            <td>{{ usuario.role }}</td>
+            <td>{{ usuario.active ? 'Ativo' : 'Inativo' }}</td>
+            <td>{{ usuario.aprovado ? 'Sim' : 'Nao' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #semUsuarios>
+      <div class="linhaVazia">Nenhum usuario cadastrado.</div>
+    </ng-template>
+  </div>
+</app-tela-padrao>
+
+<app-popup-messages
+  [mensagens]="mensagensErro"
+  (fechar)="limparMensagens()"
+></app-popup-messages>
+
+<app-dialog
+  *ngIf="dialogoExclusaoAberto"
+  titulo="Exclusao de usuario"
+  mensagem="A exclusao e irreversivel, tem certeza que deseja excluir este usuario?"
+  confirmarTexto="Excluir"
+  cancelarTexto="Cancelar"
+  (confirmar)="confirmarExclusao()"
+  (cancelar)="cancelarExclusao()"
+></app-dialog>

@@ -38,14 +38,14 @@ public class AssignmentController {
     }
 
     @PutMapping("/{id}")
-    public AssignmentDto update(@PathVariable Long id, @RequestBody AssignmentDto dto) {
+    public AssignmentDto update(@PathVariable("id") Long id, @RequestBody AssignmentDto dto) {
         Assignment assignment = fromDto(dto, new Assignment());
         assignment.setId(id);
         return toDto(assignmentRepository.save(assignment));
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable("id") Long id) {
         assignmentRepository.deleteById(id);
     }
 

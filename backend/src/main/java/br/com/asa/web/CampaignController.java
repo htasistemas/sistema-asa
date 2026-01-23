@@ -29,14 +29,14 @@ public class CampaignController {
     }
 
     @PutMapping("/{id}")
-    public CampaignDto update(@PathVariable Long id, @RequestBody CampaignDto dto) {
+    public CampaignDto update(@PathVariable("id") Long id, @RequestBody CampaignDto dto) {
         Campaign campaign = fromDto(dto, new Campaign());
         campaign.setId(id);
         return toDto(campaignRepository.save(campaign));
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable("id") Long id) {
         campaignRepository.deleteById(id);
     }
 

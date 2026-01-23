@@ -6,17 +6,17 @@
         <h2 class="tituloFormulario">Acesso Restrito</h2>
         <p class="subtituloFormulario">Faca login para continuar</p>
 
-        <form class="formularioLogin" (ngSubmit)="handleLogin()">
+        <form class="formularioLogin" (ngSubmit)="modoCadastro ? handleCadastro() : handleLogin()">
           <div class="grupoCampo">
-            <label class="rotuloCampo" for="usuario">Usuario</label>
+            <label class="rotuloCampo" for="email">E-mail</label>
             <input
               class="campoTexto"
-              id="usuario"
-              name="usuario"
-              type="text"
-              placeholder="Digite seu usuario"
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Digite seu e-mail"
               required
-              [(ngModel)]="username"
+              [(ngModel)]="email"
             />
           </div>
 
@@ -33,11 +33,30 @@
             />
           </div>
 
+          <div class="grupoCampo" *ngIf="modoCadastro">
+            <label class="rotuloCampo" for="confirmarSenha">Confirmar senha</label>
+            <input
+              class="campoTexto"
+              id="confirmarSenha"
+              name="confirmarSenha"
+              type="password"
+              placeholder="Confirme sua senha"
+              required
+              [(ngModel)]="confirmarSenha"
+            />
+          </div>
+
           <div *ngIf="error" class="mensagemErro">{{ error }}</div>
 
-          <button class="botaoPrimario" type="submit" [disabled]="!username || !password || carregando">
-            Entrar no Sistema
+          <button class="botaoPrimario" type="submit" [disabled]="!email || !password || (modoCadastro && !confirmarSenha) || carregando">
+            {{ modoCadastro ? 'Cadastrar usuario' : 'Entrar no Sistema' }}
           </button>
+          <div class="acoesLogin">
+            <button type="button" class="botaoSecundario" (click)="alternarModoCadastro()">
+              {{ modoCadastro ? 'Voltar para login' : 'Cadastrar e-mail' }}
+            </button>
+            <button type="button" class="linkEsqueciSenha" (click)="abrirEsqueciSenha()">Esqueci minha senha</button>
+          </div>
         </form>
       </div>
     </section>
@@ -55,3 +74,24 @@
     <span>© 2024 Sistema de Gestao ASA</span>
   </footer>
 </main>
+<app-dialog
+  *ngIf="dialogoEsqueciSenhaAberto"
+  titulo="Esqueci minha senha"
+  [mensagem]="''"
+  confirmarTexto="Enviar"
+  cancelarTexto="Cancelar"
+  (confirmar)="enviarRecuperacao()"
+  (cancelar)="fecharEsqueciSenha()"
+>
+  <div class="conteudoRecuperacao">
+    <label class="rotuloCampo" for="emailRecuperacao">E-mail</label>
+    <input
+      id="emailRecuperacao"
+      name="emailRecuperacao"
+      type="email"
+      class="campoTexto"
+      placeholder="Digite seu e-mail"
+      [(ngModel)]="emailRecuperacao"
+    />
+  </div>
+</app-dialog>

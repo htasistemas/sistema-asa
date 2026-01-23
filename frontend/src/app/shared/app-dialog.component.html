@@ -4,7 +4,8 @@
       <h3 class="dialogoTitulo">{{ titulo }}</h3>
     </div>
     <div class="dialogoCorpo">
-      <p class="dialogoMensagem">{{ mensagem }}</p>
+      <p class="dialogoMensagem" *ngIf="mensagem">{{ mensagem }}</p>
+      <ng-content></ng-content>
     </div>
     <div class="dialogoAcoes">
       <button type="button" class="botaoDialogo" (click)="aoCancelar()">{{ cancelarTexto }}</button>

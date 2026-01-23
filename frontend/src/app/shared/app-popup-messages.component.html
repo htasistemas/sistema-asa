@@ -1,0 +1,9 @@
+<div class="popupErro" role="alert" *ngIf="mensagens.length > 0">
+  <div class="conteudoErro">
+    <h3 class="tituloErro">{{ titulo }}</h3>
+    <ul class="listaErros">
+      <li *ngFor="let mensagem of mensagens">{{ mensagem }}</li>
+    </ul>
+    <button type="button" class="botaoAcao botaoPrimario" (click)="aoFechar()">Fechar</button>
+  </div>
+</div>

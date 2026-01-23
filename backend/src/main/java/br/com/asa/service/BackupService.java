@@ -2,11 +2,16 @@ package br.com.asa.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -73,13 +78,41 @@ public class BackupService {
             ambiente.put("PGPASSWORD", senha);
             builder.redirectErrorStream(true);
             Process processo = builder.start();
-            int status = processo.waitFor();
+            CompletableFuture<String> leituraSaida = lerSaidaAssincrona(processo.getInputStream());
+            boolean finalizado = processo.waitFor(3, TimeUnit.MINUTES);
+            if (!finalizado) {
+                processo.destroyForcibly();
+                throw new IllegalStateException("Comando excedeu o tempo limite.");
+            }
+            int status = processo.exitValue();
+            String saida = obterSaida(leituraSaida);
             if (status != 0) {
-                throw new IllegalStateException("Comando retornou status " + status);
+                throw new IllegalStateException("Comando retornou status " + status + ". Saida: " + saida);
             }
         } catch (IOException | InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Falha ao executar comando do banco.", e);
+        }
+    }
+
+    private CompletableFuture<String> lerSaidaAssincrona(InputStream entrada) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return new String(entrada.readAllBytes(), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                return "";
+            }
+        });
+    }
+
+    private String obterSaida(CompletableFuture<String> leituraSaida) {
+        try {
+            return leituraSaida.get(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return "";
+        } catch (ExecutionException | java.util.concurrent.TimeoutException e) {
+            return "";
         }
     }
 

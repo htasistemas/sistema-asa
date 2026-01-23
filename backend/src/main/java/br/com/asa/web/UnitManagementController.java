@@ -26,7 +26,7 @@ public class UnitManagementController {
     }
 
     @GetMapping("/{unitId}")
-    public UnitManagementDto getByUnit(@PathVariable Long unitId) {
+    public UnitManagementDto getByUnit(@PathVariable("unitId") Long unitId) {
         Unit unit = unitRepository.findById(unitId).orElseThrow();
         return unitManagementRepository.findByUnit(unit).map(this::toDto).orElseGet(() -> {
             UnitManagementDto dto = new UnitManagementDto();

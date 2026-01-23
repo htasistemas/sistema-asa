@@ -17,6 +17,7 @@ export class AppComponent {
   darkMode = false;
   menuUnidadesAberto = false;
   menuOperacionalAberto = false;
+  menuConfiguracoesAberto = false;
 
   get estaNaTelaLogin(): boolean {
     return this.router.url === '/login';
@@ -52,12 +53,22 @@ export class AppComponent {
     this.menuOperacionalAberto = !this.menuOperacionalAberto;
     if (this.menuOperacionalAberto) {
       this.menuUnidadesAberto = false;
+      this.menuConfiguracoesAberto = false;
+    }
+  }
+
+  alternarMenuConfiguracoes(): void {
+    this.menuConfiguracoesAberto = !this.menuConfiguracoesAberto;
+    if (this.menuConfiguracoesAberto) {
+      this.menuUnidadesAberto = false;
+      this.menuOperacionalAberto = false;
     }
   }
 
   fecharMenus(): void {
     this.menuUnidadesAberto = false;
     this.menuOperacionalAberto = false;
+    this.menuConfiguracoesAberto = false;
   }
 
   @HostListener('document:click', ['$event'])

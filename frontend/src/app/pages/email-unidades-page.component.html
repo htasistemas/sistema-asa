@@ -1,0 +1,109 @@
+<app-tela-padrao
+  [menuPai]="menuPai"
+  [titulo]="titulo"
+  [subtitulo]="subtitulo"
+  [comentarioDidatico]="comentarioDidatico"
+>
+  <div barra-acoes>
+    <app-barra-acoes-crud
+      [desabilitarBuscar]="carregando"
+      [desabilitarNovo]="carregando"
+      [desabilitarSalvar]="carregando"
+      [desabilitarCancelar]="carregando"
+      [desabilitarExcluir]="true"
+      [desabilitarImprimir]="carregando"
+      [desabilitarFechar]="false"
+      (buscar)="aoBuscar()"
+      (novo)="aoNovo()"
+      (salvar)="aoSalvar()"
+      (cancelar)="aoCancelar()"
+      (imprimir)="aoImprimir()"
+      (fechar)="aoFechar()"
+    ></app-barra-acoes-crud>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Envio de e-mail</h3>
+    <form class="formularioPadrao">
+      <div class="gradeGrupo">
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="assuntoEmail">Assunto <span class="campoObrigatorio">*</span></label>
+          <input
+            id="assuntoEmail"
+            name="assuntoEmail"
+            type="text"
+            class="campoTexto"
+            placeholder="Assunto do e-mail"
+            [(ngModel)]="envio.assunto"
+            required
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="cidadeEmail">Cidade</label>
+          <select id="cidadeEmail" name="cidadeEmail" class="campoTexto" [(ngModel)]="envio.cidade">
+            <option value="">Todas</option>
+            <option *ngFor="let cidade of cidades" [value]="cidade">{{ cidade }}</option>
+          </select>
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="regiaoEmail">Regiao</label>
+          <select id="regiaoEmail" name="regiaoEmail" class="campoTexto" [(ngModel)]="envio.regiao">
+            <option value="">Todas</option>
+            <option *ngFor="let regiao of regioes" [value]="regiao">{{ regiao }}</option>
+          </select>
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="distritoEmail">Distrito</label>
+          <select id="distritoEmail" name="distritoEmail" class="campoTexto" [(ngModel)]="envio.distrito">
+            <option value="">Todos</option>
+            <option *ngFor="let distrito of distritos" [value]="distrito">{{ distrito }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="linhaFormulario linhaTextoGrande">
+        <label class="rotuloCampo" for="mensagemEmail">Mensagem <span class="campoObrigatorio">*</span></label>
+        <textarea
+          id="mensagemEmail"
+          name="mensagemEmail"
+          class="campoTexto campoTextoEndereco"
+          rows="4"
+          placeholder="Digite a mensagem do e-mail"
+          [(ngModel)]="envio.mensagem"
+          required
+        ></textarea>
+      </div>
+    </form>
+  </div>
+
+  <div class="cartaoTabela">
+    <h3 class="tituloSecao">Historico de envios</h3>
+    <div class="tabelaEmails" *ngIf="logs.length > 0; else semLogs">
+      <table>
+        <thead>
+          <tr>
+            <th>Data/Hora</th>
+            <th>Assunto</th>
+            <th>Filtro</th>
+            <th>Quantidade</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of logs">
+            <td>{{ log.dataHora | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ log.assunto }}</td>
+            <td>{{ (log.cidade || 'Todas') + ' / ' + (log.regiao || 'Todas') + ' / ' + (log.distrito || 'Todos') }}</td>
+            <td>{{ log.quantidadeEnvios }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #semLogs>
+      <div class="linhaVazia">Nenhum envio registrado.</div>
+    </ng-template>
+  </div>
+</app-tela-padrao>
+
+<app-popup-messages
+  [mensagens]="mensagensErro"
+  (fechar)="limparMensagens()"
+></app-popup-messages>

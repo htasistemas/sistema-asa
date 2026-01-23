@@ -1,0 +1,8 @@
+  set APP_EMAIL_HABILITADO=true
+  set APP_EMAIL_REMETENTE=asadiretoresmmo@gmail.com
+  set APP_EMAIL_NOME=ASA - Ação Solidária Adventista
+  set MAIL_HOST=smtp.gmail.com
+  set MAIL_PORT=587
+  set MAIL_USER=asadiretoresmmo@gmail.com
+  set MAIL_PASS=nmsq wbvk wcda mwfa
+  .\mvnw.cmd -q -DskipTests clean spring-boot:run

@@ -1,0 +1,546 @@
+<app-tela-padrao
+  [menuPai]="menuPai"
+  [titulo]="titulo"
+  [subtitulo]="subtitulo"
+  [comentarioDidatico]="comentarioDidatico"
+>
+  <div barra-acoes>
+    <app-barra-acoes-crud
+      [desabilitarBuscar]="carregando"
+      [desabilitarNovo]="carregando"
+      [desabilitarSalvar]="carregando"
+      [desabilitarCancelar]="carregando"
+      [desabilitarExcluir]="!atividadeSelecionada || carregando"
+      [desabilitarImprimir]="carregando"
+      [desabilitarFechar]="false"
+      (buscar)="aoBuscar()"
+      (novo)="aoNovo()"
+      (salvar)="aoSalvar()"
+      (cancelar)="aoCancelar()"
+      (excluir)="aoExcluir()"
+      (imprimir)="aoImprimir()"
+      (fechar)="aoFechar()"
+    ></app-barra-acoes-crud>
+  </div>
+
+  <div class="abasPadrao">
+    <button
+      type="button"
+      class="abaPadrao"
+      [ngClass]="{
+        abaAtiva: abaAtiva === 'cadastro',
+        abaAnterior: abaAtiva === 'acoes',
+        abaFutura: abaAtiva !== 'cadastro' && abaAtiva !== 'acoes'
+      }"
+      (click)="abaAtiva = 'cadastro'"
+    >
+      Cadastro
+    </button>
+    <button
+      type="button"
+      class="abaPadrao"
+      [ngClass]="{
+        abaAtiva: abaAtiva === 'acoes',
+        abaAnterior: abaAtiva === 'cadastro',
+        abaFutura: abaAtiva !== 'cadastro' && abaAtiva !== 'acoes'
+      }"
+      (click)="abaAtiva = 'acoes'"
+    >
+      Acoes
+    </button>
+  </div>
+
+  <div *ngIf="abaAtiva === 'cadastro'">
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Identificação da ASA</h3>
+    <form class="formularioPadrao">
+      <div class="grupoFormulario">
+        <div class="cabecalhoGrupo">Dados iniciais</div>
+        <div class="gradeGrupo gradeGrupoLinhaUnica linhaDadosIniciais">
+          <div class="linhaFormulario">
+            <label class="rotuloCampo" for="asaIdentificacao">Nome da Unidade <span class="campoObrigatorio">*</span></label>
+            <select
+              id="asaIdentificacao"
+              name="asaIdentificacao"
+              class="campoTexto campoAsaIdentificacao"
+              [(ngModel)]="atividadeEmEdicao.asaIdentificacao"
+              (ngModelChange)="aoSelecionarAsa()"
+              required
+            >
+              <option value="">Selecione</option>
+              <option *ngFor="let asa of opcoesAsa" [value]="asa">{{ asa }}</option>
+            </select>
+          </div>
+
+          <div class="linhaFormulario">
+            <label class="rotuloCampo" for="periodoRelatorio">Periodo do Relatorio <span class="campoObrigatorio">*</span></label>
+            <div class="linhaPeriodo">
+              <select
+                id="periodoRelatorioMes"
+                name="periodoRelatorioMes"
+                class="campoTexto"
+                [ngModel]="obterMesSelecionado()"
+                (ngModelChange)="definirPeriodoRelatorio($event, obterAnoSelecionado() || 0)"
+                required
+              >
+                <option [ngValue]="null">Mes</option>
+                <option *ngFor="let mes of meses" [ngValue]="mes.valor">{{ mes.rotulo }}</option>
+              </select>
+              <select
+                id="periodoRelatorioAno"
+                name="periodoRelatorioAno"
+                class="campoTexto"
+                [ngModel]="obterAnoSelecionado()"
+                (ngModelChange)="definirPeriodoRelatorio(obterMesSelecionado() || 0, $event)"
+                required
+              >
+                <option [ngValue]="null">Ano</option>
+                <option *ngFor="let ano of anos" [ngValue]="ano">{{ ano }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="linhaFormulario">
+            <label class="rotuloCampo" for="diretorNome">Diretor(a)<span class="campoObrigatorio">*</span></label>
+            <input
+              id="diretorNome"
+              name="diretorNome"
+              type="text"
+              class="campoTexto"
+              placeholder="Nome completo"
+              [(ngModel)]="atividadeEmEdicao.diretorNome"
+              required
+            />
+          </div>
+
+          <div class="linhaFormulario">
+            <label class="rotuloCampo" for="telefoneContato">Telefone<span class="campoObrigatorio">*</span></label>
+            <input
+              id="telefoneContato"
+              name="telefoneContato"
+              type="text"
+              class="campoTexto campoTelefoneContato"
+              placeholder="(00) 00000-0000"
+              inputmode="tel"
+              [(ngModel)]="atividadeEmEdicao.telefoneContato"
+              required
+            />
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Estrutura da ASA</h3>
+    <div class="grupoFormulario">
+      <div class="cabecalhoGrupo">A sua ASA possui os itens abaixo?</div>
+      <div class="gradeSimNao">
+        <div class="linhaGrade" *ngFor="let item of itensEstrutura">
+          <span>{{ item.rotulo }}</span>
+          <div class="opcoesGrade">
+            <label>
+              <input
+                type="radio"
+                [name]="item.campo"
+                [checked]="obterValorBooleano(item.campo) === true"
+                (change)="atualizarValorBooleano(item.campo, true)"
+              />
+              Sim
+            </label>
+            <label>
+              <input
+                type="radio"
+                [name]="item.campo"
+                [checked]="obterValorBooleano(item.campo) === false"
+                (change)="atualizarValorBooleano(item.campo, false)"
+              />
+              Nao
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="linhaFormulario">
+        <label class="rotuloCampo" for="emailOficial">Qual e-mail oficial da minha ASA?</label>
+        <input
+          id="emailOficial"
+          name="emailOficial"
+          type="email"
+          class="campoTexto"
+          placeholder="email@exemplo.com"
+          [(ngModel)]="atividadeEmEdicao.emailOficial"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Acoes Desenvolvidas no Mes</h3>
+    <div class="grupoFormulario">
+      <div class="cabecalhoGrupo">Minha ASA promoveu este mes o projeto:</div>
+      <div class="gradeSimNao">
+        <div class="linhaGrade" *ngFor="let item of itensAcoesMes">
+          <span>{{ item.rotulo }}</span>
+          <div class="opcoesGrade">
+            <label>
+              <input
+                type="radio"
+                [name]="item.campo"
+                [checked]="obterValorBooleano(item.campo) === true"
+                (change)="atualizarValorBooleano(item.campo, true)"
+              />
+              Sim
+            </label>
+            <label>
+              <input
+                type="radio"
+                [name]="item.campo"
+                [checked]="obterValorBooleano(item.campo) === false"
+                (change)="atualizarValorBooleano(item.campo, false)"
+              />
+              Nao
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Atendimentos Realizados</h3>
+    <div class="grupoFormulario">
+      <div class="gradeGrupo">
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="familiasAtendidas">Quantas familias foram atendidas esse mes? <span class="campoObrigatorio">*</span></label>
+          <input
+            id="familiasAtendidas"
+            name="familiasAtendidas"
+            type="number"
+            min="0"
+            class="campoTexto"
+            [(ngModel)]="atividadeEmEdicao.familiasAtendidas"
+            required
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="cestasBasicas">Quantas cestas basicas de 19 kg ou mais foram distribuidas este mes? <span class="campoObrigatorio">*</span></label>
+          <input
+            id="cestasBasicas"
+            name="cestasBasicas"
+            type="number"
+            min="0"
+            class="campoTexto"
+            [(ngModel)]="atividadeEmEdicao.cestasBasicas19kg"
+            required
+          />
+        </div>
+        <div class="linhaFormulario observacao">
+          <span>Composicao da cesta (19 kg)</span>
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="pecasRoupas">Quantas pecas de roupas e calcados distribuidos? <span class="campoObrigatorio">*</span></label>
+          <input
+            id="pecasRoupas"
+            name="pecasRoupas"
+            type="number"
+            min="0"
+            class="campoTexto"
+            [(ngModel)]="atividadeEmEdicao.pecasRoupasCalcados"
+            required
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="voluntariosAtivos">Numero de voluntarios que atuam ativamente na sua ASA? <span class="campoObrigatorio">*</span></label>
+          <input
+            id="voluntariosAtivos"
+            name="voluntariosAtivos"
+            type="number"
+            min="0"
+            class="campoTexto"
+            [(ngModel)]="atividadeEmEdicao.voluntariosAtivos"
+            required
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Acoes Espirituais</h3>
+    <div class="grupoFormulario">
+      <div class="gradeGrupo">
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="estudosBiblicos">Quantos estudos biblicos estao sendo realizados? <span class="campoObrigatorio">*</span></label>
+          <input
+            id="estudosBiblicos"
+            name="estudosBiblicos"
+            type="number"
+            min="0"
+            class="campoTexto"
+            [(ngModel)]="atividadeEmEdicao.estudosBiblicos"
+            required
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="batismosMes">Informe a quantidade de batismos realizados esse mes por influencia da ASA <span class="campoObrigatorio">*</span></label>
+          <input
+            id="batismosMes"
+            name="batismosMes"
+            type="number"
+            min="0"
+            class="campoTexto"
+            [(ngModel)]="atividadeEmEdicao.batismosMes"
+            required
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo">Realizei esse mes a reuniao com toda minha equipe de ASA para avaliacao e planejamento mensal? <span class="campoObrigatorio">*</span></label>
+          <div class="opcoesRadio">
+            <label>
+              <input
+                type="radio"
+                name="reuniaoAvaliacao"
+                [checked]="atividadeEmEdicao.reuniaoAvaliacaoPlanejamento === true"
+                (change)="atividadeEmEdicao.reuniaoAvaliacaoPlanejamento = true"
+              />
+              Sim
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="reuniaoAvaliacao"
+                [checked]="atividadeEmEdicao.reuniaoAvaliacaoPlanejamento === false"
+                (change)="atividadeEmEdicao.reuniaoAvaliacaoPlanejamento = false"
+              />
+              Nao
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Acoes Assistenciais</h3>
+    <div class="grupoFormulario">
+      <div class="cabecalhoGrupo">Acoes assistenciais promovidas nesse mes:</div>
+      <div class="gradeSimNao">
+        <div class="linhaGrade" *ngFor="let item of itensAssistencia">
+          <span>{{ item.rotulo }}</span>
+          <div class="opcoesGrade">
+            <label>
+              <input
+                type="radio"
+                [name]="item.campo"
+                [checked]="obterValorBooleano(item.campo) === true"
+                (change)="atualizarValorBooleano(item.campo, true)"
+              />
+              Sim
+            </label>
+            <label>
+              <input
+                type="radio"
+                [name]="item.campo"
+                [checked]="obterValorBooleano(item.campo) === false"
+                (change)="atualizarValorBooleano(item.campo, false)"
+              />
+              Nao
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="linhaFormulario linhaTextoGrande">
+        <label class="rotuloCampo" for="assistenciaOutras">Outras acoes assistenciais nao descritas</label>
+        <textarea
+          id="assistenciaOutras"
+          name="assistenciaOutras"
+          class="campoTexto campoTextoEndereco"
+          rows="3"
+          [(ngModel)]="atividadeEmEdicao.assistenciaOutras"
+        ></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Acoes de Desenvolvimento</h3>
+    <div class="grupoFormulario">
+      <div class="cabecalhoGrupo">Acoes de desenvolvimento promovidas nesse mes:</div>
+      <div class="gradeSimNao">
+        <div class="linhaGrade" *ngFor="let item of itensDesenvolvimento">
+          <span>{{ item.rotulo }}</span>
+          <div class="opcoesGrade">
+            <label>
+              <input
+                type="radio"
+                [name]="item.campo"
+                [checked]="obterValorBooleano(item.campo) === true"
+                (change)="atualizarValorBooleano(item.campo, true)"
+              />
+              Sim
+            </label>
+            <label>
+              <input
+                type="radio"
+                [name]="item.campo"
+                [checked]="obterValorBooleano(item.campo) === false"
+                (change)="atualizarValorBooleano(item.campo, false)"
+              />
+              Nao
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="linhaFormulario linhaTextoGrande">
+        <label class="rotuloCampo" for="desenvolvimentoOutras">Outras acoes de desenvolvimento nao descritas</label>
+        <textarea
+          id="desenvolvimentoOutras"
+          name="desenvolvimentoOutras"
+          class="campoTexto campoTextoEndereco"
+          rows="3"
+          [(ngModel)]="atividadeEmEdicao.desenvolvimentoOutras"
+        ></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Finalizacao</h3>
+    <div class="grupoFormulario">
+      <div class="linhaFormulario">
+        <label class="rotuloCampo">O que voce achou deste novo relatorio mensal? <span class="campoObrigatorio">*</span></label>
+        <div class="opcoesEscala">
+          <label *ngFor="let valor of [1,2,3,4,5]">
+            <input
+              type="radio"
+              name="avaliacaoRelatorio"
+              [value]="valor"
+              [(ngModel)]="atividadeEmEdicao.avaliacaoRelatorio"
+            />
+            {{ valor }}
+          </label>
+        </div>
+        <div class="legendaEscala">
+          <span>1 – Muito ruim</span>
+          <span>2 – Bom</span>
+          <span>3 – Muito bom</span>
+          <span>4 – Otimo</span>
+          <span>5 – Excelente</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cartaoTabela">
+    <div class="cabecalhoFormulario cabecalhoTabela">
+      <h3 class="tituloSecao">Registros cadastrados</h3>
+      <div class="linhaBusca">
+        <input
+          id="buscaAtividade"
+          name="buscaAtividade"
+          type="text"
+          class="campoTexto"
+          placeholder="Buscar por ASA, periodo ou diretor"
+          [(ngModel)]="termoBusca"
+          (input)="aplicarFiltro()"
+        />
+      </div>
+    </div>
+    <div class="tabelaAtividades" *ngIf="atividadesFiltradas.length > 0; else semAtividades">
+      <table>
+        <thead>
+          <tr>
+            <th>ASA</th>
+            <th>Periodo</th>
+            <th>Diretor(a)</th>
+            <th>Telefone</th>
+            <th>Avaliacao</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let atividade of atividadesFiltradas"
+            (click)="selecionarAtividade(atividade)"
+            [class.linhaSelecionada]="atividadeSelecionada?.id === atividade.id"
+          >
+            <td>{{ atividade.asaIdentificacao }}</td>
+            <td>{{ formatarPeriodoRelatorio(atividade.periodoRelatorio) }}</td>
+            <td>{{ atividade.diretorNome }}</td>
+            <td>{{ atividade.telefoneContato }}</td>
+            <td>{{ atividade.avaliacaoRelatorio }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #semAtividades>
+      <div class="linhaVazia">Nenhum registro encontrado.</div>
+    </ng-template>
+  </div>
+  </div>
+
+  <div *ngIf="abaAtiva === 'acoes'">
+    <div class="cartaoFormulario">
+      <h3 class="tituloSecao">Resumo de Acoes</h3>
+      <div class="linhaResumo">
+        <span class="rotuloCampo">Periodo selecionado:</span>
+        <strong>{{ formatarPeriodoRelatorio(atividadeEmEdicao.periodoRelatorio || '') || '-' }}</strong>
+      </div>
+      <div class="gridResumo">
+        <div class="cartaoResumo">
+          <h4>Mensal</h4>
+          <ul>
+            <li *ngFor="let item of obterResumoAcoes('mensal')">
+              <span>{{ item.rotulo }}</span>
+              <strong>{{ item.total }}</strong>
+            </li>
+          </ul>
+        </div>
+        <div class="cartaoResumo">
+          <h4>Bimestral</h4>
+          <ul>
+            <li *ngFor="let item of obterResumoAcoes('bimestral')">
+              <span>{{ item.rotulo }}</span>
+              <strong>{{ item.total }}</strong>
+            </li>
+          </ul>
+        </div>
+        <div class="cartaoResumo">
+          <h4>Semestral</h4>
+          <ul>
+            <li *ngFor="let item of obterResumoAcoes('semestral')">
+              <span>{{ item.rotulo }}</span>
+              <strong>{{ item.total }}</strong>
+            </li>
+          </ul>
+        </div>
+        <div class="cartaoResumo">
+          <h4>Anual</h4>
+          <ul>
+            <li *ngFor="let item of obterResumoAcoes('anual')">
+              <span>{{ item.rotulo }}</span>
+              <strong>{{ item.total }}</strong>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div *ngIf="!atividadeEmEdicao.periodoRelatorio" class="linhaVazia">
+        Selecione mes e ano na aba Cadastro para visualizar os resumos.
+      </div>
+    </div>
+  </div>
+</app-tela-padrao>
+
+<app-popup-messages
+  [mensagens]="mensagensErro"
+  (fechar)="limparMensagens()"
+></app-popup-messages>
+
+<app-dialog
+  *ngIf="dialogoExclusaoAberto"
+  titulo="Exclusao de registro"
+  mensagem="A exclusao e irreversivel, tem certeza que deseja excluir este registro?"
+  confirmarTexto="Excluir"
+  cancelarTexto="Cancelar"
+  (confirmar)="confirmarExclusao()"
+  (cancelar)="cancelarExclusao()"
+></app-dialog>

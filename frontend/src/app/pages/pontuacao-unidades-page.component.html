@@ -1,0 +1,110 @@
+<app-tela-padrao
+  [menuPai]="menuPai"
+  [titulo]="titulo"
+  [subtitulo]="subtitulo"
+  [comentarioDidatico]="comentarioDidatico"
+>
+  <div barra-acoes>
+    <app-barra-acoes-crud
+      [desabilitarBuscar]="carregando || carregandoConfiguracoes"
+      [desabilitarNovo]="carregando || carregandoConfiguracoes"
+      [desabilitarSalvar]="carregandoConfiguracoes"
+      [desabilitarCancelar]="carregandoConfiguracoes"
+      [desabilitarExcluir]="true"
+      [desabilitarImprimir]="carregando"
+      [desabilitarFechar]="false"
+      (buscar)="aoBuscar()"
+      (novo)="aoNovo()"
+      (salvar)="aoSalvar()"
+      (cancelar)="aoCancelar()"
+      (excluir)="aoExcluir()"
+      (imprimir)="aoImprimir()"
+      (fechar)="aoFechar()"
+    ></app-barra-acoes-crud>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Periodo de pontuacao</h3>
+    <form class="formularioPadrao">
+      <div class="gradeGrupo">
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="periodoRelatorio">Periodo (MM-AAAA) <span class="campoObrigatorio">*</span></label>
+          <input
+            id="periodoRelatorio"
+            name="periodoRelatorio"
+            type="text"
+            class="campoTexto"
+            placeholder="01-2026"
+            [(ngModel)]="periodoRelatorio"
+            required
+          />
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="cartaoTabela">
+    <div class="cabecalhoFormulario cabecalhoTabela">
+      <h3 class="tituloSecao">Pontuacao das unidades</h3>
+    </div>
+    <div class="tabelaPontuacao" *ngIf="pontuacoes.length > 0; else semPontuacoes">
+      <table>
+        <thead>
+          <tr>
+            <th>Unidade</th>
+            <th>Pontos</th>
+            <th>Selo de excelencia</th>
+            <th>Trofeu anual</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let pontuacao of pontuacoes">
+            <td>{{ pontuacao.nomeUnidade }}</td>
+            <td>{{ pontuacao.pontosTotal }}</td>
+            <td>{{ pontuacao.seloExcelencia ? 'Sim' : 'Nao' }}</td>
+            <td>{{ pontuacao.trofeuMelhorUnidadeAno ? 'Sim' : 'Nao' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #semPontuacoes>
+      <div class="linhaVazia">Nenhuma pontuacao encontrada para o periodo.</div>
+    </ng-template>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Configuracao de pontos por atividade</h3>
+    <div class="tabelaConfiguracoes" *ngIf="configuracoes.length > 0; else semConfiguracoes">
+      <table>
+        <thead>
+          <tr>
+            <th>Atividade</th>
+            <th>Pontos</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let config of configuracoes">
+            <td>{{ config.descricao }}</td>
+            <td>
+              <input
+                type="number"
+                class="campoTexto campoPontos"
+                min="0"
+                [(ngModel)]="config.pontos"
+                [name]="'pontos_' + config.chave"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #semConfiguracoes>
+      <div class="linhaVazia">Nenhuma configuracao encontrada.</div>
+    </ng-template>
+  </div>
+</app-tela-padrao>
+
+<app-popup-messages
+  [mensagens]="mensagensErro"
+  (fechar)="limparMensagens()"
+></app-popup-messages>

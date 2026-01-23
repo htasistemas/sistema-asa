@@ -12,6 +12,9 @@ public class User {
     @Column(nullable = false, unique = true)
     private String username;
 
+    @Column(nullable = false, unique = true)
+    private String email;
+
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
@@ -20,6 +23,9 @@ public class User {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    @Column(nullable = false)
+    private boolean aprovado = true;
 
     public Long getId() {
         return id;
@@ -31,6 +37,14 @@ public class User {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPasswordHash() {
@@ -55,5 +69,13 @@ public class User {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public boolean isAprovado() {
+        return aprovado;
+    }
+
+    public void setAprovado(boolean aprovado) {
+        this.aprovado = aprovado;
     }
 }

@@ -1,0 +1,113 @@
+<app-tela-padrao
+  [menuPai]="menuPai"
+  [titulo]="titulo"
+  [subtitulo]="subtitulo"
+  [comentarioDidatico]="comentarioDidatico"
+>
+  <div barra-acoes>
+    <app-barra-acoes-crud
+      [desabilitarBuscar]="carregando"
+      [desabilitarNovo]="carregando"
+      [desabilitarSalvar]="carregando"
+      [desabilitarCancelar]="carregando"
+      [desabilitarExcluir]="carregando || historicoVersoes.length === 0"
+      [desabilitarImprimir]="carregando"
+      [desabilitarFechar]="true"
+      (buscar)="aoBuscar()"
+      (novo)="aoNovo()"
+      (salvar)="aoSalvar()"
+      (cancelar)="aoCancelar()"
+      (excluir)="aoExcluir()"
+      (imprimir)="aoImprimir()"
+    ></app-barra-acoes-crud>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Versao Atual</h3>
+    <div class="linhaVersaoAtual">
+      <span class="rotuloCampo">Versao em producao:</span>
+      <strong>{{ versaoAtual }}</strong>
+    </div>
+    <div class="linhaAcoesConfig">
+      <a class="botaoPrimarioLink" routerLink="/configuracoes-gerais/usuarios">Gerenciar usuarios</a>
+      <a class="botaoPrimarioLink" routerLink="/configuracoes-gerais/aprovacao-usuarios">Aprovacao de usuarios</a>
+    </div>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Registro de Nova Versao</h3>
+    <form class="formularioPadrao">
+      <div class="gradeGrupo">
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="versaoNova">Versao (formato 1.00.0) <span class="campoObrigatorio">*</span></label>
+          <input
+            id="versaoNova"
+            name="versaoNova"
+            type="text"
+            class="campoTexto"
+            placeholder="1.00.0"
+            [(ngModel)]="novaVersao.versao"
+            required
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="dataHora">Data e hora <span class="campoObrigatorio">*</span></label>
+          <div class="linhaDataHora">
+            <input
+              id="dataHora"
+              name="dataHora"
+              type="text"
+              class="campoTexto"
+              placeholder="dd/MM/yyyy HH:mm"
+              [(ngModel)]="novaVersao.dataHora"
+              required
+            />
+            <button type="button" class="botaoAcao" (click)="definirDataHoraAtual()">Agora</button>
+          </div>
+        </div>
+        <div class="linhaFormulario linhaTextoGrande">
+          <label class="rotuloCampo" for="mudancas">Mudancas <span class="campoObrigatorio">*</span></label>
+          <textarea
+            id="mudancas"
+            name="mudancas"
+            class="campoTexto campoTextoEndereco"
+            rows="3"
+            placeholder="Descreva as mudancas de forma objetiva"
+            [(ngModel)]="novaVersao.mudancas"
+            required
+          ></textarea>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="cartaoTabela">
+    <h3 class="tituloSecao">Historico de Versoes</h3>
+    <div class="tabelaVersoes" *ngIf="historicoVersoes.length > 0; else semVersoes">
+      <table>
+        <thead>
+          <tr>
+            <th>Versao</th>
+            <th>Data/Hora</th>
+            <th>Mudancas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let registro of historicoVersoes">
+            <td>{{ registro.versao }}</td>
+            <td>{{ registro.dataHora }}</td>
+            <td>{{ registro.mudancas }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #semVersoes>
+      <div class="linhaVazia">Nenhum registro de versao encontrado.</div>
+    </ng-template>
+  </div>
+</app-tela-padrao>
+
+<app-popup-messages
+  [mensagens]="mensagensErro"
+  (fechar)="limparMensagens()"
+></app-popup-messages>

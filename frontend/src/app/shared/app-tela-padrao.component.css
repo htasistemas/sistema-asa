@@ -1,0 +1,60 @@
+.telaPadrao {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: #1f2a1f;
+}
+
+.cabecalhoTela {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.cabecalhoTitulo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.page-title__eyebrow {
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7b857b;
+}
+
+.page-title__label {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1f2a1f;
+}
+
+.subtituloTela {
+  margin: 0;
+  color: #5f6b5f;
+  max-width: 680px;
+}
+
+.comentarioDidatico {
+  font-size: 12px;
+  color: #4b5563;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 12px;
+  max-width: 280px;
+  text-align: right;
+}
+
+@media (max-width: 900px) {
+  .cabecalhoTela {
+    flex-direction: column;
+  }
+
+  .comentarioDidatico {
+    text-align: left;
+    max-width: none;
+  }
+}

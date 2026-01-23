@@ -1,0 +1,150 @@
+<app-tela-padrao
+  [menuPai]="menuPai"
+  [titulo]="titulo"
+  [subtitulo]="subtitulo"
+  [comentarioDidatico]="comentarioDidatico"
+>
+  <div barra-acoes>
+    <app-barra-acoes-crud
+      [desabilitarBuscar]="carregando"
+      [desabilitarNovo]="carregando"
+      [desabilitarSalvar]="carregando"
+      [desabilitarCancelar]="carregando"
+      [desabilitarExcluir]="!fotoSelecionada || carregando"
+      [desabilitarImprimir]="carregando"
+      [desabilitarFechar]="false"
+      (buscar)="aoBuscar()"
+      (novo)="aoNovo()"
+      (salvar)="aoSalvar()"
+      (cancelar)="aoCancelar()"
+      (excluir)="aoExcluir()"
+      (imprimir)="aoImprimir()"
+      (fechar)="aoFechar()"
+    ></app-barra-acoes-crud>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Dados da foto</h3>
+    <form class="formularioPadrao">
+      <div class="gradeGrupo">
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="nomeInstituicao">Instituicao <span class="campoObrigatorio">*</span></label>
+          <input
+            id="nomeInstituicao"
+            name="nomeInstituicao"
+            type="text"
+            class="campoTexto"
+            placeholder="Digite o nome da instituicao"
+            [(ngModel)]="fotoEmEdicao.nomeInstituicao"
+            required
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="nomeEvento">Evento <span class="campoObrigatorio">*</span></label>
+          <input
+            id="nomeEvento"
+            name="nomeEvento"
+            type="text"
+            class="campoTexto"
+            placeholder="Digite o nome do evento"
+            [(ngModel)]="fotoEmEdicao.nomeEvento"
+            required
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="dataEvento">Data do evento</label>
+          <input
+            id="dataEvento"
+            name="dataEvento"
+            type="date"
+            class="campoTexto"
+            [(ngModel)]="fotoEmEdicao.dataEvento"
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="urlFoto">Link da foto <span class="campoObrigatorio">*</span></label>
+          <input
+            id="urlFoto"
+            name="urlFoto"
+            type="url"
+            class="campoTexto"
+            placeholder="https://..."
+            [(ngModel)]="fotoEmEdicao.urlFoto"
+            required
+          />
+        </div>
+        <div class="linhaFormulario linhaFormularioCompleta">
+          <label class="rotuloCampo" for="descricaoFoto">Descricao</label>
+          <textarea
+            id="descricaoFoto"
+            name="descricaoFoto"
+            class="campoTexto campoTextoArea"
+            placeholder="Descreva o evento"
+            [(ngModel)]="fotoEmEdicao.descricao"
+          ></textarea>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="cartaoTabela">
+    <div class="cabecalhoFormulario cabecalhoTabela">
+      <h3 class="tituloSecao">Fotos cadastradas</h3>
+      <div class="linhaBusca">
+        <input
+          id="buscaFoto"
+          name="buscaFoto"
+          type="text"
+          class="campoTexto"
+          placeholder="Buscar por instituicao, evento ou descricao"
+          [(ngModel)]="termoBusca"
+          (input)="aplicarFiltro()"
+        />
+      </div>
+    </div>
+    <div class="tabelaFotos" *ngIf="fotosFiltradas.length > 0; else semFotos">
+      <table>
+        <thead>
+          <tr>
+            <th>Instituicao</th>
+            <th>Evento</th>
+            <th>Data</th>
+            <th>Link</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let foto of fotosFiltradas"
+            (click)="selecionarFoto(foto)"
+            [class.linhaSelecionada]="fotoSelecionada?.id === foto.id"
+          >
+            <td>{{ foto.nomeInstituicao }}</td>
+            <td>{{ foto.nomeEvento }}</td>
+            <td>{{ foto.dataEvento || '-' }}</td>
+            <td>
+              <a [href]="foto.urlFoto" target="_blank" rel="noopener">Abrir foto</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #semFotos>
+      <div class="linhaVazia">Nenhuma foto cadastrada.</div>
+    </ng-template>
+  </div>
+</app-tela-padrao>
+
+<app-popup-messages
+  [mensagens]="mensagensErro"
+  (fechar)="limparMensagens()"
+></app-popup-messages>
+
+<app-dialog
+  *ngIf="dialogoExclusaoAberto"
+  titulo="Exclusao de foto"
+  mensagem="A exclusao e irreversivel, tem certeza que deseja excluir esta foto?"
+  confirmarTexto="Excluir"
+  cancelarTexto="Cancelar"
+  (confirmar)="confirmarExclusao()"
+  (cancelar)="cancelarExclusao()"
+></app-dialog>

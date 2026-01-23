@@ -167,11 +167,12 @@ import { FileService, FileResource } from '../services/file.service';
         >
           <div class="cartaoArquivoTopo">
             <div class="infoArquivo">
-              <h4 class="nomeArquivo">{{ formatarNomeArquivo(arquivo.name) }}</h4>
-            <div class="metaArquivo">
-              <span>{{ arquivo.category }}</span>
-              <span class="chipTipoArquivo">
-                <span class="iconeTipo" [ngSwitch]="obterTipoArquivo(arquivo.url)">
+              <div class="linhaNomeArquivo">
+                <h4 class="nomeArquivo">{{ formatarNomeArquivo(arquivo.name) }}</h4>
+                <div class="metaArquivo">
+                  <span>{{ arquivo.category }}</span>
+                  <span class="chipTipoArquivo">
+                    <span class="iconeTipo" [ngSwitch]="obterTipoArquivo(arquivo.url)">
                   <svg *ngSwitchCase="'PDF'" class="iconeSvg" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M7 3h7l4 4v14H7z"></path>
                     <path d="M14 3v5h5"></path>
@@ -202,11 +203,12 @@ import { FileService, FileResource } from '../services/file.service';
                     <path d="M7 3h7l4 4v14H7z"></path>
                     <path d="M14 3v5h5"></path>
                   </svg>
-                </span>
-                {{ obterTipoArquivo(arquivo.url) }}
-              </span>
-              <span *ngIf="arquivo.date">{{ formatarData(arquivo.date) }}</span>
-            </div>
+                    </span>
+                    {{ obterTipoArquivo(arquivo.url) }}
+                  </span>
+                  <span *ngIf="arquivo.date">{{ formatarData(arquivo.date) }}</span>
+                </div>
+              </div>
             </div>
             <div class="acoesArquivo">
               <span class="badge badgeSuave">Drive</span>
@@ -443,8 +445,8 @@ import { FileService, FileResource } from '../services/file.service';
     }
 
     .listaArquivos {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      display: flex;
+      flex-direction: column;
       gap: 16px;
     }
 
@@ -483,15 +485,28 @@ import { FileService, FileResource } from '../services/file.service';
       gap: 6px;
     }
 
+    .linhaNomeArquivo {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 12px;
+    }
+
     .nomeArquivo {
       margin: 0;
-      font-size: 16px;
-      font-weight: 700;
-      color: #1f2a1f;
+      font-size: 20px;
+      font-weight: 800;
+      color: #1a3a28;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
     }
 
     .metaArquivo {
       display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
       gap: 8px;
       font-size: 12px;
       color: #6b776b;

@@ -20,11 +20,14 @@ C:\asa\backend\src\main\java\br\com\asa\security\CustomUserDetailsService.java
 C:\asa\backend\src\main\java\br\com\asa\security\JwtAuthFilter.java
 C:\asa\backend\src\main\java\br\com\asa\security\JwtService.java
 C:\asa\backend\src\main\java\br\com\asa\security\SecurityConfig.java
+C:\asa\backend\src\main\java\br\com\asa\service\BackupService.java
 C:\asa\backend\src\main\java\br\com\asa\web\AssignmentController.java
 C:\asa\backend\src\main\java\br\com\asa\web\AssignmentDto.java
 C:\asa\backend\src\main\java\br\com\asa\web\AuthController.java
 C:\asa\backend\src\main\java\br\com\asa\web\AuthRequest.java
 C:\asa\backend\src\main\java\br\com\asa\web\AuthResponse.java
+C:\asa\backend\src\main\java\br\com\asa\web\BackupController.java
+C:\asa\backend\src\main\java\br\com\asa\web\BackupResponseDto.java
 C:\asa\backend\src\main\java\br\com\asa\web\CampaignController.java
 C:\asa\backend\src\main\java\br\com\asa\web\CampaignDto.java
 C:\asa\backend\src\main\java\br\com\asa\web\FileResourceController.java

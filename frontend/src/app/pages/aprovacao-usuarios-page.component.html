@@ -1,0 +1,127 @@
+<app-tela-padrao
+  [menuPai]="menuPai"
+  [titulo]="titulo"
+  [subtitulo]="subtitulo"
+  [comentarioDidatico]="comentarioDidatico"
+>
+  <div barra-acoes>
+    <app-barra-acoes-crud
+      [desabilitarBuscar]="carregando"
+      [desabilitarNovo]="carregando"
+      [desabilitarSalvar]="carregando || !usuarioSelecionado"
+      [desabilitarCancelar]="carregando"
+      [desabilitarExcluir]="true"
+      [desabilitarImprimir]="carregando"
+      [desabilitarFechar]="false"
+      (buscar)="aoBuscar()"
+      (novo)="aoNovo()"
+      (salvar)="aoSalvar()"
+      (cancelar)="aoCancelar()"
+      (imprimir)="aoImprimir()"
+      (fechar)="aoFechar()"
+    ></app-barra-acoes-crud>
+  </div>
+
+  <div class="cartaoFormulario">
+    <h3 class="tituloSecao">Dados do usuario</h3>
+    <form class="formularioPadrao">
+      <div class="gradeGrupo">
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="emailUsuarioAprovacao">E-mail <span class="campoObrigatorio">*</span></label>
+          <input
+            id="emailUsuarioAprovacao"
+            name="emailUsuarioAprovacao"
+            type="email"
+            class="campoTexto"
+            [(ngModel)]="usuarioEmEdicao.email"
+            required
+            disabled
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="perfilUsuarioAprovacao">Perfil</label>
+          <input
+            id="perfilUsuarioAprovacao"
+            name="perfilUsuarioAprovacao"
+            type="text"
+            class="campoTexto"
+            [(ngModel)]="usuarioEmEdicao.role"
+            disabled
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="statusUsuarioAprovacao">Status</label>
+          <input
+            id="statusUsuarioAprovacao"
+            name="statusUsuarioAprovacao"
+            type="text"
+            class="campoTexto"
+            [value]="usuarioEmEdicao.active ? 'Ativo' : 'Inativo'"
+            disabled
+          />
+        </div>
+        <div class="linhaFormulario">
+          <label class="rotuloCampo" for="aprovadoUsuarioAprovacao">Aprovado</label>
+          <select
+            id="aprovadoUsuarioAprovacao"
+            name="aprovadoUsuarioAprovacao"
+            class="campoTexto"
+            [(ngModel)]="usuarioEmEdicao.aprovado"
+          >
+            <option [ngValue]="true">Sim</option>
+            <option [ngValue]="false">Nao</option>
+          </select>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="cartaoTabela">
+    <div class="cabecalhoFormulario cabecalhoTabela">
+      <h3 class="tituloSecao">Solicitacoes pendentes</h3>
+      <div class="linhaBusca">
+        <input
+          id="buscaUsuarioAprovacao"
+          name="buscaUsuarioAprovacao"
+          type="text"
+          class="campoTexto"
+          placeholder="Buscar por e-mail ou perfil"
+          [(ngModel)]="termoBusca"
+          (input)="aplicarFiltro()"
+        />
+      </div>
+    </div>
+    <div class="tabelaUsuarios" *ngIf="usuariosFiltrados.length > 0; else semUsuarios">
+      <table>
+        <thead>
+          <tr>
+            <th>E-mail</th>
+            <th>Perfil</th>
+            <th>Status</th>
+            <th>Aprovado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let usuario of usuariosFiltrados"
+            (click)="selecionarUsuario(usuario)"
+            [class.linhaSelecionada]="usuarioSelecionado?.id === usuario.id"
+          >
+            <td>{{ usuario.email }}</td>
+            <td>{{ usuario.role }}</td>
+            <td>{{ usuario.active ? 'Ativo' : 'Inativo' }}</td>
+            <td>{{ usuario.aprovado ? 'Sim' : 'Nao' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #semUsuarios>
+      <div class="linhaVazia">Nenhuma solicitacao pendente.</div>
+    </ng-template>
+  </div>
+</app-tela-padrao>
+
+<app-popup-messages
+  [mensagens]="mensagensErro"
+  (fechar)="limparMensagens()"
+></app-popup-messages>

@@ -2,14 +2,265 @@
 .paginaDashboard {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   color: #1f2a1f;
+  background: linear-gradient(180deg, #f7fbf8 0%, #ffffff 45%);
+  padding: 12px;
+  border-radius: 12px;
 }
 
+.cabecalhoDashboard {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 6px;
+  border-bottom: 4px solid #b68a2d;
+}
+
+.tituloDashboard {
+  text-align: center;
+  color: #2f4a3a;
+}
+
+.tituloDashboard h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.tituloDashboard span {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.topoDashboard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 4px solid #b68a2d;
+  padding: 10px 12px;
+}
+
+.linhaTopoDashboard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: #2f4a3a;
+}
+
+.rotuloQuantidade {
+  font-size: 15px;
+}
+
+.valorQuantidade {
+  background: #e5e7eb;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.seletorPeriodo select {
+  border: 1px solid #cfd6cf;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  min-width: 220px;
+  color: #374151;
+}
+
+.gradeDashboard {
+  display: grid;
+  grid-template-columns: 220px 1fr 360px;
+  gap: 16px;
+}
+
+.colunaLista {
+  border-right: 1px solid #e5e7eb;
+  padding-right: 12px;
+}
+
+.listaAcoes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.itemAcao {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #2b3a2b;
+}
+
+.valorAcao {
+  min-width: 40px;
+  text-align: center;
+  background: #254b3f;
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.gradeIndicadoresPrincipais {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.cartaoPrincipal {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 16px;
+  text-align: center;
+  background: #ffffff;
+}
+
+.cartaoDestaque {
+  background: #2f4a3a;
+  color: #ffffff;
+}
+
+.cartaoDestaque .rotuloPrincipal,
+.cartaoDestaque .subRotulo {
+  color: #e5f2ea;
+}
+
+.valorPrincipal {
+  font-size: 38px;
+  font-weight: 700;
+  color: inherit;
+}
+
+.rotuloPrincipal {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2f4a3a;
+}
+
+.subRotulo {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.gradeIndicadoresSecundarios {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.cartaoSecundario {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 16px;
+  text-align: center;
+  background: #ffffff;
+}
+
+.valorSecundario {
+  font-size: 32px;
+  font-weight: 700;
+  color: #2f4a3a;
+}
+
+.rotuloSecundario {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2f4a3a;
+}
+
+.colunaGrafico {
+  display: flex;
+  flex-direction: column;
+}
+
+.cartaoGrafico {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 12px 14px;
+  background: #ffffff;
+}
+
+.cartaoGrafico h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #2f4a3a;
+}
+
+.graficoBarras {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.linhaBarra {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.barra {
+  height: 26px;
+  background: #2f4a3a;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.rotuloBarra {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.rodapeDashboard {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.botaoBaixar {
+  background: #3b3b3b;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+@media (max-width: 1100px) {
+  .gradeDashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .colunaLista {
+    border-right: none;
+    padding-right: 0;
+  }
+
+  .cabecalhoDashboard {
+    text-align: center;
+  }
+}
+
+/* Area original de indicadores */
 .topoPagina {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  margin-top: 12px;
 }
 
 .linhaTopo {
@@ -38,7 +289,6 @@
   text-align: right;
 }
 
-/* Indicadores */
 .gradeIndicadores {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -64,11 +314,6 @@
   transform: translateY(-2px);
   box-shadow: 0 14px 24px rgba(31, 42, 31, 0.12);
   border-color: var(--cor-destaque);
-}
-
-.cartaoIndicador:focus-visible {
-  outline: 3px solid rgba(47, 122, 69, 0.25);
-  outline-offset: 2px;
 }
 
 .cartaoIndicador.ativo {
@@ -139,7 +384,6 @@
   color: #5f6b5f;
 }
 
-/* Paleta por indicador */
 .corVerde {
   --cor-destaque: #2f7a45;
   --cor-fundo: #ecf6ef;

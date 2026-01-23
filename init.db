@@ -1,0 +1,137 @@
+-- Script idempotente para criacao da tabela de atividades da ASA
+CREATE TABLE IF NOT EXISTS atividades_asa (
+  id BIGSERIAL PRIMARY KEY,
+  asa_identificacao VARCHAR(255) NOT NULL,
+  periodo_relatorio VARCHAR(50) NOT NULL,
+  diretor_nome VARCHAR(255) NOT NULL,
+  telefone_contato VARCHAR(50) NOT NULL,
+  possui_instagram BOOLEAN NOT NULL,
+  possui_email_proprio BOOLEAN NOT NULL,
+  possui_uniforme_oficial BOOLEAN NOT NULL,
+  possui_novo_manual_asa BOOLEAN NOT NULL,
+  possui_livro_beneficencia_social BOOLEAN NOT NULL,
+  email_oficial VARCHAR(255),
+  acao_visita_beneficiarios BOOLEAN NOT NULL,
+  acao_recolta_donativos BOOLEAN NOT NULL,
+  acao_doacao_sangue BOOLEAN NOT NULL,
+  acao_campanha_agasalho BOOLEAN NOT NULL,
+  acao_feira_solidaria BOOLEAN NOT NULL,
+  acao_palestras_educativas BOOLEAN NOT NULL,
+  acao_cursos_geracao_renda BOOLEAN NOT NULL,
+  acao_mutirao_natal BOOLEAN NOT NULL,
+  familias_atendidas INTEGER NOT NULL,
+  cestas_basicas_19kg INTEGER NOT NULL,
+  pecas_roupas_calcados INTEGER NOT NULL,
+  voluntarios_ativos INTEGER NOT NULL,
+  estudos_biblicos INTEGER NOT NULL,
+  batismos_mes INTEGER NOT NULL,
+  reuniao_avaliacao_planejamento BOOLEAN NOT NULL,
+  assistencia_alimentos BOOLEAN NOT NULL,
+  assistencia_roupas BOOLEAN NOT NULL,
+  assistencia_moveis BOOLEAN NOT NULL,
+  assistencia_limpeza_higiene BOOLEAN NOT NULL,
+  assistencia_construcao BOOLEAN NOT NULL,
+  assistencia_material_escolar BOOLEAN NOT NULL,
+  assistencia_medicamentos BOOLEAN NOT NULL,
+  assistencia_atendimento_saude BOOLEAN NOT NULL,
+  assistencia_mutiroes BOOLEAN NOT NULL,
+  assistencia_outras TEXT,
+  desenvolvimento_capacitacao_profissional BOOLEAN NOT NULL,
+  desenvolvimento_curriculo_orientacao BOOLEAN NOT NULL,
+  desenvolvimento_curso_idioma BOOLEAN NOT NULL,
+  desenvolvimento_curso_informatica BOOLEAN NOT NULL,
+  desenvolvimento_cursos_geracao_renda BOOLEAN NOT NULL,
+  desenvolvimento_administracao_financeira_lar BOOLEAN NOT NULL,
+  desenvolvimento_deixar_fumar_beber BOOLEAN NOT NULL,
+  desenvolvimento_prevencao_drogas BOOLEAN NOT NULL,
+  desenvolvimento_habitos_saudaveis BOOLEAN NOT NULL,
+  desenvolvimento_educacao_sexual BOOLEAN NOT NULL,
+  desenvolvimento_educacao_filhos BOOLEAN NOT NULL,
+  desenvolvimento_aproveitamento_alimentos BOOLEAN NOT NULL,
+  desenvolvimento_alfabetizacao_adultos BOOLEAN NOT NULL,
+  desenvolvimento_outras TEXT,
+  avaliacao_relatorio INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS configuracoes_gerais (
+  id BIGSERIAL PRIMARY KEY,
+  versao VARCHAR(20) NOT NULL,
+  data_hora VARCHAR(50) NOT NULL,
+  mudancas TEXT NOT NULL
+);
+
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+UPDATE usuarios SET email = username WHERE email IS NULL AND username LIKE '%@%';
+UPDATE usuarios SET email = 'admin@asa.local' WHERE email IS NULL AND username = 'admin';
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS aprovado BOOLEAN DEFAULT TRUE;
+UPDATE usuarios SET aprovado = TRUE WHERE aprovado IS NULL;
+
+INSERT INTO configuracoes_gerais (versao, data_hora, mudancas)
+SELECT '1.00.1', to_char(now(), 'DD/MM/YYYY HH24:MI'), 'Controle de aprovacao para usuarios e tela de autorizacao de acesso.'
+WHERE NOT EXISTS (SELECT 1 FROM configuracoes_gerais WHERE versao = '1.00.1');
+
+CREATE TABLE IF NOT EXISTS email_logs (
+  id BIGSERIAL PRIMARY KEY,
+  assunto VARCHAR(255) NOT NULL,
+  mensagem TEXT NOT NULL,
+  cidade VARCHAR(255),
+  regiao VARCHAR(255),
+  distrito VARCHAR(255),
+  quantidade_envios INTEGER NOT NULL,
+  data_hora TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS pontuacao_atividade_config (
+  id BIGSERIAL PRIMARY KEY,
+  chave VARCHAR(100) NOT NULL UNIQUE,
+  descricao VARCHAR(255) NOT NULL,
+  pontos INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS pontuacao_unidade_mes (
+  id BIGSERIAL PRIMARY KEY,
+  nome_unidade VARCHAR(255) NOT NULL,
+  periodo_relatorio VARCHAR(10) NOT NULL,
+  pontos_total INTEGER NOT NULL,
+  selo_excelencia BOOLEAN NOT NULL,
+  trofeu_melhor_unidade_ano BOOLEAN NOT NULL,
+  data_calculo TIMESTAMP NOT NULL,
+  UNIQUE (nome_unidade, periodo_relatorio)
+);
+
+INSERT INTO configuracoes_gerais (versao, data_hora, mudancas)
+SELECT '1.00.2', to_char(now(), 'DD/MM/YYYY HH24:MI'), 'Tela de pontuacao das unidades, selo de excelencia e trofeu anual.'
+WHERE NOT EXISTS (SELECT 1 FROM configuracoes_gerais WHERE versao = '1.00.2');
+
+CREATE TABLE IF NOT EXISTS fotos_eventos_instituicoes (
+  id BIGSERIAL PRIMARY KEY,
+  nome_instituicao VARCHAR(255) NOT NULL,
+  nome_evento VARCHAR(255) NOT NULL,
+  data_evento DATE,
+  url_foto TEXT NOT NULL,
+  descricao TEXT
+);
+
+INSERT INTO configuracoes_gerais (versao, data_hora, mudancas)
+SELECT '1.00.3', to_char(now(), 'DD/MM/YYYY HH24:MI'), 'Tela de fotos de eventos das instituicoes no menu operacional.'
+WHERE NOT EXISTS (SELECT 1 FROM configuracoes_gerais WHERE versao = '1.00.3');
+
+INSERT INTO configuracoes_gerais (versao, data_hora, mudancas)
+SELECT '1.00.4', to_char(now(), 'DD/MM/YYYY HH24:MI'), 'Tela de atividades da ASA sem duplicar dados quando ASA e mes ja existem.'
+WHERE NOT EXISTS (SELECT 1 FROM configuracoes_gerais WHERE versao = '1.00.4');
+
+INSERT INTO configuracoes_gerais (versao, data_hora, mudancas)
+SELECT '1.00.5', to_char(now(), 'DD/MM/YYYY HH24:MI'), 'Pontuacao das unidades considera periodo em formato MM-AAAA e AAAA-MM.'
+WHERE NOT EXISTS (SELECT 1 FROM configuracoes_gerais WHERE versao = '1.00.5');
+
+INSERT INTO configuracoes_gerais (versao, data_hora, mudancas)
+SELECT '1.00.6', to_char(now(), 'DD/MM/YYYY HH24:MI'), 'Pontuacao das unidades unifica nome da ASA com cadastro de unidades.'
+WHERE NOT EXISTS (SELECT 1 FROM configuracoes_gerais WHERE versao = '1.00.6');
+
+INSERT INTO configuracoes_gerais (versao, data_hora, mudancas)
+SELECT '1.00.7', to_char(now(), 'DD/MM/YYYY HH24:MI'), 'Atividades da ASA salva nome da unidade conforme cadastro padrao.'
+WHERE NOT EXISTS (SELECT 1 FROM configuracoes_gerais WHERE versao = '1.00.7');
+
+INSERT INTO configuracoes_gerais (versao, data_hora, mudancas)
+SELECT '1.00.8', to_char(now(), 'DD/MM/YYYY HH24:MI'), 'Pontuacao aceita periodo com barra e normaliza para calculo.'
+WHERE NOT EXISTS (SELECT 1 FROM configuracoes_gerais WHERE versao = '1.00.8');

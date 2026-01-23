@@ -32,14 +32,14 @@ public class ReportController {
     }
 
     @PutMapping("/{id}")
-    public ReportDto update(@PathVariable Long id, @RequestBody ReportDto dto) {
+    public ReportDto update(@PathVariable("id") Long id, @RequestBody ReportDto dto) {
         Report report = fromDto(dto, new Report());
         report.setId(id);
         return toDto(reportRepository.save(report));
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable("id") Long id) {
         reportRepository.deleteById(id);
     }
 

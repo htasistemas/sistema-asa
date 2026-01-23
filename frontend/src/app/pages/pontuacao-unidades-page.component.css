@@ -1,0 +1,87 @@
+.cartaoFormulario,
+.cartaoTabela {
+  background-color: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e1e5e1;
+  padding: 20px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+}
+
+.tituloSecao {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.cabecalhoFormulario {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.formularioPadrao {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.gradeGrupo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.linhaFormulario {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rotuloCampo {
+  font-size: 13px;
+  color: #3a463a;
+}
+
+.campoObrigatorio {
+  color: #b91c1c;
+}
+
+.campoTexto {
+  border: 1px solid #d8ddd8;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.campoTexto:focus {
+  outline: none;
+  border-color: #2f7a45;
+  box-shadow: 0 0 0 3px rgba(47, 122, 69, 0.15);
+}
+
+.tabelaPontuacao table,
+.tabelaConfiguracoes table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tabelaPontuacao th,
+.tabelaPontuacao td,
+.tabelaConfiguracoes th,
+.tabelaConfiguracoes td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.campoPontos {
+  max-width: 120px;
+}
+
+.linhaVazia {
+  text-align: center;
+  color: #7b857b;
+  padding: 16px;
+}

@@ -1,0 +1,57 @@
+.popupErro {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.35);
+  padding: 20px;
+}
+
+.conteudoErro {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tituloErro {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2a1f;
+}
+
+.listaErros {
+  margin: 0;
+  padding: 0 0 0 16px;
+  text-align: left;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.botaoAcao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #d8ddd8;
+  background-color: #ffffff;
+  color: #2e3a2e;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.botaoPrimario {
+  background-color: #2f7a45;
+  color: #ffffff;
+  border-color: #2f7a45;
+}

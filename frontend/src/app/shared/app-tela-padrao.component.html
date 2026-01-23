@@ -1,0 +1,12 @@
+<section class="telaPadrao">
+  <div class="cabecalhoTela">
+    <div class="cabecalhoTitulo">
+      <div class="page-title__eyebrow">{{ menuPai }}</div>
+      <div class="page-title__label">{{ titulo }}</div>
+    </div>
+    <div class="comentarioDidatico">{{ comentarioDidatico }}</div>
+  </div>
+  <p class="subtituloTela" *ngIf="subtitulo">{{ subtitulo }}</p>
+  <ng-content select="[barra-acoes]"></ng-content>
+  <ng-content></ng-content>
+</section>
