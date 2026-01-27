@@ -21,7 +21,7 @@ export class ConfiguracoesGeraisPageComponent implements OnInit {
   readonly subtitulo = 'Controle de versao e historico de alteracoes do sistema.';
   readonly comentarioDidatico = 'registre versao, data/hora e mudancas.';
 
-  versaoAtual = '1.00.0';
+  versaoAtual = '1.00.9';
   historicoVersoes: ConfiguracaoGeral[] = [];
   novaVersao: ConfiguracaoGeral = this.criarRegistroVazio();
   mensagensErro: string[] = [];

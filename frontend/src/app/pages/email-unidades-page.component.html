@@ -27,6 +27,19 @@
     <form class="formularioPadrao">
       <div class="gradeGrupo">
         <div class="linhaFormulario">
+          <label class="rotuloCampo" for="modeloEmail">Modelo predefinido</label>
+          <select
+            id="modeloEmail"
+            name="modeloEmail"
+            class="campoTexto"
+            [(ngModel)]="modeloSelecionadoId"
+            (ngModelChange)="aoSelecionarModelo()"
+          >
+            <option value="">Selecionar modelo</option>
+            <option *ngFor="let modelo of modelosEmail" [value]="modelo.id">{{ modelo.titulo }}</option>
+          </select>
+        </div>
+        <div class="linhaFormulario">
           <label class="rotuloCampo" for="assuntoEmail">Assunto <span class="campoObrigatorio">*</span></label>
           <input
             id="assuntoEmail"

@@ -13,11 +13,13 @@
   border-radius: 16px;
   padding: 24px;
   max-width: 380px;
+  max-height: min(80vh, 640px);
   width: 100%;
   text-align: center;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow: hidden;
 }
 
 .tituloErro {
@@ -33,6 +35,8 @@
   text-align: left;
   color: #b91c1c;
   font-weight: 600;
+  max-height: min(50vh, 360px);
+  overflow: auto;
 }
 
 .botaoAcao {

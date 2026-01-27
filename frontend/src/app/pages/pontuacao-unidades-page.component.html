@@ -23,46 +23,57 @@
     ></app-barra-acoes-crud>
   </div>
 
-  <div class="cartaoFormulario">
-    <h3 class="tituloSecao">Periodo de pontuacao</h3>
-    <form class="formularioPadrao">
-      <div class="gradeGrupo">
-        <div class="linhaFormulario">
-          <label class="rotuloCampo" for="periodoRelatorio">Periodo (MM-AAAA) <span class="campoObrigatorio">*</span></label>
-          <input
-            id="periodoRelatorio"
-            name="periodoRelatorio"
-            type="text"
-            class="campoTexto"
-            placeholder="01-2026"
-            [(ngModel)]="periodoRelatorio"
-            required
-          />
-        </div>
-      </div>
-    </form>
+  <div class="abasPadrao">
+    <button
+      type="button"
+      class="abaPadrao"
+      [ngClass]="{ abaAtiva: abaAtiva === 'pontuacao' }"
+      (click)="abaAtiva = 'pontuacao'"
+    >
+      Pontuacao das unidades
+    </button>
+    <button
+      type="button"
+      class="abaPadrao"
+      [ngClass]="{ abaAtiva: abaAtiva === 'selos' }"
+      (click)="abaAtiva = 'selos'"
+    >
+      Selos por unidade
+    </button>
+    <button
+      type="button"
+      class="abaPadrao"
+      [ngClass]="{ abaAtiva: abaAtiva === 'configuracoes' }"
+      (click)="abaAtiva = 'configuracoes'"
+    >
+      Configuracao de pontos
+    </button>
   </div>
 
-  <div class="cartaoTabela">
+  <div class="cartaoTabela" *ngIf="abaAtiva === 'pontuacao'">
     <div class="cabecalhoFormulario cabecalhoTabela">
       <h3 class="tituloSecao">Pontuacao das unidades</h3>
     </div>
-    <div class="tabelaPontuacao" *ngIf="pontuacoes.length > 0; else semPontuacoes">
+    <div class="tabelaPontuacao" *ngIf="pontuacoesMensais.length > 0; else semPontuacoes">
       <table>
         <thead>
           <tr>
             <th>Unidade</th>
-            <th>Pontos</th>
-            <th>Selo de excelencia</th>
-            <th>Trofeu anual</th>
+            <th *ngFor="let mes of mesesPontuacao; let i = index" [class.mesAtual]="i === 0">{{ mes.rotulo }}</th>
+            <th>Total</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let pontuacao of pontuacoes">
-            <td>{{ pontuacao.nomeUnidade }}</td>
-            <td>{{ pontuacao.pontosTotal }}</td>
-            <td>{{ pontuacao.seloExcelencia ? 'Sim' : 'Nao' }}</td>
-            <td>{{ pontuacao.trofeuMelhorUnidadeAno ? 'Sim' : 'Nao' }}</td>
+          <tr *ngFor="let linha of pontuacoesMensais">
+            <td class="colunaUnidade">{{ linha.nomeUnidade }}</td>
+            <td
+              *ngFor="let pontosMes of linha.pontosPorMes; let i = index"
+              class="colunaMes"
+              [class.mesAtual]="i === 0"
+            >
+              {{ pontosMes }}
+            </td>
+            <td class="colunaTotal">{{ linha.totalAno }}</td>
           </tr>
         </tbody>
       </table>
@@ -72,7 +83,42 @@
     </ng-template>
   </div>
 
-  <div class="cartaoFormulario">
+  <div class="cartaoTabela" *ngIf="abaAtiva === 'selos'">
+    <div class="cabecalhoFormulario cabecalhoTabela">
+      <h3 class="tituloSecao">Selos por unidade ({{ anoReferencia }})</h3>
+    </div>
+    <div class="tabelaSelos" *ngIf="pontuacoes.length > 0; else semSelos">
+      <table>
+        <thead>
+          <tr>
+            <th>Unidade</th>
+            <th *ngFor="let mes of mesesAno">{{ mes.rotulo }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let pontuacao of pontuacoes">
+            <td class="colunaUnidade">{{ pontuacao.nomeUnidade }}</td>
+            <td *ngFor="let selo of obterSelosDaUnidade(pontuacao.nomeUnidade); let i = index" class="colunaSelo">
+              <img
+                *ngIf="selo; else semSelo"
+                [src]="urlImagemSelo"
+                [alt]="'Selo ' + mesesAno[i].rotulo"
+                class="imagemSelo"
+              />
+              <ng-template #semSelo>
+                <span class="marcadorSemSelo" aria-label="Sem selo">X</span>
+              </ng-template>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #semSelos>
+      <div class="linhaVazia">Nenhuma unidade encontrada para exibir os selos.</div>
+    </ng-template>
+  </div>
+
+  <div class="cartaoFormulario" *ngIf="abaAtiva === 'configuracoes'">
     <h3 class="tituloSecao">Configuracao de pontos por atividade</h3>
     <div class="tabelaConfiguracoes" *ngIf="configuracoes.length > 0; else semConfiguracoes">
       <table>

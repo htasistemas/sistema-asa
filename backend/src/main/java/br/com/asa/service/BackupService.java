@@ -8,6 +8,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,15 +22,18 @@ public class BackupService {
     private final String urlBanco;
     private final String usuarioBanco;
     private final String senhaBanco;
+    private final BackupLogService backupLogService;
 
     public BackupService(
         @Value("${spring.datasource.url}") String urlBanco,
         @Value("${spring.datasource.username}") String usuarioBanco,
-        @Value("${spring.datasource.password}") String senhaBanco
+        @Value("${spring.datasource.password}") String senhaBanco,
+        BackupLogService backupLogService
     ) {
         this.urlBanco = urlBanco;
         this.usuarioBanco = usuarioBanco;
         this.senhaBanco = senhaBanco;
+        this.backupLogService = backupLogService;
     }
 
     public File gerarBackup() {
@@ -46,8 +50,16 @@ public class BackupService {
                 dadosBanco.nomeBanco()
             );
             executarComando(comando, senhaBanco);
+            backupLogService.registrar(
+                "BACKUP",
+                arquivo.getName(),
+                arquivo.length(),
+                "SUCESSO",
+                "Backup gerado com sucesso."
+            );
             return arquivo;
         } catch (IOException e) {
+            backupLogService.registrar("BACKUP", null, null, "ERRO", "Nao foi possivel gerar o backup.");
             throw new IllegalStateException("Nao foi possivel gerar o backup.", e);
         }
     }
@@ -66,8 +78,62 @@ public class BackupService {
                 "-f", arquivoTemporario.getAbsolutePath()
             );
             executarComando(comando, senhaBanco);
+            backupLogService.registrar(
+                "RESTAURACAO",
+                arquivo.getOriginalFilename(),
+                arquivo.getSize(),
+                "SUCESSO",
+                "Backup restaurado com sucesso."
+            );
         } catch (IOException e) {
+            backupLogService.registrar(
+                "RESTAURACAO",
+                arquivo.getOriginalFilename(),
+                arquivo.getSize(),
+                "ERRO",
+                "Nao foi possivel restaurar o backup."
+            );
             throw new IllegalStateException("Nao foi possivel restaurar o backup.", e);
+        }
+    }
+
+    public void testarBackup(MultipartFile arquivo) {
+        DadosBanco dadosBanco = obterDadosBanco();
+        try {
+            File arquivoTemporario = Files.createTempFile("teste-backup-asa-", ".sql").toFile();
+            arquivo.transferTo(arquivoTemporario);
+
+            File arquivoTeste = Files.createTempFile("teste-backup-wrapper-", ".sql").toFile();
+            String conteudo = Files.readString(arquivoTemporario.toPath(), StandardCharsets.UTF_8);
+            String wrapper = "BEGIN;\n" + conteudo + "\nROLLBACK;\n";
+            Files.writeString(arquivoTeste.toPath(), wrapper, StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING);
+
+            List<String> comando = List.of(
+                "psql",
+                "-h", dadosBanco.host(),
+                "-p", String.valueOf(dadosBanco.porta()),
+                "-U", usuarioBanco,
+                "-d", dadosBanco.nomeBanco(),
+                "-v", "ON_ERROR_STOP=1",
+                "-f", arquivoTeste.getAbsolutePath()
+            );
+            executarComando(comando, senhaBanco);
+            backupLogService.registrar(
+                "TESTE_RESTAURACAO",
+                arquivo.getOriginalFilename(),
+                arquivo.getSize(),
+                "SUCESSO",
+                "Teste de restauracao executado com sucesso (ROLLBACK)."
+            );
+        } catch (IOException e) {
+            backupLogService.registrar(
+                "TESTE_RESTAURACAO",
+                arquivo.getOriginalFilename(),
+                arquivo.getSize(),
+                "ERRO",
+                "Nao foi possivel testar o backup."
+            );
+            throw new IllegalStateException("Nao foi possivel testar o backup.", e);
         }
     }
 

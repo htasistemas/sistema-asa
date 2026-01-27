@@ -1,3 +1,10 @@
+:host {
+  display: block;
+  background: linear-gradient(180deg, #f7fbf8 0%, #ffffff 45%);
+  padding: 12px;
+  border-radius: 12px;
+}
+
 .cartaoFormulario,
 .cartaoTabela {
   background-color: #ffffff;
@@ -38,6 +45,28 @@
   gap: 6px;
 }
 
+.abasPadrao {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.abaPadrao {
+  border: 1px solid #d8ddd8;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-weight: 700;
+  background-color: #ffffff;
+  color: #2e3a2e;
+  cursor: pointer;
+}
+
+.abaPadrao.abaAtiva {
+  background-color: #1f6f43;
+  border-color: #1f6f43;
+  color: #ffffff;
+}
+
 .rotuloCampo {
   font-size: 13px;
   color: #3a463a;
@@ -61,7 +90,8 @@
 }
 
 .tabelaPontuacao table,
-.tabelaConfiguracoes table {
+.tabelaConfiguracoes table,
+.tabelaSelos table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
@@ -70,10 +100,75 @@
 .tabelaPontuacao th,
 .tabelaPontuacao td,
 .tabelaConfiguracoes th,
-.tabelaConfiguracoes td {
+.tabelaConfiguracoes td,
+.tabelaSelos th,
+.tabelaSelos td {
   padding: 10px 12px;
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
+}
+
+.tabelaSelos {
+  overflow-x: auto;
+}
+
+.tabelaSelos th:not(:first-child),
+.tabelaSelos td.colunaSelo {
+  text-align: center;
+  min-width: 58px;
+}
+
+.tabelaPontuacao {
+  overflow-x: auto;
+}
+
+.tabelaPontuacao th:not(:first-child),
+.tabelaPontuacao td.colunaMes,
+.tabelaPontuacao td.colunaTotal {
+  text-align: center;
+  min-width: 64px;
+}
+
+.mesAtual {
+  background-color: #e6f4ea;
+  font-weight: 800;
+  color: #1f6f43;
+}
+
+.tabelaPontuacao th.mesAtual,
+.tabelaPontuacao td.mesAtual {
+  border-bottom-color: #b7e0c2;
+}
+
+.colunaTotal {
+  font-weight: 800;
+  color: #1f6f43;
+}
+
+.colunaUnidade {
+  font-weight: 700;
+  color: #1f2a1f;
+  white-space: nowrap;
+}
+
+.imagemSelo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  display: inline-block;
+}
+
+.marcadorSemSelo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 2px solid #b91c1c;
+  color: #b91c1c;
+  font-weight: 800;
+  background-color: #fff5f5;
 }
 
 .campoPontos {

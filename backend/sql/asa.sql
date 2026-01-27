@@ -158,6 +158,16 @@ CREATE TABLE email_logs (
   data_hora TIMESTAMP NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS backup_logs (
+  id BIGSERIAL PRIMARY KEY,
+  data_hora TIMESTAMP NOT NULL,
+  tipo VARCHAR(30) NOT NULL,
+  arquivo_nome VARCHAR(255),
+  tamanho_bytes BIGINT,
+  status VARCHAR(20) NOT NULL,
+  mensagem VARCHAR(1000)
+);
+
 -- Garantir permissoes para o usuario da aplicacao
 GRANT USAGE ON SCHEMA public TO asa;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO asa;

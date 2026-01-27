@@ -37,6 +37,8 @@ export class FotosEventosPageComponent implements OnInit {
   readonly titulo = 'Fotos de eventos';
   readonly subtitulo = 'Registre fotos dos eventos realizados pelas instituicoes.';
   readonly comentarioDidatico = 'cadastre a foto com a instituicao, evento e data para manter o historico organizado.';
+  readonly imagemCapaPadrao = 'assets/capa-evento-padrao.svg';
+  readonly iconeAbrirFoto = 'assets/icone-link.svg';
 
   constructor(private fotosEventosService: FotosEventosService, private router: Router) {}
 

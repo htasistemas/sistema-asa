@@ -4,5 +4,5 @@
   set MAIL_HOST=smtp.gmail.com
   set MAIL_PORT=587
   set MAIL_USER=asadiretoresmmo@gmail.com
-  set MAIL_PASS=nmsq wbvk wcda mwfa
+  set MAIL_PASS=pnml vnde oxtn yfyx
   .\mvnw.cmd -q -DskipTests clean spring-boot:run

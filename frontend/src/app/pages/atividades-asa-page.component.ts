@@ -2,7 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AtividadeAsa, AtividadesAsaService } from '../services/atividades-asa.service';
+import {
+  AtividadeAsa,
+  AtividadesAsaService,
+  ImportacaoAtividadeResposta
+} from '../services/atividades-asa.service';
 import { Unidade, UnidadeService } from '../services/unidade.service';
 import { AppTelaPadraoComponent } from '../shared/app-tela-padrao.component';
 import { AppBarraAcoesCrudComponent } from '../shared/app-barra-acoes-crud.component';
@@ -74,6 +78,7 @@ interface ItemGrade<T> {
 })
 export class AtividadesAsaPageComponent implements OnInit {
   carregando = false;
+  importando = false;
   atividades: AtividadeAsa[] = [];
   atividadesFiltradas: AtividadeAsa[] = [];
   atividadeSelecionada: AtividadeAsa | null = null;
@@ -86,6 +91,10 @@ export class AtividadesAsaPageComponent implements OnInit {
   unidades: Unidade[] = [];
   mapaUnidades = new Map<string, Unidade>();
   abaAtiva: 'cadastro' | 'acoes' = 'cadastro';
+  arquivoImportacao: File | null = null;
+  resumoImportacao: ImportacaoAtividadeResposta | null = null;
+  mesImportacao: number | null = null;
+  anoImportacao: number | null = null;
 
   readonly menuPai = 'Operacional';
   readonly titulo = 'Atividades da ASA';
@@ -211,7 +220,6 @@ export class AtividadesAsaPageComponent implements OnInit {
 
   carregarDados(): void {
     this.carregando = true;
-    this.carregando = true;
     this.atividadesAsaService.listar().subscribe({
       next: atividades => {
         this.atividades = atividades;
@@ -235,6 +243,47 @@ export class AtividadesAsaPageComponent implements OnInit {
 
   aoBuscar(): void {
     this.carregarDados();
+  }
+
+  aoSelecionarArquivoImportacao(evento: Event): void {
+    const input = evento.target as HTMLInputElement | null;
+    const arquivo = input?.files?.item(0) ?? null;
+    this.arquivoImportacao = arquivo;
+  }
+
+  aoImportarGoogleForms(): void {
+    const periodoImportacao = this.obterPeriodoImportacao();
+    if (!this.arquivoImportacao) {
+      const builder = new PopupErrorBuilder();
+      builder.adicionarMensagem('Selecione um arquivo CSV exportado do Google Forms.');
+      this.mensagensErro = builder.construir();
+      return;
+    }
+    if (!periodoImportacao) {
+      const builder = new PopupErrorBuilder();
+      builder.adicionarMensagem('Informe o periodo do relatorio para importacao.');
+      this.mensagensErro = builder.construir();
+      return;
+    }
+
+    this.importando = true;
+    this.resumoImportacao = null;
+    this.atividadesAsaService.importarGoogleForms(this.arquivoImportacao, periodoImportacao).subscribe({
+      next: resumo => {
+        this.importando = false;
+        this.resumoImportacao = resumo;
+        if (resumo.mensagens?.length) {
+          this.mensagensErro = [...resumo.mensagens];
+        }
+        this.carregarDados();
+      },
+      error: () => {
+        this.importando = false;
+        const builder = new PopupErrorBuilder();
+        builder.adicionarMensagem('Nao foi possivel importar o arquivo CSV.');
+        this.mensagensErro = builder.construir();
+      }
+    });
   }
 
   aoNovo(): void {
@@ -588,6 +637,13 @@ export class AtividadesAsaPageComponent implements OnInit {
       desenvolvimentoOutras: '',
       avaliacaoRelatorio: 1
     };
+  }
+
+  private obterPeriodoImportacao(): string | null {
+    if (!this.anoImportacao || !this.mesImportacao) {
+      return null;
+    }
+    return `${this.anoImportacao}-${String(this.mesImportacao).padStart(2, '0')}`;
   }
 
   private gerarAnos(inicio: number, anosAFrente: number): number[] {

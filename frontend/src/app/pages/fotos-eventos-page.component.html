@@ -102,31 +102,37 @@
         />
       </div>
     </div>
-    <div class="tabelaFotos" *ngIf="fotosFiltradas.length > 0; else semFotos">
-      <table>
-        <thead>
-          <tr>
-            <th>Instituicao</th>
-            <th>Evento</th>
-            <th>Data</th>
-            <th>Link</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            *ngFor="let foto of fotosFiltradas"
-            (click)="selecionarFoto(foto)"
-            [class.linhaSelecionada]="fotoSelecionada?.id === foto.id"
+    <div class="gradeFotos" *ngIf="fotosFiltradas.length > 0; else semFotos">
+      <button
+        type="button"
+        class="cardFoto"
+        *ngFor="let foto of fotosFiltradas"
+        (click)="selecionarFoto(foto)"
+        [class.cardSelecionado]="fotoSelecionada?.id === foto.id"
+      >
+        <div class="capaFoto">
+          <img
+            [src]="foto.urlFoto || imagemCapaPadrao"
+            [alt]="foto.nomeEvento || 'Foto do evento'"
+            (error)="$event.target.src = imagemCapaPadrao"
+          />
+        </div>
+        <div class="conteudoFoto">
+          <span class="instituicaoFoto">{{ foto.nomeInstituicao }}</span>
+          <strong class="eventoFoto">{{ foto.nomeEvento }}</strong>
+          <span class="dataFoto">{{ foto.dataEvento || '-' }}</span>
+          <a
+            class="acaoFoto"
+            [href]="foto.urlFoto"
+            target="_blank"
+            rel="noopener"
+            (click)="$event.stopPropagation()"
           >
-            <td>{{ foto.nomeInstituicao }}</td>
-            <td>{{ foto.nomeEvento }}</td>
-            <td>{{ foto.dataEvento || '-' }}</td>
-            <td>
-              <a [href]="foto.urlFoto" target="_blank" rel="noopener">Abrir foto</a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            <img [src]="iconeAbrirFoto" alt="" aria-hidden="true" />
+            Abrir foto
+          </a>
+        </div>
+      </button>
     </div>
     <ng-template #semFotos>
       <div class="linhaVazia">Nenhuma foto cadastrada.</div>

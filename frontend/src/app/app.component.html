@@ -19,7 +19,7 @@
         <div class="relative menuDropdown">
           <button (click)="alternarMenuOperacional()" class="flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Operacional</button>
           <div *ngIf="menuOperacionalAberto" class="absolute left-0 mt-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 z-50">
-            <a routerLink="/files" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer first:rounded-t-lg">Arquivos</a>
+            <a routerLink="/files" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer first:rounded-t-lg">Arquivos Gerais</a>
             <a routerLink="/map" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer">Mapa Geral</a>
             <a routerLink="/atividades-asa" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer">Atividades da ASA</a>
             <a routerLink="/pontuacao-unidades" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer">Pontuacao das unidades</a>
@@ -31,7 +31,6 @@
           <div *ngIf="menuConfiguracoesAberto" class="absolute left-0 mt-0 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 z-50">
             <a routerLink="/configuracoes-gerais" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer first:rounded-t-lg">Versao do Sistema</a>
             <a routerLink="/configuracoes-gerais/usuarios" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer">Gerenciar usuarios</a>
-            <a routerLink="/configuracoes-gerais/aprovacao-usuarios" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer">Aprovacao de usuarios</a>
             <a routerLink="/configuracoes-gerais/email-unidades" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer">E-mail para unidades</a>
             <a routerLink="/backup" (click)="fecharMenus()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 cursor-pointer last:rounded-b-lg">Backup e Restauracao</a>
           </div>

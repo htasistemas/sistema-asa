@@ -1,26 +1,30 @@
-<section class="paginaBackup">
-  <div class="topoPagina">
-    <div class="linhaTopo">
-      <div>
-        <div class="identificadorModulo">OPERACIONAL</div>
-        <div class="tituloPagina">Backup e Restauração</div>
-      </div>
-      <p class="comentarioDidatico">Exportação e recuperação completa do sistema ASA.</p>
-    </div>
-  </div>
-
+<app-tela-padrao
+  [menuPai]="menuPai"
+  [titulo]="titulo"
+  [subtitulo]="subtitulo"
+  [comentarioDidatico]="comentarioDidatico"
+>
   <div class="gradeBackup">
     <div class="cartaoBackup">
-      <h3 class="tituloSecao">Backup Geral</h3>
-      <p class="descricaoSecao">Gera um arquivo com todas as tabelas do sistema para armazenamento seguro.</p>
-      <button type="button" class="botaoAcao botaoPrimario" (click)="baixarBackup()" [disabled]="carregandoBackup">
-        {{ carregandoBackup ? 'Gerando...' : 'Baixar Backup' }}
+      <h3 class="tituloSecao">Gerar Backup</h3>
+      <p class="descricaoSecao">Gera um arquivo completo (.sql) com as tabelas atuais do sistema.</p>
+      <button type="button" class="botaoAcao botaoPrimario" (click)="aoSalvar()" [disabled]="carregandoBackup">
+        {{ carregandoBackup ? 'Gerando...' : 'Gerar e Baixar Backup' }}
       </button>
     </div>
 
     <div class="cartaoBackup">
-      <h3 class="tituloSecao">Restauração Geral</h3>
-      <p class="descricaoSecao">Substitui os dados atuais pelo conteúdo do arquivo selecionado.</p>
+      <h3 class="tituloSecao">Testar Restauracao</h3>
+      <p class="descricaoSecao">Valida o arquivo selecionado executando a restauracao em transacao com ROLLBACK.</p>
+      <input type="file" accept=".sql" class="campoArquivo" (change)="selecionarArquivo($event)" />
+      <button type="button" class="botaoAcao" (click)="testarRestauracao()" [disabled]="carregandoTeste">
+        {{ carregandoTeste ? 'Testando...' : 'Testar Backup' }}
+      </button>
+    </div>
+
+    <div class="cartaoBackup cartaoAlerta">
+      <h3 class="tituloSecao">Restauracao Geral</h3>
+      <p class="descricaoSecao">Substitui os dados atuais pelo conteudo do arquivo selecionado.</p>
       <input type="file" accept=".sql" class="campoArquivo" (change)="selecionarArquivo($event)" />
       <button type="button" class="botaoAcao botaoPerigo" (click)="restaurarBackup()" [disabled]="carregandoRestauracao">
         {{ carregandoRestauracao ? 'Restaurando...' : 'Restaurar Backup' }}
@@ -28,7 +32,46 @@
     </div>
   </div>
 
-  <div *ngIf="mensagem" class="mensagemResultado" [class.mensagemSucesso]="tipoMensagem === 'sucesso'" [class.mensagemErro]="tipoMensagem === 'erro'">
-    {{ mensagem }}
+  <div class="cartaoTabela">
+    <div class="cabecalhoTabela">
+      <h3 class="tituloSecao">Historico de Backups</h3>
+      <span class="badge">{{ logs.length }} registros</span>
+    </div>
+    <div class="tabelaHistorico" *ngIf="logs.length > 0; else semLogs">
+      <table>
+        <thead>
+          <tr>
+            <th>Data/Hora</th>
+            <th>Tipo</th>
+            <th>Arquivo</th>
+            <th>Tamanho</th>
+            <th>Status</th>
+            <th>Mensagem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of logs">
+            <td>{{ log.dataHora }}</td>
+            <td>{{ log.tipo }}</td>
+            <td>{{ log.arquivoNome || '-' }}</td>
+            <td>{{ formatarTamanho(log.tamanhoBytes) }}</td>
+            <td>
+              <span class="tagStatus" [class.tagSucesso]="log.status === 'SUCESSO'" [class.tagErro]="log.status !== 'SUCESSO'">
+                {{ log.status }}
+              </span>
+            </td>
+            <td>{{ log.mensagem || '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ng-template #semLogs>
+      <div class="estadoVazio">Nenhum backup registrado ainda.</div>
+    </ng-template>
   </div>
-</section>
+</app-tela-padrao>
+
+<app-popup-messages
+  [mensagens]="mensagensErro"
+  (fechar)="limparMensagens()"
+></app-popup-messages>

@@ -86,13 +86,23 @@ public class AuthController {
         String senhaTemporaria = gerarSenhaTemporaria();
         user.setPasswordHash(passwordEncoder.encode(senhaTemporaria));
         userRepository.save(user);
-        String mensagem = "Sua senha temporaria e: " + senhaTemporaria + "\n\n"
-            + "Acesse o sistema e altere sua senha.";
+        String mensagem = "Ola,\n\n"
+            + "Recebemos uma solicitacao de recuperacao de senha para sua conta no Sistema ASA.\n\n"
+            + "Senha temporaria: " + senhaTemporaria + "\n\n"
+            + "Por seguranca:\n"
+            + "1. Acesse o sistema.\n"
+            + "2. Altere sua senha imediatamente.\n\n"
+            + "Se voce nao solicitou, ignore este e-mail ou contate o administrador.\n\n"
+            + "Equipe ASA";
         try {
             emailService.enviarEmail(user.getEmail(), "Recuperacao de senha - ASA", mensagem);
             logger.info("E-mail de recuperacao enviado para email={}", user.getEmail());
         } catch (IllegalStateException ex) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+            logger.error("SMTP nao configurado ao enviar e-mail de recuperacao para email={}", user.getEmail(), ex);
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Servico de e-mail nao configurado. Contate o administrador do sistema."
+            );
         } catch (org.springframework.mail.MailAuthenticationException ex) {
             logger.error("Falha de autenticacao SMTP ao enviar e-mail de recuperacao para email={}", user.getEmail(), ex);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Falha de autenticacao SMTP. Verifique o usuario e a senha de app do e-mail.");

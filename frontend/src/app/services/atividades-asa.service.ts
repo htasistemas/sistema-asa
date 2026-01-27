@@ -57,6 +57,15 @@ export interface AtividadeAsa {
   avaliacaoRelatorio: number;
 }
 
+export interface ImportacaoAtividadeResposta {
+  totalLinhas: number;
+  importados: number;
+  atualizados: number;
+  ignorados: number;
+  ignoradosDuplicidade: number;
+  mensagens: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class AtividadesAsaService {
   private apiUrl = 'http://localhost:8080/api/atividades-asa';
@@ -80,6 +89,17 @@ export class AtividadesAsaService {
 
   excluir(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`, this.obterOpcoesAutorizacao());
+  }
+
+  importarGoogleForms(arquivo: File, periodoRelatorio: string): Observable<ImportacaoAtividadeResposta> {
+    const formData = new FormData();
+    formData.append('arquivo', arquivo);
+    formData.append('periodoRelatorio', periodoRelatorio);
+    return this.http.post<ImportacaoAtividadeResposta>(
+      `${this.apiUrl}/importacao-google-forms`,
+      formData,
+      this.obterOpcoesAutorizacao()
+    );
   }
 
   private obterOpcoesAutorizacao(): { headers?: HttpHeaders } {

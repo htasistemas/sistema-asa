@@ -10,7 +10,6 @@ import { AtividadesAsaPageComponent } from './pages/atividades-asa-page.componen
 import { ConfiguracoesGeraisPageComponent } from './pages/configuracoes-gerais-page.component';
 import { UsuariosPageComponent } from './pages/usuarios-page.component';
 import { EmailUnidadesPageComponent } from './pages/email-unidades-page.component';
-import { AprovacaoUsuariosPageComponent } from './pages/aprovacao-usuarios-page.component';
 import { PontuacaoUnidadesPageComponent } from './pages/pontuacao-unidades-page.component';
 import { FotosEventosPageComponent } from './pages/fotos-eventos-page.component';
 
@@ -25,7 +24,6 @@ export const routes: Routes = [
   { path: 'atividades-asa', component: AtividadesAsaPageComponent },
   { path: 'configuracoes-gerais', component: ConfiguracoesGeraisPageComponent },
   { path: 'configuracoes-gerais/usuarios', component: UsuariosPageComponent },
-  { path: 'configuracoes-gerais/aprovacao-usuarios', component: AprovacaoUsuariosPageComponent },
   { path: 'configuracoes-gerais/email-unidades', component: EmailUnidadesPageComponent },
   { path: 'pontuacao-unidades', component: PontuacaoUnidadesPageComponent },
   { path: 'fotos-eventos', component: FotosEventosPageComponent },

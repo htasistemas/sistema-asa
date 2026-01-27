@@ -6,12 +6,12 @@
 >
   <div barra-acoes>
     <app-barra-acoes-crud
-      [desabilitarBuscar]="carregando"
-      [desabilitarNovo]="carregando"
-      [desabilitarSalvar]="carregando"
-      [desabilitarCancelar]="carregando"
-      [desabilitarExcluir]="!atividadeSelecionada || carregando"
-      [desabilitarImprimir]="carregando"
+      [desabilitarBuscar]="carregando || importando"
+      [desabilitarNovo]="carregando || importando"
+      [desabilitarSalvar]="carregando || importando"
+      [desabilitarCancelar]="carregando || importando"
+      [desabilitarExcluir]="!atividadeSelecionada || carregando || importando"
+      [desabilitarImprimir]="carregando || importando"
       [desabilitarFechar]="false"
       (buscar)="aoBuscar()"
       (novo)="aoNovo()"
@@ -21,6 +21,68 @@
       (imprimir)="aoImprimir()"
       (fechar)="aoFechar()"
     ></app-barra-acoes-crud>
+  </div>
+
+  <div class="cartaoFormulario cartaoImportacao">
+    <h3 class="tituloSecao">Importacao do Google Forms</h3>
+    <div class="grupoFormulario grupoImportacao">
+      <div class="linhaImportacaoUnica">
+        <div class="linhaFormulario linhaImportacao">
+          <label class="rotuloCampo" for="arquivoImportacao">Arquivo CSV das respostas</label>
+          <input
+            id="arquivoImportacao"
+            name="arquivoImportacao"
+            type="file"
+            accept=".csv,text/csv"
+            class="campoTexto campoArquivoImportacao"
+            (change)="aoSelecionarArquivoImportacao($event)"
+          />
+        </div>
+        <div class="linhaFormulario linhaImportacao">
+          <label class="rotuloCampo" for="mesImportacao">Periodo do relatorio <span class="campoObrigatorio">*</span></label>
+          <div class="linhaPeriodo">
+            <select
+              id="mesImportacao"
+              name="mesImportacao"
+              class="campoTexto"
+              [(ngModel)]="mesImportacao"
+              required
+            >
+              <option [ngValue]="null">Mes</option>
+              <option *ngFor="let mes of meses" [ngValue]="mes.valor">{{ mes.rotulo }}</option>
+            </select>
+            <select
+              id="anoImportacao"
+              name="anoImportacao"
+              class="campoTexto"
+              [(ngModel)]="anoImportacao"
+              required
+            >
+              <option [ngValue]="null">Ano</option>
+              <option *ngFor="let ano of anos" [ngValue]="ano">{{ ano }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="acoesImportacao">
+          <button
+            type="button"
+            class="botaoImportacao"
+            [disabled]="importando || carregando"
+            (click)="aoImportarGoogleForms()"
+          >
+            {{ importando ? 'Importando...' : 'Importar CSV do Google Forms' }}
+          </button>
+        </div>
+      </div>
+      <div class="resumoImportacao" *ngIf="resumoImportacao">
+        <strong>Resultado:</strong>
+        <span>Total: {{ resumoImportacao.totalLinhas }}</span>
+        <span>Novos: {{ resumoImportacao.importados }}</span>
+        <span>Atualizados: {{ resumoImportacao.atualizados }}</span>
+        <span>Ignorados: {{ resumoImportacao.ignorados }}</span>
+        <span>Ignorados por duplicidade: {{ resumoImportacao.ignoradosDuplicidade }}</span>
+      </div>
+    </div>
   </div>
 
   <div class="abasPadrao">

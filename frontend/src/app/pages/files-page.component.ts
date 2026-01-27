@@ -3,6 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FileService, FileResource } from '../services/file.service';
 
+interface GrupoCategoriaArquivos {
+  categoria: string;
+  arquivos: FileResource[];
+}
+
 @Component({
   selector: 'app-files-page',
   standalone: true,
@@ -160,77 +165,88 @@ import { FileService, FileResource } from '../services/file.service';
       </div>
       <div class="listaArquivos">
         <div
-          *ngFor="let arquivo of arquivosFiltrados"
-          class="cartaoArquivo"
-          (click)="selecionarArquivo(arquivo)"
-          [class.cartaoArquivoSelecionado]="arquivoSelecionado?.id === arquivo.id"
+          *ngFor="let grupo of gruposCategoriaArquivos"
+          class="grupoCategoria"
         >
-          <div class="cartaoArquivoTopo">
-            <div class="infoArquivo">
-              <div class="linhaNomeArquivo">
-                <h4 class="nomeArquivo">{{ formatarNomeArquivo(arquivo.name) }}</h4>
-                <div class="metaArquivo">
-                  <span>{{ arquivo.category }}</span>
-                  <span class="chipTipoArquivo">
-                    <span class="iconeTipo" [ngSwitch]="obterTipoArquivo(arquivo.url)">
-                  <svg *ngSwitchCase="'PDF'" class="iconeSvg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M7 3h7l4 4v14H7z"></path>
-                    <path d="M14 3v5h5"></path>
-                  </svg>
-                  <svg *ngSwitchCase="'JPG'" class="iconeSvg" viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-                    <path d="M7 14l3-3 4 4 3-2 3 3"></path>
-                    <circle cx="8" cy="9" r="1.5"></circle>
-                  </svg>
-                  <svg *ngSwitchCase="'PNG'" class="iconeSvg" viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-                    <path d="M7 14l3-3 4 4 3-2 3 3"></path>
-                    <circle cx="8" cy="9" r="1.5"></circle>
-                  </svg>
-                  <svg *ngSwitchCase="'DOC'" class="iconeSvg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M7 3h7l4 4v14H7z"></path>
-                    <path d="M9 12h6"></path>
-                    <path d="M9 16h6"></path>
-                    <path d="M9 8h3"></path>
-                  </svg>
-                  <svg *ngSwitchCase="'XLS'" class="iconeSvg" viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-                    <path d="M3 9h18"></path>
-                    <path d="M8 4v16"></path>
-                    <path d="M13 4v16"></path>
-                  </svg>
-                  <svg *ngSwitchDefault class="iconeSvg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M7 3h7l4 4v14H7z"></path>
-                    <path d="M14 3v5h5"></path>
-                  </svg>
+          <div class="cabecalhoGrupoCategoria">
+            <h4 class="tituloGrupoCategoria">{{ grupo.categoria }}</h4>
+            <span class="badge">{{ grupo.arquivos.length }} arquivos</span>
+          </div>
+          <div class="listaArquivosCategoria">
+            <div
+              *ngFor="let arquivo of grupo.arquivos"
+              class="cartaoArquivo"
+              (click)="selecionarArquivo(arquivo)"
+              [class.cartaoArquivoSelecionado]="arquivoSelecionado?.id === arquivo.id"
+            >
+              <div class="cartaoArquivoTopo">
+                <div class="infoArquivo">
+                  <div class="linhaNomeArquivo">
+                    <h4 class="nomeArquivo">{{ formatarNomeArquivo(arquivo.name) }}</h4>
+                    <div class="metaArquivo">
+                      <span>{{ arquivo.category }}</span>
+                      <span class="chipTipoArquivo">
+                        <span class="iconeTipo" [ngSwitch]="obterTipoArquivo(arquivo.url)">
+                      <svg *ngSwitchCase="'PDF'" class="iconeSvg" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M7 3h7l4 4v14H7z"></path>
+                        <path d="M14 3v5h5"></path>
+                      </svg>
+                      <svg *ngSwitchCase="'JPG'" class="iconeSvg" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                        <path d="M7 14l3-3 4 4 3-2 3 3"></path>
+                        <circle cx="8" cy="9" r="1.5"></circle>
+                      </svg>
+                      <svg *ngSwitchCase="'PNG'" class="iconeSvg" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                        <path d="M7 14l3-3 4 4 3-2 3 3"></path>
+                        <circle cx="8" cy="9" r="1.5"></circle>
+                      </svg>
+                      <svg *ngSwitchCase="'DOC'" class="iconeSvg" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M7 3h7l4 4v14H7z"></path>
+                        <path d="M9 12h6"></path>
+                        <path d="M9 16h6"></path>
+                        <path d="M9 8h3"></path>
+                      </svg>
+                      <svg *ngSwitchCase="'XLS'" class="iconeSvg" viewBox="0 0 24 24" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                        <path d="M3 9h18"></path>
+                        <path d="M8 4v16"></path>
+                        <path d="M13 4v16"></path>
+                      </svg>
+                      <svg *ngSwitchDefault class="iconeSvg" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M7 3h7l4 4v14H7z"></path>
+                        <path d="M14 3v5h5"></path>
+                      </svg>
+                        </span>
+                        {{ obterTipoArquivo(arquivo.url) }}
+                      </span>
+                      <span *ngIf="arquivo.date">{{ formatarData(arquivo.date) }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="acoesArquivo">
+                  <span class="badge badgeSuave">Drive</span>
+                  <a class="botaoAcao botaoAcaoCompacto" [href]="arquivo.url" target="_blank" rel="noopener">
+                    <span class="iconeAcao" aria-hidden="true">
+                      <svg class="iconeSvg" viewBox="0 0 24 24">
+                        <path d="M14 3h7v7"></path>
+                        <path d="M10 14L21 3"></path>
+                        <path d="M5 7v14h14v-5"></path>
+                      </svg>
                     </span>
-                    {{ obterTipoArquivo(arquivo.url) }}
-                  </span>
-                  <span *ngIf="arquivo.date">{{ formatarData(arquivo.date) }}</span>
+                    <span>Abrir</span>
+                  </a>
+                  <button type="button" class="botaoAcao botaoAcaoCompacto" (click)="copiarLink(arquivo.url); $event.stopPropagation();">
+                    <span class="iconeAcao" aria-hidden="true">
+                      <svg class="iconeSvg" viewBox="0 0 24 24">
+                        <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+                        <rect x="3" y="3" width="13" height="13" rx="2"></rect>
+                      </svg>
+                    </span>
+                    <span>Copiar link</span>
+                  </button>
                 </div>
               </div>
-            </div>
-            <div class="acoesArquivo">
-              <span class="badge badgeSuave">Drive</span>
-              <a class="botaoAcao botaoAcaoCompacto" [href]="arquivo.url" target="_blank" rel="noopener">
-                <span class="iconeAcao" aria-hidden="true">
-                  <svg class="iconeSvg" viewBox="0 0 24 24">
-                    <path d="M14 3h7v7"></path>
-                    <path d="M10 14L21 3"></path>
-                    <path d="M5 7v14h14v-5"></path>
-                  </svg>
-                </span>
-                <span>Abrir</span>
-              </a>
-              <button type="button" class="botaoAcao botaoAcaoCompacto" (click)="copiarLink(arquivo.url); $event.stopPropagation();">
-                <span class="iconeAcao" aria-hidden="true">
-                  <svg class="iconeSvg" viewBox="0 0 24 24">
-                    <rect x="9" y="9" width="13" height="13" rx="2"></rect>
-                    <rect x="3" y="3" width="13" height="13" rx="2"></rect>
-                  </svg>
-                </span>
-                <span>Copiar link</span>
-              </button>
             </div>
           </div>
         </div>
@@ -450,6 +466,39 @@ import { FileService, FileResource } from '../services/file.service';
       gap: 16px;
     }
 
+    .grupoCategoria {
+      border: 1px solid #e4e8e4;
+      border-radius: 16px;
+      padding: 16px;
+      background-color: #f9fbf9;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .cabecalhoGrupoCategoria {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .tituloGrupoCategoria {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      color: #1f5b34;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .listaArquivosCategoria {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
     .cartaoArquivo {
       border: 1px solid #e4e8e4;
       border-radius: 14px;
@@ -611,7 +660,16 @@ import { FileService, FileResource } from '../services/file.service';
 export class FilesPageComponent implements OnInit {
   arquivos: FileResource[] = [];
   arquivosFiltrados: FileResource[] = [];
-  categorias = ['Documentos', 'Planilhas', 'Relatorios', 'Apresentacoes', 'Manuais', 'Outros'];
+  categorias = [
+    'Documentos',
+    'Planilhas',
+    'Relatorios',
+    'Apresentacoes',
+    'Manuais',
+    'Estudos biblicos',
+    'Livros motivacionais',
+    'Outros'
+  ];
   filtroTexto = '';
   filtroCategoria = '';
   arquivoSelecionado: FileResource | null = null;
@@ -666,6 +724,21 @@ export class FilesPageComponent implements OnInit {
 
   buscarArquivos(): void {
     this.aplicarFiltro();
+  }
+
+  get gruposCategoriaArquivos(): GrupoCategoriaArquivos[] {
+    const categoriasOrdenadas = [...this.categorias];
+    const categoriasExtras = Array.from(new Set(this.arquivosFiltrados.map(arquivo => arquivo.category)))
+      .filter(categoria => !categoriasOrdenadas.includes(categoria))
+      .sort((a, b) => a.localeCompare(b));
+    const todasCategorias = [...categoriasOrdenadas, ...categoriasExtras];
+
+    return todasCategorias
+      .map(categoria => ({
+        categoria,
+        arquivos: this.arquivosFiltrados.filter(arquivo => arquivo.category === categoria)
+      }))
+      .filter(grupo => grupo.arquivos.length > 0);
   }
 
   aplicarFiltro(): void {

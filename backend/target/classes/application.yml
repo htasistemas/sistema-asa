@@ -8,8 +8,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${ASA_MAIL_USERNAME:asadiretoresmmo@gmail.com}
-    password: ${ASA_MAIL_PASSWORD:ALTERE_A_SENHA}
+    username: ${ASA_MAIL_USERNAME:${MAIL_USER:asadiretoresmmo@gmail.com}}
+    password: ${ASA_MAIL_PASSWORD:${MAIL_PASS:ALTERE_A_SENHA}}
     protocol: smtp
     test-connection: ${ASA_MAIL_TEST_CONNECTION:false}
     properties:
@@ -39,7 +39,7 @@ app:
     secret: change-this-secret-please-change-this-secret
     expiration-minutes: 480
   email:
-    nome-exibicao: "Asa - Acao Solidaria Adventista"
+    nome-exibicao: "ASA - Ação Solidária Adventista"
     pop:
       host: pop.gmail.com
       port: 995

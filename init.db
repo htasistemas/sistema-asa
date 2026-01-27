@@ -135,3 +135,7 @@ WHERE NOT EXISTS (SELECT 1 FROM configuracoes_gerais WHERE versao = '1.00.7');
 INSERT INTO configuracoes_gerais (versao, data_hora, mudancas)
 SELECT '1.00.8', to_char(now(), 'DD/MM/YYYY HH24:MI'), 'Pontuacao aceita periodo com barra e normaliza para calculo.'
 WHERE NOT EXISTS (SELECT 1 FROM configuracoes_gerais WHERE versao = '1.00.8');
+
+INSERT INTO configuracoes_gerais (versao, data_hora, mudancas)
+SELECT '1.00.9', to_char(now(), 'DD/MM/YYYY HH24:MI'), 'Importacao por CSV do Google Forms na tela de atividades da ASA.'
+WHERE NOT EXISTS (SELECT 1 FROM configuracoes_gerais WHERE versao = '1.00.9');

@@ -129,6 +129,7 @@ import { AtividadeAsa, AtividadesAsaService } from '../services/atividades-asa.s
       <div class="seletorPeriodo">
         <select [(ngModel)]="periodoSelecionado" (ngModelChange)="atualizarResumo()">
           <option value="">Periodo do Relatorio</option>
+          <option *ngFor="let ano of anosDisponiveis" [value]="'ANO_' + ano">Ano todo ({{ ano }})</option>
           <option *ngFor="let periodo of periodosDisponiveis" [value]="periodo">{{ formatarPeriodo(periodo) }}</option>
         </select>
       </div>
@@ -216,6 +217,7 @@ export class DashboardPageComponent implements OnInit {
   totalVoluntarios = 0;
   periodoSelecionado = '';
   periodosDisponiveis: string[] = [];
+  anosDisponiveis: string[] = [];
   atividades: AtividadeAsa[] = [];
   resumoAcoes: { rotulo: string; total: number }[] = [];
   topVoluntarios: { asa: string; valor: number; percentual: number }[] = [];
@@ -241,7 +243,8 @@ export class DashboardPageComponent implements OnInit {
     this.atividadesAsaService.listar().subscribe(atividades => {
       this.atividades = atividades;
       this.periodosDisponiveis = this.obterPeriodosDisponiveis(atividades);
-      this.periodoSelecionado = this.periodosDisponiveis[0] || '';
+      this.anosDisponiveis = this.obterAnosDisponiveis(this.periodosDisponiveis);
+      this.periodoSelecionado = this.obterPeriodoPadrao(this.periodosDisponiveis);
       this.atualizarResumo();
     }, () => {
       this.resumoAcoes = this.criarResumoInicial();
@@ -258,7 +261,7 @@ export class DashboardPageComponent implements OnInit {
 
   atualizarResumo(): void {
     const atividadesFiltradas = this.periodoSelecionado
-      ? this.atividades.filter(atividade => atividade.periodoRelatorio === this.periodoSelecionado)
+      ? this.filtrarAtividadesPorPeriodo(this.periodoSelecionado)
       : this.atividades;
 
     this.totalFamiliasAtendidas = atividadesFiltradas.reduce((acc, item) => acc + (item.familiasAtendidas || 0), 0);
@@ -339,6 +342,36 @@ export class DashboardPageComponent implements OnInit {
   private obterPeriodosDisponiveis(atividades: AtividadeAsa[]): string[] {
     const periodos = Array.from(new Set(atividades.map(item => item.periodoRelatorio))).filter(Boolean);
     return periodos.sort((a, b) => b.localeCompare(a));
+  }
+
+  private obterAnosDisponiveis(periodosDisponiveis: string[]): string[] {
+    const anos = new Set<string>();
+    periodosDisponiveis.forEach(periodo => {
+      const partes = periodo.split('-');
+      if (partes.length === 2) {
+        const ano = partes[0];
+        if (ano && ano.length === 4) {
+          anos.add(ano);
+        }
+      }
+    });
+    return Array.from(anos).sort((a, b) => b.localeCompare(a));
+  }
+
+  private obterPeriodoPadrao(periodosDisponiveis: string[]): string {
+    const periodoPadrao = '2026-01';
+    if (periodosDisponiveis.includes(periodoPadrao)) {
+      return periodoPadrao;
+    }
+    return periodosDisponiveis[0] || periodoPadrao;
+  }
+
+  private filtrarAtividadesPorPeriodo(periodo: string): AtividadeAsa[] {
+    if (periodo.startsWith('ANO_')) {
+      const ano = periodo.replace('ANO_', '');
+      return this.atividades.filter(atividade => atividade.periodoRelatorio?.startsWith(`${ano}-`));
+    }
+    return this.atividades.filter(atividade => atividade.periodoRelatorio === periodo);
   }
 
   private criarResumoInicial(): { rotulo: string; total: number }[] {
