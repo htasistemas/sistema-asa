@@ -1,0 +1,188 @@
+GUIA COMPLETO DE DEPLOY - HOSTINGER VPS (Ubuntu 22.04)
+DOMINIO PRINCIPAL (SITE): asammo.com.br
+SUBDOMINIO DO SISTEMA: sistema.asammo.com.br
+
+OBJETIVO
+- Site institucional em https://asammo.com.br e https://www.asammo.com.br
+- Sistema ASA em https://sistema.asammo.com.br
+- Backend Java (Spring Boot) com PostgreSQL
+
+PRE-REQUISITOS
+- VPS criado na Hostinger (Ubuntu 22.04)
+- IP publico do VPS
+- Dominio no Registro.br
+- Acesso SSH com usuario root
+- Projeto ASA em C:\asa
+
+========================================
+1) DNS NO REGISTRO.BR
+========================================
+Crie os registros A apontando para o IP do VPS:
+- @        -> IP do VPS
+- www      -> IP do VPS
+- sistema  -> IP do VPS
+
+Obs: a propagacao pode levar algumas horas.
+
+========================================
+2) ACESSO AO VPS
+========================================
+ssh root@IP_DO_VPS
+
+========================================
+3) ATUALIZACAO E DEPENDENCIAS
+========================================
+apt update && apt upgrade -y
+apt install -y nginx postgresql postgresql-contrib git unzip
+apt install -y openjdk-17-jdk
+
+========================================
+4) CRIAR ESTRUTURA DE PASTAS NO VPS
+========================================
+mkdir -p /opt/asa/backend
+mkdir -p /var/www/asa-frontend
+mkdir -p /var/www/asa-site
+
+========================================
+5) BANCO POSTGRESQL
+========================================
+sudo -u postgres psql
+
+-- Dentro do psql:
+CREATE ROLE asa WITH LOGIN PASSWORD 'asa';
+CREATE DATABASE asa OWNER asa;
+\c asa;
+\q
+
+========================================
+6) ENVIAR E EXECUTAR SCRIPT SQL
+========================================
+# No seu PC:
+scp C:\asa\backend\sql\asa.sql root@IP_DO_VPS:/opt/asa/backend/asa.sql
+
+# No VPS:
+psql -U postgres -d asa -f /opt/asa/backend/asa.sql
+
+========================================
+7) BACKEND (SPRING BOOT)
+========================================
+# No seu PC:
+cd C:\asa\backend
+mvn clean package
+
+# Enviar o JAR:
+scp target\*.jar root@IP_DO_VPS:/opt/asa/backend/app.jar
+
+# Criar servico systemd no VPS:
+cat > /etc/systemd/system/asa-backend.service <<'EOF'
+[Unit]
+Description=ASA Backend
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/opt/asa/backend
+ExecStart=/usr/bin/java -jar /opt/asa/backend/app.jar
+Restart=always
+Environment=SPRING_PROFILES_ACTIVE=prod
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable asa-backend
+systemctl start asa-backend
+systemctl status asa-backend
+
+========================================
+8) FRONTEND DO SISTEMA (ANGULAR)
+========================================
+# No seu PC:
+cd C:\asa\frontend
+ng build
+
+# Enviar o build:
+scp -r dist\* root@IP_DO_VPS:/var/www/asa-frontend/
+
+========================================
+9) SITE INSTITUCIONAL (ESTATICO)
+========================================
+# No seu PC:
+scp C:\asa\site.html root@IP_DO_VPS:/var/www/asa-site/index.html
+scp -r C:\asa\img root@IP_DO_VPS:/var/www/asa-site/
+
+========================================
+10) NGINX (SITE + SISTEMA + API)
+========================================
+# No VPS:
+cat > /etc/nginx/sites-available/asammo.com.br <<'EOF'
+server {
+    listen 80;
+    server_name asammo.com.br www.asammo.com.br;
+
+    root /var/www/asa-site;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+
+server {
+    listen 80;
+    server_name sistema.asammo.com.br;
+
+    root /var/www/asa-frontend;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://localhost:8080/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+EOF
+
+ln -s /etc/nginx/sites-available/asammo.com.br /etc/nginx/sites-enabled/
+nginx -t
+systemctl restart nginx
+
+========================================
+11) SSL (HTTPS)
+========================================
+apt install -y certbot python3-certbot-nginx
+certbot --nginx -d asammo.com.br -d www.asammo.com.br -d sistema.asammo.com.br
+
+========================================
+12) AJUSTES NO CODIGO (ANTES DO BUILD)
+========================================
+12.1) Backend - CORS
+Permitir origem:
+- https://sistema.asammo.com.br
+
+12.2) Frontend - URL da API
+Apontar para:
+- https://sistema.asammo.com.br/api
+
+========================================
+13) VALIDACOES FINAIS
+========================================
+- DNS apontado e propagado
+- Backend rodando (systemctl status asa-backend)
+- Nginx ok (nginx -t)
+- SSL ativo (https://asammo.com.br)
+- Site institucional abrindo
+- Sistema abrindo (https://sistema.asammo.com.br)
+- Login funcionando
+
+OBSERVACOES IMPORTANTES
+- Se o site institucional tiver mais arquivos (css, js, imagens), envie tudo para /var/www/asa-site
+- Se o build do frontend gerar subpasta (ex.: dist/asa), envie o conteudo correto da pasta gerada
+- Em caso de erro 502 no /api, verifique o backend (porta 8080) e o systemctl
