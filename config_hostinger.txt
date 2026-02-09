@@ -7,7 +7,8 @@ OBJETIVO
 - Sistema ASA em https://sistema.asammo.com.br
 - Backend Java (Spring Boot) com PostgreSQL
 
-PRE-REQUISITOS
+PRE-REQUISITOSt
+
 - VPS criado na Hostinger (Ubuntu 22.04)
 - IP publico do VPS
 - Dominio no Registro.br
